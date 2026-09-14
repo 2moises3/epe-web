@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import Hint from "@/shared/components/Hint";
 
 interface TablePaginationProps {
     page: number;
@@ -12,16 +13,18 @@ export default function TablePagination({ page, pageCount, onPageChange }: Table
 
     return (
         <div className="flex items-center justify-end gap-1.5">
-            <Button
-                variant="outline"
-                size="icon"
-                disabled={page === 1}
-                onClick={() => onPageChange(page - 1)}
-                aria-label="Página anterior"
-                className="h-9 w-9 rounded-lg border-border text-ink-muted hover:text-brand hover:border-brand disabled:opacity-40 transition-colors active:scale-95"
-            >
-                <ChevronLeft size={18} strokeWidth={2.5} />
-            </Button>
+            <Hint label="Página anterior">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={page === 1}
+                    onClick={() => onPageChange(page - 1)}
+                    aria-label="Página anterior"
+                    className="h-9 w-9 rounded-lg border-border text-ink-muted hover:text-brand hover:border-brand disabled:opacity-40 transition-colors active:scale-95"
+                >
+                    <ChevronLeft size={18} strokeWidth={2.5} />
+                </Button>
+            </Hint>
 
             {Array.from({ length: pageCount }).map((_, index) => {
                 const target = index + 1;
@@ -44,16 +47,18 @@ export default function TablePagination({ page, pageCount, onPageChange }: Table
                 );
             })}
 
-            <Button
-                variant="outline"
-                size="icon"
-                disabled={page === pageCount}
-                onClick={() => onPageChange(page + 1)}
-                aria-label="Página siguiente"
-                className="h-9 w-9 rounded-lg border-border text-ink-muted hover:text-brand hover:border-brand disabled:opacity-40 transition-colors active:scale-95"
-            >
-                <ChevronRight size={18} strokeWidth={2.5} />
-            </Button>
+            <Hint label="Página siguiente">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={page === pageCount}
+                    onClick={() => onPageChange(page + 1)}
+                    aria-label="Página siguiente"
+                    className="h-9 w-9 rounded-lg border-border text-ink-muted hover:text-brand hover:border-brand disabled:opacity-40 transition-colors active:scale-95"
+                >
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                </Button>
+            </Hint>
         </div>
     );
 }

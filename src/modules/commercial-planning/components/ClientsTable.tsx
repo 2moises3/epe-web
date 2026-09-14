@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { Card, CardContent } from "@/shared/components/ui/card";
-import { Button } from "@/shared/components/ui/button";
+import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ClientEditModal from "./ClientEditModal";
 import ClientViewModal from "./ClientViewModal";
 import ClientAddContractModal from "./ClientAddContractModal";
@@ -37,6 +37,18 @@ export default function ClientsTable() {
     const [editingClientId, setEditingClientId] = useState<number | null>(null);
     const [viewingClientId, setViewingClientId] = useState<number | null>(null);
     const [addingContractClientId, setAddingContractClientId] = useState<number | null>(null);
+
+    /** Editar y Ver detalles quedan siempre visibles; el resto se agrupa en el menú de "más opciones" */
+    const getRowActions = (row: { id: number }) => {
+        const primary: RowAction[] = [
+            { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditingClientId(row.id) },
+            { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => setViewingClientId(row.id) },
+        ];
+        const secondary: RowAction[] = [
+            { label: "Añadir contrato", icon: <FileSignature size={16} strokeWidth={2.5} />, onClick: () => setAddingContractClientId(row.id) },
+        ];
+        return { primary, secondary };
+    };
 
     return (
         <>
@@ -86,16 +98,8 @@ export default function ClientsTable() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-1 mt-3 px-2.5 py-1.5 border-t border-border bg-surface-page/50 text-ink-muted">
-                                <Button variant="ghost" size="icon" onClick={() => setAddingContractClientId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95" aria-label="Añadir contrato">
-                                    <FileSignature size={18} strokeWidth={2.5} />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => setEditingClientId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95" aria-label="Editar">
-                                    <Pencil size={18} strokeWidth={2.5} />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => setViewingClientId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95 ml-auto" aria-label="Ver">
-                                    <Eye size={18} strokeWidth={2.5} />
-                                </Button>
+                            <div className="flex items-center mt-3 px-2.5 py-1.5 border-t border-border bg-surface-page/50 text-ink-muted">
+                                <RowActions {...getRowActions(row)} />
                             </div>
                         </div>
                     ))}
@@ -110,7 +114,7 @@ export default function ClientsTable() {
                                 <TableHead className="text-ink font-semibold h-14">Número</TableHead>
                                 <TableHead className="text-ink font-semibold h-14">Correo</TableHead>
                                 <TableHead className="text-ink font-semibold h-14">RUC</TableHead>
-                                <TableHead className="text-ink font-semibold h-14 text-right px-6 w-36">Acciones</TableHead>
+                                <TableHead className="text-ink font-semibold h-14 text-right px-6 w-40">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -122,17 +126,7 @@ export default function ClientsTable() {
                                     <TableCell className="text-ink-body font-medium">{row.correo}</TableCell>
                                     <TableCell className="text-ink-body font-medium">{row.ruc}</TableCell>
                                     <TableCell className="px-6">
-                                        <div className="flex items-center justify-end gap-1.5 text-ink-muted">
-                                            <Button variant="ghost" size="icon" onClick={() => setAddingContractClientId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                <FileSignature size={18} strokeWidth={2.5} />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => setEditingClientId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                <Pencil size={18} strokeWidth={2.5} />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => setViewingClientId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                <Eye size={18} strokeWidth={2.5} />
-                                            </Button>
-                                        </div>
+                                        <RowActions {...getRowActions(row)} className="justify-end text-ink-muted" />
                                     </TableCell>
                                 </TableRow>
                             ))}

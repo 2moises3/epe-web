@@ -3,6 +3,7 @@ import { Button } from "@/shared/components/ui/button";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupInput, InputGroupButton } from "@/shared/components/ui/input-group";
 import { User, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import Hint from "@/shared/components/Hint";
 
 interface FormControlProps {
     onSubmit: () => void;
@@ -52,16 +53,18 @@ export default function FormControl({ onSubmit }: FormControlProps) {
                         className="h-full text-foreground placeholder:text-muted-foreground/50 text-sm pl-2"
                     />
                     <InputGroupAddon align="inline-end" className="pr-4">
-                        <InputGroupButton
-                            type="button"
-                            size="icon-sm"
-                            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                            aria-pressed={showPassword}
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            className="text-ink-muted hover:text-brand transition-colors"
-                        >
-                            {showPassword ? <EyeOff size={20} strokeWidth={2.5} /> : <Eye size={20} strokeWidth={2.5} />}
-                        </InputGroupButton>
+                        <Hint label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}>
+                            <InputGroupButton
+                                type="button"
+                                size="icon-sm"
+                                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                aria-pressed={showPassword}
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                className="text-ink-muted hover:text-brand transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={20} strokeWidth={2.5} /> : <Eye size={20} strokeWidth={2.5} />}
+                            </InputGroupButton>
+                        </Hint>
                     </InputGroupAddon>
                 </InputGroup>
             </Field>

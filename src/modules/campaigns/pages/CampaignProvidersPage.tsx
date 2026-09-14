@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import StatusBadge from "@/shared/components/StatusBadge";
+import RowActions from "@/shared/components/RowActions";
 import PageHeader from "@/shared/layout/PageHeader";
 import CampaignLinkProviderModal from "@/modules/campaigns/components/CampaignLinkProviderModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
@@ -152,7 +153,7 @@ export default function CampaignProvidersPage() {
                                     <TableHead className="text-ink font-semibold h-14">Zona</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Tipo de Proveedor</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Estado</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14 text-center px-6 w-44">Acciones</TableHead>
+                                    <TableHead className="text-ink font-semibold h-14 text-center px-6 w-36">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -165,31 +166,16 @@ export default function CampaignProvidersPage() {
                                         <StatusBadge status="Desconocido" />
                                     </TableCell>
                                     <TableCell className="px-6">
-                                        <div className="flex items-center justify-center gap-1.5 text-ink-muted">
-                                            {activeTab === "Productor" && (
-                                                <>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => setIsInterviewModalOpen(true)}
-                                                        className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95"
-                                                    >
-                                                        <UserPlus size={18} strokeWidth={2.5} />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => setIsExamModalOpen(true)}
-                                                        className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95"
-                                                    >
-                                                        <FilePlus size={18} strokeWidth={2.5} />
-                                                    </Button>
-                                                </>
-                                            )}
-                                            <Button variant="ghost" size="icon" onClick={() => { setSelectedProviderName("Juan Pérez"); setIsDetailsModalOpen(true); }} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                <Eye size={18} strokeWidth={2.5} />
-                                            </Button>
-                                        </div>
+                                        <RowActions
+                                            className="justify-center text-ink-muted"
+                                            primary={[
+                                                { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => { setSelectedProviderName("Juan Pérez"); setIsDetailsModalOpen(true); } },
+                                            ]}
+                                            secondary={activeTab === "Productor" ? [
+                                                { label: "Registrar entrevista", icon: <UserPlus size={16} strokeWidth={2.5} />, onClick: () => setIsInterviewModalOpen(true) },
+                                                { label: "Registrar examen", icon: <FilePlus size={16} strokeWidth={2.5} />, onClick: () => setIsExamModalOpen(true) },
+                                            ] : []}
+                                        />
                                     </TableCell>
                                 </TableRow>
                                 <TableRow className="border-b border-border hover:bg-surface-page/60">
@@ -201,31 +187,16 @@ export default function CampaignProvidersPage() {
                                         <StatusBadge status="Desconocido" />
                                     </TableCell>
                                     <TableCell className="px-6">
-                                        <div className="flex items-center justify-center gap-1.5 text-ink-muted">
-                                            {activeTab === "Productor" && (
-                                                <>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => setIsInterviewModalOpen(true)}
-                                                        className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95"
-                                                    >
-                                                        <UserCheck size={18} strokeWidth={2.5} />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => setIsExamModalOpen(true)}
-                                                        className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95"
-                                                    >
-                                                        <FilePlus size={18} strokeWidth={2.5} />
-                                                    </Button>
-                                                </>
-                                            )}
-                                            <Button variant="ghost" size="icon" onClick={() => { setSelectedProviderName("Carlos Mendoza"); setIsDetailsModalOpen(true); }} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                <Eye size={18} strokeWidth={2.5} />
-                                            </Button>
-                                        </div>
+                                        <RowActions
+                                            className="justify-center text-ink-muted"
+                                            primary={[
+                                                { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => { setSelectedProviderName("Carlos Mendoza"); setIsDetailsModalOpen(true); } },
+                                            ]}
+                                            secondary={activeTab === "Productor" ? [
+                                                { label: "Ver entrevista", icon: <UserCheck size={16} strokeWidth={2.5} />, onClick: () => setIsInterviewModalOpen(true) },
+                                                { label: "Registrar examen", icon: <FilePlus size={16} strokeWidth={2.5} />, onClick: () => setIsExamModalOpen(true) },
+                                            ] : []}
+                                        />
                                     </TableCell>
                                 </TableRow>
                             </TableBody>

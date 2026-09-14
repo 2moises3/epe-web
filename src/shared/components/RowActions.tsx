@@ -1,0 +1,76 @@
+import type { ReactNode } from "react";
+import { MoreVertical } from "lucide-react";
+import ActionButton from "@/shared/components/ActionButton";
+import Hint from "@/shared/components/Hint";
+import { Separator } from "@/shared/components/ui/separator";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
+export interface RowAction {
+    label: string;
+    icon: ReactNode;
+    onClick?: () => void;
+}
+
+interface RowActionsProps {
+    /** Acciones que se quedan siempre visibles como íconos, normalmente Editar y Ver detalles */
+    primary: RowAction[];
+    /** El resto de acciones, agrupadas detrás del botón de 3 puntitos */
+    secondary?: RowAction[];
+    align?: "start" | "end";
+    className?: string;
+}
+
+/** Fila de acciones de tabla: 1-2 íconos siempre visibles + el resto colapsado en un menú de "más opciones". */
+export default function RowActions({ primary, secondary = [], align = "end", className }: RowActionsProps) {
+    return (
+        <div className={cn("flex items-center justify-end gap-3", className)}>
+            {primary.map((action) => (
+                <Hint key={action.label} label={action.label}>
+                    <button
+                        onClick={action.onClick}
+                        aria-label={action.label}
+                        className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-ink-muted transition-all duration-300 hover:bg-[#69b935] hover:text-white hover:shadow-[0_4px_12px_rgba(105,185,53,0.3)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[#69b935]/50"
+                    >
+                        {action.icon}
+                    </button>
+                </Hint>
+            ))}
+
+            {secondary.length > 0 && (
+                <>
+                    {primary.length > 0 && (
+                        <div className="w-[1px] h-5 bg-border mx-1 shrink-0" />
+                    )}
+                    <DropdownMenu>
+                        <Hint label="Más opciones">
+                            <DropdownMenuTrigger
+                                aria-label="Más opciones"
+                                className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-ink-muted transition-all duration-300 hover:bg-[#69b935] hover:text-white hover:shadow-[0_4px_12px_rgba(105,185,53,0.3)] hover:-translate-y-0.5 data-[state=open]:bg-[#69b935] data-[state=open]:text-white data-[state=open]:shadow-[0_4px_12px_rgba(105,185,53,0.3)] active:translate-y-0 active:shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[#69b935]/50"
+                            >
+                                <MoreVertical size={18} strokeWidth={2.5} />
+                            </DropdownMenuTrigger>
+                        </Hint>
+                        <DropdownMenuContent align={align} sideOffset={8} className="w-52 p-1.5 rounded-xl shadow-xl border-border/50 bg-white">
+                            {secondary.map((action) => (
+                                <DropdownMenuItem
+                                    key={action.label}
+                                    onClick={action.onClick}
+                                    className="gap-2.5 px-3 py-2.5 text-[14px] font-medium text-ink-body rounded-lg cursor-pointer transition-all duration-200 hover:!text-[#2e7d32] hover:bg-[#69b935]/15 focus:!text-[#2e7d32] focus:bg-[#69b935]/15 [&_svg]:text-ink-muted hover:[&_svg]:!text-[#2e7d32] focus:[&_svg]:!text-[#2e7d32]"
+                                >
+                                    {action.icon}
+                                    {action.label}
+                                </DropdownMenuItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </>
+            )}
+        </div>
+    );
+}

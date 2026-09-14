@@ -8,6 +8,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
+import Hint from "@/shared/components/Hint";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 
 interface CampaignLinkClientModalProps {
@@ -114,12 +115,15 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave }: 
                                         <span className="text-[13px] font-bold text-ink leading-tight mb-0.5">{client.contact}</span>
                                         <span className="text-[11px] font-medium text-ink-muted">Cliente - {client.company}</span>
                                     </div>
-                                    <button
-                                        onClick={() => handleRemove(client.id)}
-                                        className="text-ink-muted hover:text-destructive transition-colors shrink-0"
-                                    >
-                                        <X size={16} strokeWidth={2.5} />
-                                    </button>
+                                    <Hint label="Quitar">
+                                        <button
+                                            onClick={() => handleRemove(client.id)}
+                                            className="text-ink-muted hover:text-destructive transition-colors shrink-0"
+                                            aria-label={`Quitar ${client.contact}`}
+                                        >
+                                            <X size={16} strokeWidth={2.5} />
+                                        </button>
+                                    </Hint>
                                 </div>
                             ))}
                         </div>

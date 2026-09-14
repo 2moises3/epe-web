@@ -11,6 +11,7 @@ import {
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import StatusBadge from "@/shared/components/StatusBadge";
+import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ProviderInterviewModal from "./ProviderInterviewModal";
 import ProviderEditModal from "./ProviderEditModal";
 import ProviderViewModal from "./ProviderViewModal";
@@ -25,6 +26,18 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
     const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
     const [editingProviderId, setEditingProviderId] = useState<number | null>(null);
     const [viewingProviderId, setViewingProviderId] = useState<number | null>(null);
+
+    /** Editar y Ver detalles quedan siempre visibles; el resto se agrupa en el menú de "más opciones" */
+    const getRowActions = (row: { id: number }) => {
+        const primary: RowAction[] = [
+            { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditingProviderId(row.id) },
+            { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => setViewingProviderId(row.id) },
+        ];
+        const secondary: RowAction[] = [
+            { label: "Ver entrevista", icon: <FileArchive size={16} strokeWidth={2.5} />, onClick: () => setIsInterviewModalOpen(true) },
+        ];
+        return { primary, secondary };
+    };
 
     return (
         <>
@@ -94,16 +107,8 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-1 mt-3 px-2.5 py-1.5 border-t border-border bg-surface-page/50 text-ink-muted">
-                                    <Button variant="ghost" size="icon" onClick={() => setEditingProviderId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95" aria-label="Editar">
-                                        <Pencil size={18} strokeWidth={2.5} />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setViewingProviderId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95" aria-label="Ver">
-                                        <Eye size={18} strokeWidth={2.5} />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => setIsInterviewModalOpen(true)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95 ml-auto" aria-label="Entrevista">
-                                        <FileArchive size={18} strokeWidth={2.5} />
-                                    </Button>
+                                <div className="flex items-center mt-3 px-2.5 py-1.5 border-t border-border bg-surface-page/50 text-ink-muted">
+                                    <RowActions {...getRowActions(row)} />
                                 </div>
                             </div>
                         ))}
@@ -118,7 +123,7 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
                                     <TableHead className="text-ink font-semibold h-14">Fruta</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Categoría de Fruta</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Estado</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-44">Acciones</TableHead>
+                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-40">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -132,18 +137,7 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
                                             <StatusBadge status={row.estado} />
                                         </TableCell>
                                         <TableCell className="px-6">
-                                            <div className="flex items-center justify-end gap-1.5 text-ink-muted">
-                                                <Button variant="ghost" size="icon" onClick={() => setEditingProviderId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                    <Pencil size={18} strokeWidth={2.5} />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => setViewingProviderId(row.id)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                    <Eye size={18} strokeWidth={2.5} />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" 
-                                                onClick={() => setIsInterviewModalOpen(true)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                    <FileArchive size={18} strokeWidth={2.5} />
-                                                </Button>
-                                            </div>
+                                            <RowActions {...getRowActions(row)} className="justify-end text-ink-muted" />
                                         </TableCell>
                                         </TableRow>
                                     ))}

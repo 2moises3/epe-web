@@ -9,6 +9,7 @@ import {
 import LogoEmpresaOnly from "@/assets/image/logo_empresa_only.webp";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { sidebarItems } from "@/shared/layout/sidebarItems";
+import Hint from "@/shared/components/Hint";
 
 interface TopNavBarProps {
     onLogout?: () => void;
@@ -28,13 +29,24 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                         isRoot ? 'w-0 opacity-0' : 'w-9 sm:w-12 opacity-100'
                     }`}
                 >
-                    <button
-                        onClick={() => navigate('/modules')}
-                        className="text-ink-muted hover:text-brand transition-all flex items-center justify-center shrink-0 w-8 h-8 rounded-full hover:bg-black/5 mr-1 sm:mr-4 active:scale-95"
-                        aria-label="Regresar a módulos"
-                    >
-                        <ArrowLeft size={22} strokeWidth={2} />
-                    </button>
+                    <Hint label="Regresar" side="bottom">
+                        <button
+                            onClick={() => {
+                                const segments = location.pathname.split('/').filter(Boolean);
+                                if (segments.length > 1) {
+                                    // Si estamos dentro de un módulo (ej. /campaigns/1/providers), volvemos a la raíz del módulo (/campaigns)
+                                    navigate(`/${segments[0]}`);
+                                } else {
+                                    // Si estamos en la raíz del módulo (ej. /campaigns), volvemos a la selección de módulos
+                                    navigate('/modules');
+                                }
+                            }}
+                            className="text-ink-muted hover:text-brand transition-all flex items-center justify-center shrink-0 w-8 h-8 rounded-full hover:bg-black/5 mr-1 sm:mr-4 active:scale-95"
+                            aria-label="Regresar"
+                        >
+                            <ArrowLeft size={22} strokeWidth={2} />
+                        </button>
+                    </Hint>
                 </div>
 
                 <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
@@ -55,9 +67,11 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
             <div className="flex items-center gap-3 sm:gap-6 ml-auto shrink-0">
                 {/* Menú rápido de Módulos (Mini-Sidebar) */}
                 <DropdownMenu>
-                    <DropdownMenuTrigger className="text-ink-muted hover:text-brand transition-all outline-none focus-visible:ring-2 focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand/40 rounded-lg p-1 active:scale-95" aria-label="Módulos">
-                        <LayoutGrid size={22} strokeWidth={2} />
-                    </DropdownMenuTrigger>
+                    <Hint label="Módulos" side="bottom">
+                        <DropdownMenuTrigger className="text-ink-muted hover:text-brand transition-all outline-none focus-visible:ring-2 focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand/40 rounded-lg p-1 active:scale-95" aria-label="Módulos">
+                            <LayoutGrid size={22} strokeWidth={2} />
+                        </DropdownMenuTrigger>
+                    </Hint>
                     <DropdownMenuContent align="end" sideOffset={12} className="w-75 p-3 rounded-xl grid grid-cols-2 gap-2">
                         {sidebarItems.map((item) => (
                             <DropdownMenuItem
@@ -76,10 +90,12 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <button className="text-ink-muted hover:text-brand transition-all relative active:scale-95" aria-label="Notificaciones">
-                    <Bell size={22} strokeWidth={2} />
-                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                </button>
+                <Hint label="Notificaciones" side="bottom">
+                    <button className="text-ink-muted hover:text-brand transition-all relative active:scale-95" aria-label="Notificaciones">
+                        <Bell size={22} strokeWidth={2} />
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                    </button>
+                </Hint>
 
                 <div className="hidden sm:block h-9 w-px bg-border shrink-0"></div>
 

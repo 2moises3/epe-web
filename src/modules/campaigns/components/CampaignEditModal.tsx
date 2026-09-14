@@ -10,6 +10,7 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
+import Hint from "@/shared/components/Hint";
 
 interface CampaignEditModalProps {
     open: boolean;
@@ -120,12 +121,15 @@ export default function CampaignEditModal({ open, onOpenChange, onSuccess }: Cam
                                     key={fruit}
                                     className="bg-brand-surface text-brand pr-3 pl-2 py-1.5 rounded-full text-[13px] font-semibold flex items-center gap-2"
                                 >
-                                    <button
-                                        onClick={() => handleRemoveDerivedFruit(fruit)}
-                                        className="hover:bg-brand-border rounded-full p-0.5 transition-colors text-brand"
-                                    >
-                                        <X size={14} strokeWidth={3} />
-                                    </button>
+                                    <Hint label="Quitar">
+                                        <button
+                                            onClick={() => handleRemoveDerivedFruit(fruit)}
+                                            className="hover:bg-brand-border rounded-full p-0.5 transition-colors text-brand"
+                                            aria-label={`Quitar ${fruit}`}
+                                        >
+                                            <X size={14} strokeWidth={3} />
+                                        </button>
+                                    </Hint>
                                     {fruit}
                                 </div>
                             ))}

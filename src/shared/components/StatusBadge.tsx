@@ -13,6 +13,8 @@ const STATUS_TONES: Record<string, StatusTone> = {
     "en espera": "highlight",
     pendiente: "highlight",
     "en proceso": "warning",
+    adelanto: "warning",
+    realizados: "brand",
     vencida: "danger",
     rechazado: "danger",
     terminado: "neutral",

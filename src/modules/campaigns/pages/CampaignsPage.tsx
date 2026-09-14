@@ -4,30 +4,41 @@ import CampaignFilters from "@/modules/campaigns/components/CampaignFilters";
 import CampaignTable from "@/modules/campaigns/components/CampaignTable";
 import CampaignCreateModal from "@/modules/campaigns/components/CampaignCreateModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
+import CampaignStatusTabs from "@/modules/campaigns/components/CampaignStatusTabs";
 import { campaigns } from "@/modules/campaigns/campaigns.data";
 import { Leaf } from "lucide-react";
 import PageHeader from "@/shared/layout/PageHeader";
 import { Button } from "@/shared/components/ui/button";
 
+/** Las campañas guardan dd/mm/aaaa; se pasa a aaaa-mm-dd para compararlas con lo que entrega el DatePicker */
+const toIsoDate = (value: string) => value.split("/").reverse().join("-");
+
 export default function CampaignsPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [search, setSearch] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [status, setStatus] = useState("Planificado");
 
-    const hasActiveFilters = search !== "";
+    const hasActiveFilters = search !== "" || startDate !== "" || endDate !== "";
 
     const clearFilters = () => {
         setSearch("");
+        setStartDate("");
+        setEndDate("");
     };
 
     const filteredCampaigns = useMemo(() => {
         return campaigns.filter((campaign) => {
             const matchesStatus = campaign.estado === status;
             const matchesSearch = campaign.nombre.toLowerCase().includes(search.trim().toLowerCase());
-            return matchesStatus && matchesSearch;
+            // El DatePicker entrega aaaa-mm-dd, así que las fechas de la campaña se llevan a ese formato para comparar
+            const matchesStart = !startDate || toIsoDate(campaign.inicio) >= startDate;
+            const matchesEnd = !endDate || toIsoDate(campaign.fin) <= endDate;
+            return matchesStatus && matchesSearch && matchesStart && matchesEnd;
         });
-    }, [search, status]);
+    }, [search, startDate, endDate, status]);
 
     const handleCreateSuccess = () => {
         setIsCreateModalOpen(false);
@@ -47,32 +58,18 @@ export default function CampaignsPage() {
                 }
             />
 
-            <CampaignStatsOverview activeStatus={status} onStatusChange={setStatus} />
+            <CampaignStatsOverview />
 
-            {/* Tabs de Estado */}
-            <div className="flex w-full mt-4 mb-4 rounded-md border-[2px] border-border overflow-hidden bg-white shadow-sm">
-                {[
-                    { id: "Planificado", label: "Planificado" },
-                    { id: "En proceso", label: "en proceso" },
-                    { id: "Terminado", label: "Finalizado" },
-                ].map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setStatus(tab.id)}
-                        className={`flex-1 py-3 text-center text-[15px] transition-colors border-r-[2px] border-border last:border-r-0 ${
-                            status === tab.id
-                                ? "bg-brand text-black font-bold"
-                                : "bg-white text-ink-muted hover:bg-muted/30 font-medium"
-                        }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
+            <CampaignStatusTabs value={status} onChange={setStatus} className="mt-4 mb-6" />
 
             <CampaignFilters
                 search={search}
                 onSearchChange={setSearch}
+                startDate={startDate}
+                onStartDateChange={setStartDate}
+                endDate={endDate}
+                onEndDateChange={setEndDate}
+                hasActiveFilters={hasActiveFilters}
                 onClear={clearFilters}
             />
 

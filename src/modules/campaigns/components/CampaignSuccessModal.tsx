@@ -10,7 +10,7 @@ import { Button } from "@/shared/components/ui/button";
 interface CampaignSuccessModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    mode?: "create" | "edit" | "provider" | "exam" | "interview" | "client";
+    mode?: "create" | "edit" | "provider" | "exam" | "interview" | "client" | "certification" | "payment" | "receipt" | "advance";
 }
 
 export default function CampaignSuccessModal({ open, onOpenChange, mode = "create" }: CampaignSuccessModalProps) {
@@ -20,6 +20,10 @@ export default function CampaignSuccessModal({ open, onOpenChange, mode = "creat
         if (mode === "exam") return "Examen Médico Registrado";
         if (mode === "interview") return "Informe Registrado";
         if (mode === "client") return "Clientes Registrados";
+        if (mode === "certification") return "Certificación Registrada";
+        if (mode === "payment") return "Pago Registrado";
+        if (mode === "receipt") return "Boleta Adjuntada";
+        if (mode === "advance") return "Pago Completado";
         return "Campaña Registrada";
     };
 
@@ -29,6 +33,10 @@ export default function CampaignSuccessModal({ open, onOpenChange, mode = "creat
         if (mode === "exam") return "Se ha registrado el examen médico del proveedor exitosamente";
         if (mode === "interview") return "Se visualizara informe";
         if (mode === "client") return "Se podra ver los clientes en visualizar";
+        if (mode === "certification") return "Se ha registrado la certificación del proveedor exitosamente";
+        if (mode === "payment") return "Se ha registrado el pago al transportista exitosamente";
+        if (mode === "receipt") return "Se ha adjuntado la boleta de pago exitosamente";
+        if (mode === "advance") return "Se ha cerrado el saldo pendiente del adelanto exitosamente";
         return "Se podra ver las campañas registradas en el inicio";
     };
     

@@ -6,6 +6,7 @@ import UsersModulesPage from './modules/users/pages/UsersModulesPage'
 import CampaignsPage from './modules/campaigns/pages/CampaignsPage'
 import CampaignDetailsPage from './modules/campaigns/pages/CampaignDetailsPage'
 import CampaignProvidersPage from './modules/campaigns/pages/CampaignProvidersPage'
+import CampaignCarrierPaymentsPage from './modules/campaigns/pages/CampaignCarrierPaymentsPage'
 import ProvidersPage from './modules/providers/pages/ProvidersPage'
 import CommercialPlanningPage from './modules/commercial-planning/pages/CommercialPlanningPage'
 import DashboardLayout from '@/shared/layout/DashboardLayout'
@@ -73,6 +74,7 @@ function App() {
           <Route path="/campaigns" element={<CampaignsPage />} />
           <Route path="/campaigns/:id" element={<CampaignDetailsPage />} />
           <Route path="/campaigns/:id/providers" element={<CampaignProvidersPage />} />
+          <Route path="/campaigns/:id/carrier-payments" element={<CampaignCarrierPaymentsPage />} />
           <Route path="/proveedores" element={<ProvidersPage />} />
           <Route path="/planificacion-comercial" element={<CommercialPlanningPage />} />
         </Route>

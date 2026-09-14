@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { useState } from "react";
 import CampaignManagementProvidersModal from "@/modules/campaigns/components/CampaignManagementProvidersModal";
 import CampaignManagementClientsModal from "@/modules/campaigns/components/CampaignManagementClientsModal";
+import CampaignCertificationsList from "@/modules/campaigns/components/CampaignCertificationsList";
 import PageHeader from "@/shared/layout/PageHeader";
 
 
@@ -167,8 +168,7 @@ export default function CampaignDetailsPage() {
                         </CardContent></Card>
                     </div>
 
-
-
+                    <CampaignCertificationsList />
                 </div>
             </div>
 
