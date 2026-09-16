@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { MoreVertical } from "lucide-react";
-import ActionButton from "@/shared/components/ActionButton";
 import Hint from "@/shared/components/Hint";
-import { Separator } from "@/shared/components/ui/separator";
 import {
     DropdownMenu,
     DropdownMenuContent,
