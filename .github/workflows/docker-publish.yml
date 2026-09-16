@@ -30,8 +30,14 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: luiskeny001/app-web:latest
-          
+          # Do not include a tag here; metadata-action adds the tags below.
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/app-web
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
