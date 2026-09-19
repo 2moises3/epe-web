@@ -8,8 +8,9 @@ import {
 } from "@/shared/components/ui/dropdown-menu";
 import LogoEmpresaOnly from "@/assets/image/logo_empresa_only.webp";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { sidebarItems } from "@/shared/layout/sidebarItems";
+import { navigationItems } from "@/shared/layout/navigationItems";
 import Hint from "@/shared/components/Hint";
+import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
 
 interface TopNavBarProps {
     onLogout?: () => void;
@@ -73,7 +74,7 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                         </DropdownMenuTrigger>
                     </Hint>
                     <DropdownMenuContent align="end" sideOffset={12} className="w-75 p-3 rounded-xl grid grid-cols-2 gap-2">
-                        {sidebarItems.map((item) => (
+                        {navigationItems.map((item) => (
                             <DropdownMenuItem
                                 key={item.title}
                                 className="p-0 outline-none"
@@ -101,7 +102,10 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger className="flex items-center gap-3 p-1 sm:p-1.5 sm:pl-2 rounded-xl transition-all hover:bg-black/5 outline-none focus-visible:ring-2 focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand/40 active:scale-95">
-                        <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-sm">
+                        <span
+                            className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border border-transparent text-white"
+                            style={BRAND_ACTIVE_SURFACE}
+                        >
                             <User size={20} strokeWidth={2} />
                         </span>
                         {/* Nombre y rol se ocultan en móvil: el avatar basta como acceso al menú */}

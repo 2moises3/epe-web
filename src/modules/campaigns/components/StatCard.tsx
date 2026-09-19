@@ -80,7 +80,7 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
                     onClick?.();
                 }
             }}
-            className={`relative rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] h-[132px] sm:h-[160px] bg-white transition-all border-l-[3px] outline-none ${
+            className={`relative rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] h-33 sm:h-40 bg-white transition-all borderl-[-3px] outline-none ${
                 isInteractive ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/40" : ""
             } ${
                 active
@@ -93,7 +93,7 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
                 y todas las tarjetas alinean sus números a la misma altura. */}
             <CardContent className="sm:hidden p-3.5 flex flex-col h-full relative z-10">
                 <div className="flex items-center justify-between gap-2">
-                    <div className="w-8 h-8 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0 border border-brand-border/50 [&>svg]:size-[16px]">
+                    <div className="w-8 h-8 rounded-full bg-brand-surface flex items-center justify-center shrink-0 border border-brand-border/50 [&>svg]:size-4" style={{ color: "var(--brand-gradient-mid)" }}>
                         {icon}
                     </div>
                     {trend && (
@@ -121,7 +121,7 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
             {/* ESCRITORIO: hay espacio para el ícono grande, la comparativa y la sparkline */}
             <CardContent className="hidden sm:flex p-5 pt-1 flex-col h-full relative z-10 justify-between">
                 <div className="flex items-start gap-4 min-w-0">
-                    <div className="w-16 h-16 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0 border border-brand-border/50">
+                    <div className="w-16 h-16 rounded-full bg-brand-surface flex items-center justify-center shrink-0 border border-brand-border/50" style={{ color: "var(--brand-gradient-mid)" }}>
                         {icon}
                     </div>
                     <div className="flex flex-col pt-1 min-w-0">

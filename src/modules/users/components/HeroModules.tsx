@@ -34,7 +34,7 @@ export default function HeroModules() {
           clip-path, y `vectorEffect="non-scaling-stroke"` evita que ese estirado
           deforme el grosor del trazo. */}
       <svg
-        className="hidden lg:block absolute inset-y-0 right-0 h-full z-10 pointer-events-none -translate-x-[14px]"
+        className="hidden lg:block absolute inset-y-0 right-0 h-full z-10 pointer-events-none -translatex-[-14px]"
         style={{ width: PHOTO_WIDTH }}
         viewBox="0 0 1 1"
         preserveAspectRatio="none"
@@ -61,7 +61,7 @@ export default function HeroModules() {
       />
 
       {/* Columna de textos */}
-      <div className="relative z-20 h-full flex flex-col justify-center px-4 sm:px-8 lg:px-0 lg:pl-16 max-w-full lg:max-w-[35%] xl:max-w-[38%]">
+      <div className="relative z-20 h-full flex flex-col justify-center px-4 sm:px-8 lg:px-0 lg:pl-16 max-w-full lg:maxw-[-35%] xl:maxw-[-38%]">
         <div className="flex items-center gap-2 mb-2 lg:mb-3">
           <Sparkles size={16} className="text-brand shrink-0" strokeWidth={2} />
           <span className="text-[12px] sm:text-[14px] md:text-[16px] xl:text-[18px] font-medium tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em]">

@@ -1,9 +1,5 @@
-import { MapPin, Sprout, Leaf, Users } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-} from "@/shared/components/ui/dialog";
+import { MapPin, Sprout, Leaf } from "lucide-react";
+import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 
@@ -15,23 +11,25 @@ interface CampaignInterviewModalProps {
 
 export default function CampaignInterviewModal({ open, onOpenChange, onSave }: CampaignInterviewModalProps) {
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[1100px] p-0 rounded-2xl bg-white border-none shadow-2xl overflow-hidden gap-0 max-h-[90vh] overflow-y-auto">
-                {/* Header Custom */}
-                <div className="flex items-center gap-3 sm:gap-4 px-5 sm:px-8 py-4 sm:py-6 border-b border-border">
-                    <div className="w-12 h-12 rounded-full bg-brand-surface flex items-center justify-center text-brand">
-                        <Users size={24} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex flex-col">
-                        <DialogTitle className="text-[20px] font-bold text-ink">
-                            Informe de Entrevista
-                        </DialogTitle>
-                        <span className="text-[14px] text-ink-muted font-medium">Fundo Los Olivos</span>
-                    </div>
-                </div>
-
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Informe de Entrevista"
+            description="Fundo Los Olivos"
+            className="sm:max-w-275"
+            footer={
+                <>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button size="xl" onClick={() => onSave ? onSave() : onOpenChange(false)}>
+                        Guardar entrevista
+                    </Button>
+                </>
+            }
+        >
                 {/* Content */}
-                <div className="p-5 sm:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-x-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-x-12">
                     {/* Left Column */}
                     <div className="flex flex-col gap-8 lg:border-r lg:border-border lg:pr-12">
                         {/* Datos del cultivo */}
@@ -142,10 +140,10 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         </div>
 
                         {/* Fake Map */}
-                        <div className="h-[200px] w-full rounded-2xl border-brand-surface bg-brand-surface/20 overflow-hidden relative mt-2 flex flex-col items-center justify-center gap-2">
+                        <div className="h-50 w-full rounded-2xl border-brand-surface bg-brand-surface/20 overflow-hidden relative mt-2 flex flex-col items-center justify-center gap-2">
                             {/* Grid overlay for map look */}
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(var(--brand) 1px, transparent 1px), linear-gradient(90deg, var(--brand) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                            <div className="relative z-10 w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center text-brand">
+                            <div className="relative z-10 w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center" style={{ color: "var(--brand-gradient-mid)" }}>
                                 <MapPin size={24} strokeWidth={2.5} />
                             </div>
                             <span className="relative z-10 text-[13px] font-bold text-brand">Mapa de ubicación</span>
@@ -163,24 +161,6 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         </div>
                     </div>
                 </div>
-
-                {/* Botones Footer */}
-                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 px-5 sm:px-8 py-4 sm:py-5 border-t border-border bg-surface-page/60 [&>button]:w-full sm:[&>button]:w-auto">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-11 px-6 border-border text-ink-body font-bold shadow-none hover:bg-muted transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={() => onSave ? onSave() : onOpenChange(false)}
-                        className="rounded-lg h-11 px-8 bg-brand hover:bg-brand-dark text-white font-bold shadow-sm transition-colors active:scale-95"
-                    >
-                        Guardar entrevista
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </AppModal>
     );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileText, Image as ImageIcon, Upload, Eye, X } from "lucide-react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/shared/components/ui/dialog";
+import AppModal from "@/shared/components/AppModal";
 import Hint from "@/shared/components/Hint";
 import { cn } from "@/lib/utils";
 
@@ -46,8 +46,8 @@ export default function FileDropzone({ label, hint = "PDF · Máx. 10 MB", accep
 
     return (
         <div className="flex flex-col gap-2.5">
-            <label htmlFor={inputId} className="text-[13px] font-bold text-ink-muted uppercase tracking-wider">
-                {label}
+            <label htmlFor={inputId} className="text-[13px] font-semibold text-ink">
+                {label}:
             </label>
 
             {!file ? (
@@ -103,29 +103,25 @@ export default function FileDropzone({ label, hint = "PDF · Máx. 10 MB", accep
             )}
 
             {file && objectUrl && (
-                <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-                    <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[760px] p-0 rounded-2xl bg-white border-none shadow-2xl gap-0 max-h-[90vh] overflow-hidden flex flex-col">
-                        <div className="flex items-center gap-3 border-b border-border p-4 sm:p-5">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-surface text-brand">
-                                <FileIcon size={19} strokeWidth={2} />
-                            </span>
-                            <div className="flex min-w-0 flex-col pr-8">
-                                <DialogTitle className="truncate text-[14.5px] font-bold text-ink">{file.name}</DialogTitle>
-                                <DialogDescription className="text-[12px] text-ink-muted">{formatFileSize(file.size)}</DialogDescription>
+                <AppModal
+                    open={previewOpen}
+                    onOpenChange={setPreviewOpen}
+                    title="Vista Previa"
+                    description={`${file.name} (${formatFileSize(file.size)})`}
+                    className="sm:max-w-190"
+                >
+                    <div className={cn("w-full overflow-hidden rounded-xl border border-border bg-surface-page", !isPdf(file) && !isImage(file) && "flex minh-[-40vh] items-center justify-center p-6")}>
+                        {isPdf(file) ? (
+                            <iframe src={objectUrl} title={file.name} className="h-[70vh] w-full" />
+                        ) : isImage(file) ? (
+                            <div className="flex maxh-[-70vh] w-full items-center justify-center bg-black/5 p-4">
+                                <img src={objectUrl} alt={file.name} className="max-h-full max-w-full rounded shadow-sm" />
                             </div>
-                        </div>
-
-                        <div className={cn("flex-1 overflow-auto bg-surface-page p-3 sm:p-4", !isPdf(file) && !isImage(file) && "flex items-center justify-center")}>
-                            {isPdf(file) ? (
-                                <iframe src={objectUrl} title={file.name} className="h-[70vh] w-full rounded-lg border border-border bg-white" />
-                            ) : isImage(file) ? (
-                                <img src={objectUrl} alt={file.name} className="mx-auto max-h-[70vh] max-w-full rounded-lg border border-border object-contain" />
-                            ) : (
-                                <p className="text-[13.5px] font-medium text-ink-muted">Vista previa no disponible para este tipo de archivo.</p>
-                            )}
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                        ) : (
+                            <p className="text-[13.5px] font-medium">Vista previa no disponible para este tipo de archivo.</p>
+                        )}
+                    </div>
+                </AppModal>
             )}
         </div>
     );

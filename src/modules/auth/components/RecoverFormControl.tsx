@@ -38,9 +38,8 @@ export default function RecoverFormControl({ onBack }: RecoverFormControlProps) 
                     </InputGroup>
                 </Field>
 
-                <Button type="submit" className="bg-brand hover:bg-brand-dark w-full h-11 rounded-lg font-bold text-white shadow-sm flex items-center justify-between px-6 transition-all text-[15px] active:scale-95">
-                    <span className="flex-1 text-center pr-2">Recuperar</span>
-                    <ArrowRight size={20} strokeWidth={2.5} className="shrink-0" />
+                <Button type="submit" size="xl" className="w-full">
+                    Recuperar
                 </Button>
 
                 <div className="mt-2 w-full flex justify-center">

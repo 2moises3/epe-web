@@ -4,57 +4,38 @@ import ProvidersTable from "@/modules/providers/components/ProvidersTable";
 import ProviderCreateModal from "@/modules/providers/components/ProviderCreateModal";
 import ProviderSuccessModal from "@/modules/providers/components/ProviderSuccessModal";
 import PageHeader from "@/shared/layout/PageHeader";
-import { Truck } from "lucide-react";
+import { Truck, Plus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-
-const providersData = [
-    {
-        id: 1,
-        nombre: "Moises Chilet",
-        dni: "98765412",
-        fruta: "mango",
-        categoria: "Mango Eduard",
-        estado: "Aprobado"
-    },
-    {
-        id: 2,
-        nombre: "Brayan Ponce",
-        dni: "78451296",
-        fruta: "mango",
-        categoria: "Mango Eduard",
-        estado: "Por aprobar"
-    }
-];
+import { providers } from "@/modules/providers/providers.data";
 
 export default function ProvidersPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-    // Filter states
+    // Filtros: cadena vacía = sin filtrar por ese campo
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("estados");
-    const [type, setType] = useState("todos");
+    const [type, setType] = useState("");
+    const [registrationDate, setRegistrationDate] = useState("");
+    const [status, setStatus] = useState("");
 
     const clearFilters = () => {
         setSearch("");
-        setStatus("estados");
-        setType("todos");
+        setType("");
+        setRegistrationDate("");
+        setStatus("");
     };
-    
-    const hasActiveFilters = search !== "" || status !== "estados" || type !== "todos";
 
+    const hasActiveFilters = search !== "" || type !== "" || registrationDate !== "" || status !== "";
+
+    // Tipo y fecha de registro todavía no filtran: los datos de ejemplo no traen esos campos
     const filteredData = useMemo(() => {
-        return providersData.filter((item) => {
-            let matchesStatus = true;
-            if (status === "aprobado") matchesStatus = item.estado === "Aprobado";
-            else if (status === "por aprobar") matchesStatus = item.estado === "Por aprobar";
-            
-            const searchLower = search.trim().toLowerCase();
+        const searchLower = search.trim().toLowerCase();
+        return providers.filter((item) => {
+            const matchesStatus = status === "" || item.estado.toLowerCase() === status;
             const matchesSearch = item.nombre.toLowerCase().includes(searchLower) || item.dni.includes(searchLower);
-            
             return matchesStatus && matchesSearch;
         });
-    }, [search, status, type]);
+    }, [search, status]);
 
     const handleCreateSuccess = () => {
         setIsCreateModalOpen(false);
@@ -71,24 +52,30 @@ export default function ProvidersPage() {
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 [&>button]:w-full sm:[&>button]:w-auto">
                         <Button
                             variant="outline"
-                            className="h-11 rounded-lg px-6 border-border text-ink-body font-semibold shadow-none hover:bg-muted hover:text-ink transition-colors active:scale-95"
+                            size="xl"
                         >
                             Importar Excel
                         </Button>
                         <Button
+                            size="xl"
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="bg-brand hover:bg-brand-dark text-white rounded-lg font-semibold h-11 px-6 shadow-sm transition-colors active:scale-95"
                         >
-                            + Nuevo Proveedor
+                            <Plus size={20} strokeWidth={2.5} /> Nuevo Proveedor
                         </Button>
                     </div>
                 }
             />
 
-            <ProvidersFilters 
-                search={search} onSearchChange={setSearch}
-                status={status} onStatusChange={setStatus}
-                type={type} onTypeChange={setType}
+            <ProvidersFilters
+                search={search}
+                onSearchChange={setSearch}
+                type={type}
+                onTypeChange={setType}
+                registrationDate={registrationDate}
+                onRegistrationDateChange={setRegistrationDate}
+                status={status}
+                onStatusChange={setStatus}
+                hasActiveFilters={hasActiveFilters}
                 onClear={clearFilters}
             />
 

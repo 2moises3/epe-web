@@ -1,6 +1,6 @@
 import { Home, Users, Contact } from "lucide-react";
 
-export const sidebarItems = [
+export const navigationItems = [
   {
     title: "Campañas",
     url: "/campaigns",

@@ -1,68 +1,48 @@
-import { Smile } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/shared/components/ui/dialog";
-import { Button } from "@/shared/components/ui/button";
+import SuccessModal from "@/shared/components/SuccessModal";
+
+type CampaignSuccessMode =
+    | "create"
+    | "edit"
+    | "provider"
+    | "exam"
+    | "interview"
+    | "client"
+    | "certification"
+    | "payment"
+    | "receipt"
+    | "advance";
 
 interface CampaignSuccessModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    mode?: "create" | "edit" | "provider" | "exam" | "interview" | "client" | "certification" | "payment" | "receipt" | "advance";
+    mode?: CampaignSuccessMode;
+    /** Solo cuando el resultado se ve en otra pantalla, ej. los clientes vinculados viven en el detalle */
+    primaryAction?: { label: string; onClick: () => void };
 }
 
-export default function CampaignSuccessModal({ open, onOpenChange, mode = "create" }: CampaignSuccessModalProps) {
-    const getTitle = () => {
-        if (mode === "edit") return "Cambios Guardados";
-        if (mode === "provider") return "Proveedor Añadido a Campaña";
-        if (mode === "exam") return "Examen Médico Registrado";
-        if (mode === "interview") return "Informe Registrado";
-        if (mode === "client") return "Clientes Registrados";
-        if (mode === "certification") return "Certificación Registrada";
-        if (mode === "payment") return "Pago Registrado";
-        if (mode === "receipt") return "Boleta Adjuntada";
-        if (mode === "advance") return "Pago Completado";
-        return "Campaña Registrada";
-    };
+/** Título y descripción por escenario: la campaña es el único flujo con tantos modos distintos de éxito */
+const COPY: Record<CampaignSuccessMode, { title: string; description: string }> = {
+    create: { title: "Campaña Registrada", description: "Se podra ver las campañas registradas en el inicio" },
+    edit: { title: "Cambios Guardados", description: "Se actualizó correctamente" },
+    provider: { title: "Proveedor Añadido a Campaña", description: "Se ha añadido el proveedor exitosamente a la campaña" },
+    exam: { title: "Examen Médico Registrado", description: "Se ha registrado el examen médico del proveedor exitosamente" },
+    interview: { title: "Informe Registrado", description: "Se visualizara informe" },
+    client: { title: "Clientes vinculados", description: "Los clientes se vincularon correctamente y ya puedes consultarlos en el detalle de la campaña." },
+    certification: { title: "Certificación Registrada", description: "Se ha registrado la certificación del proveedor exitosamente" },
+    payment: { title: "Pago Registrado", description: "Se ha registrado el pago al transportista exitosamente" },
+    receipt: { title: "Boleta Adjuntada", description: "Se ha adjuntado la boleta de pago exitosamente" },
+    advance: { title: "Pago Completado", description: "Se ha cerrado el saldo pendiente del adelanto exitosamente" },
+};
 
-    const getDescription = () => {
-        if (mode === "edit") return "Se actualizó correctamente";
-        if (mode === "provider") return "Se ha añadido el proveedor exitosamente a la campaña";
-        if (mode === "exam") return "Se ha registrado el examen médico del proveedor exitosamente";
-        if (mode === "interview") return "Se visualizara informe";
-        if (mode === "client") return "Se podra ver los clientes en visualizar";
-        if (mode === "certification") return "Se ha registrado la certificación del proveedor exitosamente";
-        if (mode === "payment") return "Se ha registrado el pago al transportista exitosamente";
-        if (mode === "receipt") return "Se ha adjuntado la boleta de pago exitosamente";
-        if (mode === "advance") return "Se ha cerrado el saldo pendiente del adelanto exitosamente";
-        return "Se podra ver las campañas registradas en el inicio";
-    };
-    
+export default function CampaignSuccessModal({ open, onOpenChange, mode = "create", primaryAction }: CampaignSuccessModalProps) {
+    const { title, description } = COPY[mode];
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[400px] p-5 sm:p-8 rounded-2xl bg-white border-none shadow-2xl gap-0 flex flex-col items-center text-center max-h-[90vh] overflow-y-auto">
-                <div className="w-24 h-24 rounded-full bg-brand-surface flex items-center justify-center text-brand mb-6 border border-brand-border">
-                    <Smile size={48} strokeWidth={2} />
-                </div>
-
-                <DialogTitle className="text-[22px] font-bold text-ink mb-3">
-                    {getTitle()}
-                </DialogTitle>
-                
-                <DialogDescription className="text-[14px] text-ink-muted mb-8 font-medium">
-                    {getDescription()}
-                </DialogDescription>
-
-                <Button 
-                    onClick={() => onOpenChange(false)}
-                    className="w-32 rounded-lg h-11 bg-brand hover:bg-brand-dark text-white font-semibold shadow-sm transition-colors active:scale-95"
-                >
-                    Aceptar
-                </Button>
-
-            </DialogContent>
-        </Dialog>
+        <SuccessModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={title}
+            description={description}
+            primaryAction={primaryAction}
+        />
     );
 }

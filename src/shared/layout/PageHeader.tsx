@@ -11,7 +11,7 @@ export default function PageHeader({ icon, title, description, action }: PageHea
     return (
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8">
             <div className="flex items-start sm:items-center gap-3 min-w-0">
-                <div className="text-brand shrink-0 mt-0.5 sm:mt-0">{icon}</div>
+                <div className="shrink-0 mt-0.5 sm:mt-0" style={{ color: "var(--brand-gradient-mid)" }}>{icon}</div>
                 <div className="flex flex-col min-w-0">
                     <h1 className="text-[19px] sm:text-[22px] font-bold text-ink leading-tight">{title}</h1>
                     {description && (
@@ -21,7 +21,7 @@ export default function PageHeader({ icon, title, description, action }: PageHea
             </div>
             {/* En móvil las acciones pasan a ancho completo, debajo del título */}
             {action && (
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 [&>*]:w-full sm:[&>*]:w-auto">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 *:w-full sm:*:w-auto">
                     {action}
                 </div>
             )}

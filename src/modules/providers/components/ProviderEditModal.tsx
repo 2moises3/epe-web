@@ -1,12 +1,6 @@
-import { useState } from "react";
-import { Upload, X, Pencil } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/shared/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Upload, X } from "lucide-react";
+import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
@@ -20,7 +14,31 @@ interface ProviderEditModalProps {
 }
 
 export default function ProviderEditModal({ open, onOpenChange, onSuccess }: ProviderEditModalProps) {
+    const [nombres, setNombres] = useState("Juan");
+    const [apellidos, setApellidos] = useState("Perez");
+    const [tipoDoc, setTipoDoc] = useState("dni");
+    const [dni, setDni] = useState("12345678");
+    const [zona, setZona] = useState("Norte");
+    const [fechaRevision, setFechaRevision] = useState("2026-09-01");
+    const [codigo, setCodigo] = useState("PRV-001");
+    const [telefono, setTelefono] = useState("987654321");
+    const [email, setEmail] = useState("juan@perez.com");
     const [selectedFruits, setSelectedFruits] = useState<string[]>(["Mango Kent"]);
+
+    useEffect(() => {
+        if (!open) {
+            setNombres("Juan");
+            setApellidos("Perez");
+            setTipoDoc("dni");
+            setDni("12345678");
+            setZona("Norte");
+            setFechaRevision("2026-09-01");
+            setCodigo("PRV-001");
+            setTelefono("987654321");
+            setEmail("juan@perez.com");
+            setSelectedFruits(["Mango Kent"]);
+        }
+    }, [open]);
 
     const handleAddFruit = (value: string | null) => {
         if (value && !selectedFruits.includes(value)) {
@@ -33,38 +51,36 @@ export default function ProviderEditModal({ open, onOpenChange, onSuccess }: Pro
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[900px] p-5 sm:p-8 rounded-2xl bg-white border-none shadow-2xl gap-0 max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="mb-6">
-                    <div className="flex items-start gap-5">
-                        <div className="w-[52px] h-[52px] rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0 border border-brand-border">
-                            <Pencil size={24} strokeWidth={2} />
-                        </div>
-                        <div className="flex-1 pt-1">
-                            <DialogTitle className="text-xl font-bold text-ink">
-                                Editar Proveedor
-                            </DialogTitle>
-                            <DialogDescription className="text-[13.5px] text-ink-muted mt-1">
-                                Modifica la información del proveedor existente.
-                            </DialogDescription>
-                        </div>
-                    </div>
-                </DialogHeader>
-
-                <div className="grid grid-cols-4 gap-6">
-                    {/* Row 1 */}
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Editar Proveedor"
+            description="Modifica la información del proveedor existente."
+            className="sm:max-w-225"
+            footer={
+                <>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button size="xl" onClick={onSuccess}>
+                        Guardar
+                    </Button>
+                </>
+            }
+        >
+                <div className="grid grid-cols-4 gap-6">                    {/* Row 1 */}
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Nombres:</label>
-                        <Input className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input value={nombres} onChange={(e) => setNombres(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Apellidos:</label>
-                        <Input className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input value={apellidos} onChange={(e) => setApellidos(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Tipo de Documento:</label>
-                        <Select>
-                            <SelectTrigger className="rounded-lg h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
+                        <Select value={tipoDoc} onValueChange={setTipoDoc}>
+                            <SelectTrigger className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand">
                                 <SelectValue placeholder="" />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg">
@@ -75,22 +91,22 @@ export default function ProviderEditModal({ open, onOpenChange, onSuccess }: Pro
                     </div>
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">DNI:</label>
-                        <Input className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input value={dni} onChange={(e) => setDni(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
 
                     {/* Row 2 */}
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Zona:</label>
-                        <Input className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input value={zona} onChange={(e) => setZona(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Fecha Revision SENASA:</label>
-                        <Input type="date" className="rounded-lg h-11 border-border text-ink-muted shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input type="date" value={fechaRevision} onChange={(e) => setFechaRevision(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
                     <div className="flex flex-col gap-2.5 col-span-2">
                         <label className="text-[13px] font-semibold text-ink">Frutas derivadas:</label>
                         <Select onValueChange={handleAddFruit} value="">
-                            <SelectTrigger className="rounded-lg h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
+                            <SelectTrigger className="rounded-lg h-11 border-border shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand font-medium">
                                 <SelectValue placeholder="" />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg">
@@ -103,15 +119,15 @@ export default function ProviderEditModal({ open, onOpenChange, onSuccess }: Pro
                     {/* Row 3 */}
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Codigo Proveedor:</label>
-                        <Input className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input value={codigo} onChange={(e) => setCodigo(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Teléfono:</label>
-                        <Input className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input value={telefono} onChange={(e) => setTelefono(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Email:</label>
-                        <Input className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
+                        <Input value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
                     </div>
                     <div className="flex flex-col gap-2.5 row-span-2">
                         <label className="text-[13px] font-semibold text-ink">Frutas derivadas seleccionadas:</label>
@@ -141,17 +157,17 @@ export default function ProviderEditModal({ open, onOpenChange, onSuccess }: Pro
                         <DropdownMenu>
                             <DropdownMenuTrigger 
                                 render={
-                                    <Button variant="secondary" className="bg-ink-body hover:bg-ink text-white rounded-lg h-11 flex gap-2 shadow-none w-full transition-all active:scale-95">
+                                    <Button variant="secondary" size="xl" className="bg-ink-body hover:bg-ink text-white flex gap-2 shadow-none w-full">
                                         <Upload size={16} />
                                         Certificado Nacional
                                     </Button>
                                 }
                             />
-                            <DropdownMenuContent align="center" className="w-[180px] rounded-lg p-1">
+                            <DropdownMenuContent align="center" className="w-45 rounded-lg p-1">
                                 <DropdownMenuItem className="rounded-lg cursor-pointer text-[13.5px] font-medium justify-center py-2.5">
                                     Link
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-lg cursor-pointer text-[13.5px] font-medium justify-center py-2.5 text-ink-muted border-t border-border mt-1">
+                                <DropdownMenuItem className="rounded-lg cursor-pointer text-[13.5px] font-medium justify-center py-2.5 border-t border-border mt-1">
                                     Archivo
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -161,40 +177,23 @@ export default function ProviderEditModal({ open, onOpenChange, onSuccess }: Pro
                         <DropdownMenu>
                             <DropdownMenuTrigger 
                                 render={
-                                    <Button variant="secondary" className="bg-ink-body hover:bg-ink text-white rounded-lg h-11 flex gap-2 shadow-none w-full transition-all active:scale-95">
+                                    <Button variant="secondary" size="xl" className="bg-ink-body hover:bg-ink text-white flex gap-2 shadow-none w-full">
                                         <Upload size={16} />
                                         Adjuntar DNI
                                     </Button>
                                 }
                             />
-                            <DropdownMenuContent align="center" className="w-[180px] rounded-lg p-1">
+                            <DropdownMenuContent align="center" className="w-45 rounded-lg p-1">
                                 <DropdownMenuItem className="rounded-lg cursor-pointer text-[13.5px] font-medium justify-center py-2.5">
                                     Link
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-lg cursor-pointer text-[13.5px] font-medium justify-center py-2.5 text-ink-muted border-t border-border mt-1">
+                                <DropdownMenuItem className="rounded-lg cursor-pointer text-[13.5px] font-medium justify-center py-2.5 border-t border-border mt-1">
                                     Archivo
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 </div>
-
-                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 mt-8 [&>button]:w-full sm:[&>button]:w-auto">
-                    <Button
-                        variant="secondary"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-full h-10 px-6 bg-muted hover:bg-muted/80 text-ink font-semibold border-none transition-all active:scale-95"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={onSuccess}
-                        className="rounded-full h-10 px-8 bg-brand hover:bg-brand-dark text-white font-semibold transition-all active:scale-95"
-                    >
-                        Guardar
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </AppModal>
     );
 }

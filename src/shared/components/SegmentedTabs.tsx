@@ -2,12 +2,14 @@ import type { CSSProperties, ComponentType } from "react";
 import { BRAND_ACTIVE_SURFACE, GRADIENT_BORDER_CLIP } from "@/shared/styles/brandGradients";
 import { cn } from "@/lib/utils";
 
-export interface StatusTabItem {
+export interface SegmentedTabItem {
     id: string;
     label: string;
     icon: ComponentType<{ size?: number; strokeWidth?: number }>;
     /** Color del círculo del ícono cuando la opción NO está activa */
     tone?: "neutral" | "brand";
+    /** Número opcional junto al texto (ej. cuántos registros hay en esa opción) */
+    count?: number;
 }
 
 const INACTIVE_BADGE_TONES = {
@@ -24,19 +26,20 @@ const TRACK_STYLE: CSSProperties = {
     boxShadow: "0 8px 28px -12px rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.04)",
 };
 
-interface StatusTabsProps {
-    tabs: readonly StatusTabItem[];
+interface SegmentedTabsProps {
+    /** El ancho de cada opción se reparte solo, así que funciona con la cantidad que le pases */
+    tabs: readonly SegmentedTabItem[];
     value: string;
     onChange: (value: string) => void;
     className?: string;
 }
 
 /**
- * Selector segmentado reutilizable: una píldora verde se desliza hacia la opción elegida.
- * Nace del selector de estado de Campañas; cualquier vista con un set de estados corto
- * (pagos, pedidos, etc.) puede reusarlo pasando su propio arreglo de `tabs`.
+ * Control segmentado reutilizable: una píldora verde se desliza hacia la opción elegida.
+ * Nació del selector de estado de Campañas, pero no está atado a "estados" — sirve para
+ * cualquier set corto de opciones excluyentes (vistas, tipos, periodos, etc.).
  */
-export default function StatusTabs({ tabs, value, onChange, className }: StatusTabsProps) {
+export default function SegmentedTabs({ tabs, value, onChange, className }: SegmentedTabsProps) {
     const activeIndex = Math.max(0, tabs.findIndex((tab) => tab.id === value));
 
     return (
@@ -76,8 +79,18 @@ export default function StatusTabs({ tabs, value, onChange, className }: StatusT
                         >
                             <Icon size={17} strokeWidth={2.5} />
                         </span>
-                        {/* En móvil el ícono basta; el texto entra desde sm para no truncarse */}
+                        {/* En móvil el ícono basta; el texto y el contador entran desde sm para no truncarse */}
                         <span className="hidden sm:inline truncate">{tab.label}</span>
+                        {typeof tab.count === "number" && (
+                            <span
+                                className={cn(
+                                    "hidden sm:inline-flex min-w-5.5 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold tabular-nums transition-colors duration-300",
+                                    isActive ? "bg-white/20 text-white" : "bg-status-neutral-surface"
+                                )}
+                            >
+                                {tab.count}
+                            </span>
+                        )}
                     </button>
                 );
             })}

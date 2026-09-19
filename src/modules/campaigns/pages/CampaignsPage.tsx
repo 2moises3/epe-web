@@ -6,7 +6,7 @@ import CampaignCreateModal from "@/modules/campaigns/components/CampaignCreateMo
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
 import CampaignStatusTabs from "@/modules/campaigns/components/CampaignStatusTabs";
 import { campaigns } from "@/modules/campaigns/campaigns.data";
-import { Leaf } from "lucide-react";
+import { Leaf, Plus } from "lucide-react";
 import PageHeader from "@/shared/layout/PageHeader";
 import { Button } from "@/shared/components/ui/button";
 
@@ -52,8 +52,8 @@ export default function CampaignsPage() {
                 title="Gestión de Campañas"
                 description="Organiza y planifica tus campañas de exportación."
                 action={
-                    <Button onClick={() => setIsCreateModalOpen(true)} className="bg-brand hover:bg-brand-dark text-white rounded-lg font-semibold h-11 px-6 shadow-sm transition-colors active:scale-95">
-                        + Nueva Campaña
+                    <Button size="xl" onClick={() => setIsCreateModalOpen(true)}>
+                        <Plus size={20} strokeWidth={2.5} /> Nueva Campaña
                     </Button>
                 }
             />

@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import Hint from "@/shared/components/Hint";
+import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
+import { cn } from "@/lib/utils";
 
 interface TablePaginationProps {
     page: number;
@@ -36,11 +38,11 @@ export default function TablePagination({ page, pageCount, onPageChange }: Table
                         size="icon"
                         onClick={() => onPageChange(target)}
                         aria-current={isActive ? "page" : undefined}
-                        className={`h-9 w-9 rounded-lg font-bold transition-colors active:scale-95 ${
-                            isActive
-                                ? "bg-brand border-brand text-white hover:bg-brand-dark hover:text-white"
-                                : "border-border text-ink-muted hover:text-brand hover:border-brand"
-                        }`}
+                        style={isActive ? BRAND_ACTIVE_SURFACE : undefined}
+                        className={cn(
+                            "h-9 w-9 rounded-lg font-bold transition-[color,filter] active:scale-95",
+                            isActive ? "border-transparent text-white hover:text-white hover:brightness-105" : "border-border hover:text-brand hover:border-brand"
+                        )}
                     >
                         {target}
                     </Button>

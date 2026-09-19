@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { MoreVertical } from "lucide-react";
-import ActionButton from "@/shared/components/ActionButton";
 import Hint from "@/shared/components/Hint";
-import { Separator } from "@/shared/components/ui/separator";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -45,7 +43,7 @@ export default function RowActions({ primary, secondary = [], align = "end", cla
             {secondary.length > 0 && (
                 <>
                     {primary.length > 0 && (
-                        <div className="w-[1px] h-5 bg-border mx-1 shrink-0" />
+                        <div className="w-0.25 h-5 bg-border mx-1 shrink-0" />
                     )}
                     <DropdownMenu>
                         <Hint label="Más opciones">
