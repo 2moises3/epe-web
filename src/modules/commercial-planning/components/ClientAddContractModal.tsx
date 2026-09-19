@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Save, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import FileDropzone from "@/shared/components/FileDropzone";
 import { Input } from "@/shared/components/ui/input";
@@ -34,10 +35,10 @@ export default function ClientAddContractModal({ open, onOpenChange, onSuccess }
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={onSuccess}>
-                        Guardar contrato
+                        <Save size={20} strokeWidth={2.5} /> Guardar contrato
                     </Button>
                 </>
             }

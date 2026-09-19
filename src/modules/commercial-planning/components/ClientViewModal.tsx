@@ -1,4 +1,5 @@
 import AppModal from "@/shared/components/AppModal";
+import { X } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { InfoField } from "@/shared/components/InfoField";
 
@@ -20,8 +21,8 @@ export default function ClientViewModal({ open, onOpenChange, clientId }: Client
             className="sm:max-w-162.5"
             footer={
                 <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                    Cerrar
-                </Button>
+                        <X size={20} strokeWidth={2.5} /> Cerrar
+                    </Button>
             }
         >
             <div className="grid grid-cols-2 gap-5 sm:gap-6">

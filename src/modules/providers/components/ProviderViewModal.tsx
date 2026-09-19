@@ -1,4 +1,5 @@
 import AppModal from "@/shared/components/AppModal";
+import { X } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
 interface ProviderViewModalProps {
@@ -36,8 +37,8 @@ export default function ProviderViewModal({ open, onOpenChange, providerId }: Pr
             className="sm:max-w-112.5"
             footer={
                 <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                    Cerrar
-                </Button>
+                        <X size={20} strokeWidth={2.5} /> Cerrar
+                    </Button>
             }
         >
             {/* Chips */}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Wallet, Clock, TrendingUp, CheckCircle2, Banknote, Eye, Truck } from "lucide-react";
+import { Wallet, Clock, TrendingUp, CheckCircle2, Banknote, Eye, Truck, ListFilter, Plus } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -128,7 +128,7 @@ export default function CampaignCarrierPaymentsPage() {
                 description="Controla los pagos pendientes, adelantos y pagos realizados a tus transportistas."
                 action={
                     <Button size="xl" onClick={() => setIsRegisterModalOpen(true)}>
-                        + Registrar pago
+                        <Banknote size={20} strokeWidth={2.5} /> Registrar pago
                     </Button>
                 }
             />
@@ -166,8 +166,8 @@ export default function CampaignCarrierPaymentsPage() {
                             onClick={clearFilters}
                             className="h-11 rounded-lg px-6 border-border text-ink-body font-semibold hover:bg-muted hover:text-ink shadow-none transition-colors active:scale-95"
                         >
-                            Limpiar filtros
-                        </Button>
+                        <ListFilter size={20} strokeWidth={2.5} /> Limpiar filtros
+                    </Button>
                     ) : undefined
                 }
                 page={currentPage}

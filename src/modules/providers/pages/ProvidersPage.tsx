@@ -4,7 +4,7 @@ import ProvidersTable from "@/modules/providers/components/ProvidersTable";
 import ProviderCreateModal from "@/modules/providers/components/ProviderCreateModal";
 import ProviderSuccessModal from "@/modules/providers/components/ProviderSuccessModal";
 import PageHeader from "@/shared/layout/PageHeader";
-import { Truck, Plus } from "lucide-react";
+import { Truck, Plus, FileDown, UserPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { providers } from "@/modules/providers/providers.data";
 
@@ -54,14 +54,14 @@ export default function ProvidersPage() {
                             variant="outline"
                             size="xl"
                         >
-                            Importar Excel
-                        </Button>
+                        <FileDown size={20} strokeWidth={2.5} /> Importar Excel
+                    </Button>
                         <Button
                             size="xl"
                             onClick={() => setIsCreateModalOpen(true)}
                         >
-                            <Plus size={20} strokeWidth={2.5} /> Nuevo Proveedor
-                        </Button>
+                        <UserPlus size={20} strokeWidth={2.5} /> Nuevo Proveedor
+                    </Button>
                     </div>
                 }
             />

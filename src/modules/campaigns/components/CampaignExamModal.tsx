@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { X, Save } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import FileDropzone from "@/shared/components/FileDropzone";
 import { Input } from "@/shared/components/ui/input";
@@ -42,10 +43,10 @@ export default function CampaignExamModal({ open, onOpenChange, onSave }: Campai
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={() => onSave ? onSave() : onOpenChange(false)}>
-                        Guardar
+                        <Save size={20} strokeWidth={2.5} /> Guardar
                     </Button>
                 </>
             }

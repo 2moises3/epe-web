@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { UserPlus, UserCheck, Eye, Users, FilePlus, Tractor, Truck, SearchX } from "lucide-react";
+import { UserPlus, UserCheck, Eye, Users, FilePlus, Tractor, Truck, SearchX, ListFilter, Link } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import FilterBar, { FilterDateField, FilterSearch } from "@/shared/components/FilterBar";
 import SegmentedTabs, { type SegmentedTabItem } from "@/shared/components/SegmentedTabs";
@@ -91,7 +91,7 @@ export default function CampaignProvidersPage() {
                 description="Gestiona los productores y acopiadores vinculados a esta campaña."
                 action={
                     <Button size="xl" onClick={() => setIsLinkModalOpen(true)}>
-                        + Vincular proveedor
+                        <Link size={20} strokeWidth={2.5} /> Vincular proveedor
                     </Button>
                 }
             />
@@ -140,8 +140,8 @@ export default function CampaignProvidersPage() {
                             onClick={clearFilters}
                             className="h-9 px-4 rounded-lg font-semibold border-border text-brand hover:text-brand-dark hover:bg-brand-surface shadow-none transition-colors"
                         >
-                            Limpiar filtros
-                        </Button>
+                        <ListFilter size={20} strokeWidth={2.5} /> Limpiar filtros
+                    </Button>
                     ) : undefined
                 }
                 page={currentPage}

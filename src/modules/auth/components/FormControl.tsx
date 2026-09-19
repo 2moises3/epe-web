@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupInput, InputGroupButton } from "@/shared/components/ui/input-group";
-import { User, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { User, Lock, Eye, EyeOff, ArrowRight, LogIn } from "lucide-react";
 import Hint from "@/shared/components/Hint";
 
 interface FormControlProps {
@@ -71,8 +71,8 @@ export default function FormControl({ onSubmit }: FormControlProps) {
 
             <div className="pt-2">
                 <Button type="submit" size="xl" className="w-full">
-                    Ingresar
-                </Button>
+                        <LogIn size={20} strokeWidth={2.5} /> Ingresar
+                    </Button>
             </div>
         </form>
     )

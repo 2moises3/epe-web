@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { Check, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Button } from "@/shared/components/ui/button";
 import FileDropzone from "@/shared/components/FileDropzone";
@@ -42,10 +43,10 @@ export default function CampaignAttachReceiptModal({ open, onOpenChange, payment
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={handleConfirm}>
-                        Confirmar
+                        <Check size={20} strokeWidth={2.5} /> Confirmar
                     </Button>
                 </>
             }

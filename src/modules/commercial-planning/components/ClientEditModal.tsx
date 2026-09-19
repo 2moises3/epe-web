@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Save, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -42,10 +43,10 @@ export default function ClientEditModal({ open, onOpenChange, onSuccess }: Clien
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={onSuccess}>
-                        Guardar
+                        <Save size={20} strokeWidth={2.5} /> Guardar
                     </Button>
                 </>
             }

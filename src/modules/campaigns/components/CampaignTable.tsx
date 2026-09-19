@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Eye, Contact, Layers, ArrowUpDown, ArrowUp, ArrowDown, Briefcase, ShieldCheck, Truck, Calendar, Package, Apple, Banana, Grape, Cherry, Leaf } from "lucide-react";
+import { Pencil, Eye, Contact, Layers, ArrowUpDown, ArrowUp, ArrowDown, Briefcase, ShieldCheck, Truck, Calendar, Package, Apple, Banana, Grape, Cherry, Leaf, ListFilter } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -230,8 +230,8 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
                             onClick={onClearFilters}
                             size="xl" className="border-border text-ink-body hover:bg-muted hover:text-ink shadow-none transition-colors active:scale-95"
                         >
-                            Limpiar filtros
-                        </Button>
+                        <ListFilter size={20} strokeWidth={2.5} /> Limpiar filtros
+                    </Button>
                     ) : undefined
                 }
                 page={currentPage}

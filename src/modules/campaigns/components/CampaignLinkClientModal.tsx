@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { X, Save } from "lucide-react";
 import FileDropzone from "@/shared/components/FileDropzone";
 import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
@@ -38,10 +39,10 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave }: 
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={() => onSave ? onSave() : onOpenChange(false)} disabled={!selectedClient}>
-                        Guardar
+                        <Save size={20} strokeWidth={2.5} /> Guardar
                     </Button>
                 </>
             }

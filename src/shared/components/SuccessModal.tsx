@@ -156,8 +156,8 @@ export default function SuccessModal({
                         </div>
                     ) : (
                         <Button size="xl" className="min-w-40" onClick={() => onOpenChange(false)}>
-                            Aceptar
-                        </Button>
+                        <Check size={20} strokeWidth={2.5} /> Aceptar
+                    </Button>
                     )}
                 </div>
 

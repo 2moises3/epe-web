@@ -1,4 +1,5 @@
 import AppModal from "@/shared/components/AppModal";
+import { Plus, X, CalendarPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
 interface ProviderInterviewModalProps {
@@ -18,10 +19,10 @@ export default function ProviderInterviewModal({ open, onOpenChange, onSuccess }
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cerrar
+                        <X size={20} strokeWidth={2.5} /> Cerrar
                     </Button>
                     <Button size="xl" onClick={onSuccess}>
-                        + Agregar entrevista
+                        <CalendarPlus size={20} strokeWidth={2.5} /> Agregar entrevista
                     </Button>
                 </>
             }

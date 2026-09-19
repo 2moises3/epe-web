@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Leaf } from "lucide-react";
+import { Leaf, X, Sprout } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -41,11 +41,10 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={onSuccess}>
-                        <Leaf size={18} strokeWidth={2.5} />
-                        Crear Campaña
+                        <Sprout size={20} strokeWidth={2.5} /> Crear Campaña
                     </Button>
                 </>
             }

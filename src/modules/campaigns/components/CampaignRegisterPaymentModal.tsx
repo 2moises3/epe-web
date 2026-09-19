@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { Save, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
@@ -51,10 +52,10 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => handleOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={handleSave}>
-                        Guardar
+                        <Save size={20} strokeWidth={2.5} /> Guardar
                     </Button>
                 </>
             }

@@ -1,4 +1,4 @@
-import { MapPin, Sprout, Leaf } from "lucide-react";
+import { MapPin, Sprout, Leaf, X, Save } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
@@ -20,10 +20,10 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={() => onSave ? onSave() : onOpenChange(false)}>
-                        Guardar entrevista
+                        <Save size={20} strokeWidth={2.5} /> Guardar entrevista
                     </Button>
                 </>
             }

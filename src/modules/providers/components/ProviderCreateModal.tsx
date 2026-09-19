@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Plus, UserPlus } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -60,10 +60,10 @@ export default function ProviderCreateModal({ open, onOpenChange, onSuccess }: P
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        Cancelar
+                        <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={onSuccess}>
-                        Crear Proveedor
+                        <UserPlus size={20} strokeWidth={2.5} /> Crear Proveedor
                     </Button>
                 </>
             }

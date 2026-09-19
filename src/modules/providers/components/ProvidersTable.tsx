@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Eye, FileArchive, Truck, UserRound } from "lucide-react";
+import { Pencil, Eye, FileArchive, Truck, UserRound, ListFilter } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -107,8 +107,8 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
                             variant="outline"
                             className="h-9 px-4 rounded-lg font-semibold border-border text-brand hover:text-brand-dark hover:bg-brand-surface shadow-none transition-colors"
                         >
-                            Limpiar filtros
-                        </Button>
+                        <ListFilter size={20} strokeWidth={2.5} /> Limpiar filtros
+                    </Button>
                     ) : undefined
                 }
                 page={currentPage}

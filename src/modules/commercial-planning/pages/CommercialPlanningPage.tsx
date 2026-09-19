@@ -4,7 +4,7 @@ import ClientsTable from "@/modules/commercial-planning/components/ClientsTable"
 import ClientCreateModal from "@/modules/commercial-planning/components/ClientCreateModal";
 import ClientSuccessModal from "@/modules/commercial-planning/components/ClientSuccessModal";
 import PageHeader from "@/shared/layout/PageHeader";
-import { Contact, Plus } from "lucide-react";
+import { Contact, Plus, UserPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { clients } from "@/modules/commercial-planning/clients.data";
 
@@ -51,7 +51,7 @@ export default function CommercialPlanningPage() {
                         size="xl"
                         onClick={() => setIsCreateModalOpen(true)}
                     >
-                        <Plus size={20} strokeWidth={2.5} /> Nuevo Cliente
+                        <UserPlus size={20} strokeWidth={2.5} /> Nuevo Cliente
                     </Button>
                 }
             />
