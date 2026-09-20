@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Save } from "lucide-react";
 import FileDropzone from "@/shared/components/FileDropzone";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
@@ -23,13 +25,11 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave }: 
     ];
 
     // Resetear estados cuando se cierra el modal
-    useEffect(() => {
-        if (!open) {
-            setSelectedClient("");
-            setCantidad("");
-            setFile(null);
-        }
-    }, [open]);
+    useResetOnToggle(open, () => {
+        setSelectedClient("");
+        setCantidad("");
+        setFile(null);
+    });
 
     return (
         <AppModal
@@ -50,26 +50,25 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave }: 
                 <div className="flex flex-col gap-5">
                     {/* Cliente + Cantidad */}
                     <div className="flex gap-4 items-start">
-                        <div className="flex-1 flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Seleccionar Cliente:</label>
+                        <Field className="flex-1">
+                            <FieldLabel>Seleccionar Cliente:</FieldLabel>
                             <Combobox
                                 options={ALL_CLIENTS}
                                 value={selectedClient}
                                 onChange={setSelectedClient}
                                 placeholder="Selecciona un cliente"
                             />
-                        </div>
+                        </Field>
 
-                        <div className="w-35 flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Cantidad kg:</label>
+                        <Field className="w-35">
+                            <FieldLabel>Cantidad kg:</FieldLabel>
                             <Input
                                 type="number"
                                 placeholder="0"
                                 value={cantidad}
                                 onChange={(e) => setCantidad(e.target.value)}
-                                className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                             />
-                        </div>
+                        </Field>
                     </div>
 
                     {/* Adjuntar */}

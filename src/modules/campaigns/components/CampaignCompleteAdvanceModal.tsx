@@ -1,6 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Check, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Button } from "@/shared/components/ui/button";
 import FileDropzone from "@/shared/components/FileDropzone";
 import { generatePaymentCode, type CarrierPayment } from "@/modules/campaigns/carrierPayments.data";
@@ -20,12 +22,10 @@ export default function CampaignCompleteAdvanceModal({ open, onOpenChange, payme
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `open` es la señal para regenerar, no una dependencia real de la función
     const paymentCode = useMemo(() => generatePaymentCode(), [open]);
 
-    useEffect(() => {
-        // Al cerrar se limpia, así la próxima vez que se abra (para otro pago) no arrastra el archivo anterior
-        if (!open) {
-            setReceipt(null);
-        }
-    }, [open]);
+    // Al cerrar se limpia, así la próxima vez que se abra (para otro pago) no arrastra el archivo anterior
+    useResetOnToggle(open, () => {
+        setReceipt(null);
+    });
 
     const handleConfirm = () => {
         if (onSave) onSave();
@@ -56,18 +56,18 @@ export default function CampaignCompleteAdvanceModal({ open, onOpenChange, payme
                         {paymentCode}
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Pago Realizado:</label>
+                        <Field>
+                            <FieldLabel>Pago Realizado:</FieldLabel>
                             <div className="flex h-11 items-center rounded-lg border border-border bg-surface-page px-3.5 text-[14px] font-semibold text-ink">
                                 Adelanto · S/ {payment ? payment.cantidad.toLocaleString("es-PE") : 0}
                             </div>
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Pago Pendiente:</label>
+                        </Field>
+                        <Field>
+                            <FieldLabel>Pago Pendiente:</FieldLabel>
                             <div className="flex h-11 items-center rounded-lg border border-border bg-surface-page px-3.5 text-[14px] font-semibold text-ink">
                                 Pendiente · S/ {payment?.cantidadPendiente ? payment.cantidadPendiente.toLocaleString("es-PE") : 0}
                             </div>
-                        </div>
+                        </Field>
                     </div>
 
                     <FileDropzone label="Boleta" hint="PDF, imagen · Máx. 10 MB" file={receipt} onChange={setReceipt} />

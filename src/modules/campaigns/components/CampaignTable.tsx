@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Eye, Contact, Layers, ArrowUpDown, ArrowUp, ArrowDown, Briefcase, ShieldCheck, Truck, Calendar, Package, Apple, Banana, Grape, Cherry, Leaf, ListFilter } from "lucide-react";
+import { Pencil, Eye, Contact, Layers, ArrowUpDown, ArrowUp, ArrowDown, Briefcase, ShieldCheck, Truck, Calendar, Package, ListFilter } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -17,11 +17,14 @@ import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle } from "
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import Hint from "@/shared/components/Hint";
 import { Button } from "@/shared/components/ui/button";
-import CampaignEditModal from "@/modules/campaigns/components/CampaignEditModal";
+import CampaignFormModal from "@/modules/campaigns/components/CampaignFormModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
 import CampaignLinkClientModal from "@/modules/campaigns/components/CampaignLinkClientModal";
 import CampaignCertificationModal from "@/modules/campaigns/components/CampaignCertificationModal";
 import type { Campaign } from "@/modules/campaigns/campaigns.data";
+import { downloadCsv } from "@/shared/utils/downloadCsv";
+import { getCampaignFruitIcon } from "@/modules/campaigns/campaignFruit";
+import { formatCampaignNumber, getCampaignDurationLabel, parseCampaignDate, toDateInputValue } from "@/modules/campaigns/campaignDetails.utils";
 
 const PAGE_SIZE = 8;
 
@@ -46,38 +49,6 @@ const STATUS_ACCENT_BORDER: Record<string, string> = {
     "En proceso": "border-l-status-warning",
     Terminado: "border-l-status-neutral",
 };
-
-/** Las fechas llegan como dd/mm/aaaa, así que hay que invertirlas para comparar */
-function toSortableDate(value: string) {
-    const [day, month, year] = value.split("/");
-    return `${year}${month}${day}`;
-}
-
-/** Calcula la duración exacta en meses entre dos fechas dd/mm/aaaa */
-function getDurationInMonths(inicio: string, fin: string) {
-    const [d1, m1, y1] = inicio.split("/");
-    const [d2, m2, y2] = fin.split("/");
-    const date1 = new Date(Number(y1), Number(m1) - 1, Number(d1));
-    const date2 = new Date(Number(y2), Number(m2) - 1, Number(d2));
-    const months = (date2.getFullYear() - date1.getFullYear()) * 12 + (date2.getMonth() - date1.getMonth());
-    const absMo = Math.abs(months) || 1;
-    return `${absMo} mes${absMo !== 1 ? "es" : ""}`;
-}
-
-/** Formatea un número con separador de miles */
-function formatNumber(value: string | number) {
-    return Number(value).toLocaleString("es-PE");
-}
-
-/** Selecciona un ícono basado en el nombre de la campaña */
-function getFruitIcon(nombre: string) {
-    const n = nombre.toLowerCase();
-    if (n.includes("banan")) return <Banana className="text-brand" size={22} strokeWidth={2} />;
-    if (n.includes("uva")) return <Grape className="text-brand" size={22} strokeWidth={2} />;
-    if (n.includes("cereza") || n.includes("cherry")) return <Cherry className="text-brand" size={22} strokeWidth={2} />;
-    if (n.includes("palta") || n.includes("aguacate")) return <Leaf className="text-brand" size={22} strokeWidth={2} />;
-    return <Apple className="text-brand" size={22} strokeWidth={2} />;
-}
 
 interface SortableHeadProps {
     label: string;
@@ -126,7 +97,7 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
             const factor = sort.direction === "asc" ? 1 : -1;
             if (sort.key === "kilos") return (Number(a.kilos) - Number(b.kilos)) * factor;
             if (sort.key === "inicio" || sort.key === "fin") {
-                return toSortableDate(a[sort.key]).localeCompare(toSortableDate(b[sort.key])) * factor;
+                return ((parseCampaignDate(a[sort.key]) ?? 0) - (parseCampaignDate(b[sort.key]) ?? 0)) * factor;
             }
             return a.nombre.localeCompare(b.nombre) * factor;
         });
@@ -134,24 +105,19 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
 
     /** Exporta los datos visibles a CSV y lo descarga */
     const handleExportCSV = useCallback(() => {
-        const header = ["Campaña", "Código", "Fecha Inicio", "Fecha Fin", "Periodo", "Kilos", "Estado"];
-        const rows = sortedData.map((row, idx) => [
-            row.nombre,
-            `CAM-2026-${String(idx + 1).padStart(3, "0")}`,
-            row.inicio,
-            row.fin,
-            getDurationInMonths(row.inicio, row.fin),
-            row.kilos,
-            row.estado,
-        ]);
-        const csvContent = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "campanas_exportacion.csv";
-        link.click();
-        URL.revokeObjectURL(url);
+        downloadCsv(
+            "campanas_exportacion.csv",
+            ["Campaña", "Código", "Fecha Inicio", "Fecha Fin", "Periodo", "Kilos", "Estado"],
+            sortedData.map((row, idx) => [
+                row.nombre,
+                `CAM-2026-${String(idx + 1).padStart(3, "0")}`,
+                row.inicio,
+                row.fin,
+                getCampaignDurationLabel(row.inicio, row.fin),
+                row.kilos,
+                row.estado,
+            ]),
+        );
     }, [sortedData]);
 
     /** Editar y Ver detalles quedan siempre visibles; el resto de acciones se agrupa en el menú de "más opciones" */
@@ -197,6 +163,8 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
         });
     };
 
+    const editingCampaign = data.find((row) => row.id === editingCampaignId) ?? null;
+
     const pageCount = Math.max(1, Math.ceil(sortedData.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
     const visibleData = sortedData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -240,11 +208,13 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
             >
                 {/* ─── Mobile / Grid Cards ─── */}
                 <div className={`flex flex-col gap-3 ${viewMode === 'grid' ? 'sm:grid sm:grid-cols-2 lg:grid-cols-3' : 'sm:hidden'}`}>
-                    {visibleData.map((row, idx) => (
+                    {visibleData.map((row, idx) => {
+                        const FruitIcon = getCampaignFruitIcon(row.nombre);
+                        return (
                         <TableGridCard
                             key={row.id}
                             accentColor={STATUS_ACCENT_BORDER[row.estado] ?? "border-l-status-neutral"}
-                            icon={getFruitIcon(row.nombre)}
+                            icon={<FruitIcon className="text-brand" size={22} strokeWidth={2} />}
                             title={row.nombre}
                             subtitle={`CAM-2026-${String(idx + 1).padStart(3, "0")}`}
                             badge={<StatusBadge status={row.estado} />}
@@ -254,10 +224,10 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
                                 <div className="flex items-center gap-3">
                                     <Calendar size={18} strokeWidth={2.5} className="text-ink-muted shrink-0" />
                                     <div className="flex flex-col">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider mb-0.5">Periodo</span>
+                                        <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-0.5">Periodo</span>
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-[13px] font-semibold text-ink">{row.inicio} – {row.fin}</span>
-                                            <span className="text-[12px]">• {getDurationInMonths(row.inicio, row.fin)}</span>
+                                            <span className="text-[12px]">• {getCampaignDurationLabel(row.inicio, row.fin)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -267,13 +237,13 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
                                 <div className="flex items-center gap-3">
                                     <Package size={18} strokeWidth={2.5} className="text-ink-muted shrink-0" />
                                     <div className="flex flex-col">
-                                        <span className="text-[11px] font-bold uppercase tracking-wider mb-0.5">Requerimiento Comercial</span>
-                                        <span className="text-[13px] font-semibold text-ink">{formatNumber(row.kilos)} Kilos</span>
+                                        <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted mb-0.5">Requerimiento Comercial</span>
+                                        <span className="text-[13px] font-semibold text-ink">{formatCampaignNumber(Number(row.kilos))} Kilos</span>
                                     </div>
                                 </div>
                             </div>
                         </TableGridCard>
-                    ))}
+                    ); })}
                 </div>
 
                 {/* ─── Desktop Table ─── */}
@@ -290,12 +260,14 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {visibleData.map((row, idx) => (
+                            {visibleData.map((row, idx) => {
+                                const FruitIcon = getCampaignFruitIcon(row.nombre);
+                                return (
                                 <TableRow key={row.id} className="border-b border-border hover:bg-surface-page/60 transition-colors">
                                     <TableCell className="h-20 px-6 relative">
                                         <TableRowAccent color={STATUS_ACCENT_COLORS[row.estado] ?? "bg-status-neutral"} />
                                         <TableRowLead
-                                            icon={getFruitIcon(row.nombre)}
+                                            icon={<FruitIcon className="text-brand" size={22} strokeWidth={2} />}
                                             title={row.nombre}
                                             subtitle={`CAM-2026-${String(idx + 1).padStart(3, "0")}`}
                                         />
@@ -305,7 +277,7 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
                                             <Calendar size={18} strokeWidth={2} className="text-ink-muted shrink-0" />
                                             <div className="flex flex-col">
                                                 <span className="font-semibold text-[13.5px] text-ink-body leading-tight">{row.inicio} – {row.fin}</span>
-                                                <span className="text-[12.5px] font-medium mt-1">{getDurationInMonths(row.inicio, row.fin)}</span>
+                                                <span className="text-[12.5px] font-medium mt-1">{getCampaignDurationLabel(row.inicio, row.fin)}</span>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -313,7 +285,7 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
                                         <div className="flex items-center gap-3">
                                             <Package size={18} strokeWidth={2} className="text-ink-muted shrink-0" />
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-[13.5px] text-ink-body leading-tight">{formatNumber(row.kilos)}</span>
+                                                <span className="font-semibold text-[13.5px] text-ink-body leading-tight">{formatCampaignNumber(Number(row.kilos))}</span>
                                                 <span className="text-[12.5px] font-medium mt-1">Kilos</span>
                                             </div>
                                         </div>
@@ -327,17 +299,25 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
                                         <RowActions {...getRowActions(row)} className="justify-center text-ink-muted" />
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            ); })}
                         </TableBody>
                     </Table>
                 </div>
                 )}
             </TableCard>
 
-            <CampaignEditModal
+            <CampaignFormModal
                 open={editingCampaignId !== null}
                 onOpenChange={(open) => !open && setEditingCampaignId(null)}
-                campaignId={editingCampaignId}
+                mode="edit"
+                initialValues={editingCampaign ? {
+                    nombre: editingCampaign.nombre,
+                    inicio: toDateInputValue(editingCampaign.inicio),
+                    fin: toDateInputValue(editingCampaign.fin),
+                    kilos: editingCampaign.kilos,
+                    fruta: editingCampaign.fruta ?? "",
+                    variedades: editingCampaign.variedades ?? [],
+                } : undefined}
                 onSuccess={handleEditSuccess}
             />
 

@@ -2,11 +2,11 @@ import { useMemo, useState } from "react";
 import CampaignStatsOverview from "@/modules/campaigns/components/CampaignStatsOverview";
 import CampaignFilters from "@/modules/campaigns/components/CampaignFilters";
 import CampaignTable from "@/modules/campaigns/components/CampaignTable";
-import CampaignCreateModal from "@/modules/campaigns/components/CampaignCreateModal";
+import CampaignFormModal from "@/modules/campaigns/components/CampaignFormModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
 import CampaignStatusTabs from "@/modules/campaigns/components/CampaignStatusTabs";
 import { campaigns } from "@/modules/campaigns/campaigns.data";
-import { Leaf, Plus, Sprout } from "lucide-react";
+import { Leaf, Sprout } from "lucide-react";
 import PageHeader from "@/shared/layout/PageHeader";
 import { Button } from "@/shared/components/ui/button";
 
@@ -79,7 +79,7 @@ export default function CampaignsPage() {
                 hasActiveFilters={hasActiveFilters}
             />
 
-            <CampaignCreateModal
+            <CampaignFormModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 onSuccess={handleCreateSuccess}

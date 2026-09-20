@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
 import ProvidersFilters from "@/modules/providers/components/ProvidersFilters";
 import ProvidersTable from "@/modules/providers/components/ProvidersTable";
-import ProviderCreateModal from "@/modules/providers/components/ProviderCreateModal";
+import ProviderFormModal from "@/modules/providers/components/ProviderFormModal";
 import ProviderSuccessModal from "@/modules/providers/components/ProviderSuccessModal";
 import PageHeader from "@/shared/layout/PageHeader";
-import { Truck, Plus, FileDown, UserPlus } from "lucide-react";
+import { Truck, FileDown, UserPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { providers } from "@/modules/providers/providers.data";
 
@@ -85,7 +85,7 @@ export default function ProvidersPage() {
                 onClearFilters={clearFilters}
             />
 
-            <ProviderCreateModal
+            <ProviderFormModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 onSuccess={handleCreateSuccess}

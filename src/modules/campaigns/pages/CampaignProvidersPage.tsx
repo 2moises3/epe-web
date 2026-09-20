@@ -14,6 +14,7 @@ import {
 import StatusBadge from "@/shared/components/StatusBadge";
 import RowActions from "@/shared/components/RowActions";
 import TableCard from "@/shared/components/TableCard";
+import { downloadCsv } from "@/shared/utils/downloadCsv";
 import { TABLE_HEAD_BG, TableRowAccent, TableRowLead } from "@/shared/components/DataTableRow";
 import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared/components/TableGridCard";
 import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type TableViewMode } from "@/shared/components/TableToolbar";
@@ -66,18 +67,8 @@ export default function CampaignProvidersPage() {
     }, [activeTab, search]);
 
     /** Exporta los proveedores visibles (de la pestaña y filtros actuales) a CSV y lo descarga */
-    const handleExportCSV = () => {
-        const header = ["Nombre", "DNI", "Zona", "Tipo", "Estado"];
-        const rows = filteredData.map((row) => [row.nombre, row.dni, row.zona, row.tipo, row.estado]);
-        const csvContent = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-        const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "proveedores_campana.csv";
-        link.click();
-        URL.revokeObjectURL(url);
-    };
+    const handleExportCSV = () =>
+        downloadCsv("proveedores_campana.csv", ["Nombre", "DNI", "Zona", "Tipo", "Estado"], filteredData.map((row) => [row.nombre, row.dni, row.zona, row.tipo, row.estado]));
 
     const pageCount = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);

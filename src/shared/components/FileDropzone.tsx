@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Image as ImageIcon, Upload, Eye, X } from "lucide-react";
+import { FileText, Upload, Eye, X, Image as ImageIcon } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import Hint from "@/shared/components/Hint";
 import { cn } from "@/lib/utils";

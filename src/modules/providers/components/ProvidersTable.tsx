@@ -11,12 +11,13 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import StatusBadge from "@/shared/components/StatusBadge";
 import TableCard from "@/shared/components/TableCard";
+import { downloadCsv } from "@/shared/utils/downloadCsv";
 import { TABLE_HEAD_BG, TableRowAccent, TableRowLead } from "@/shared/components/DataTableRow";
 import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared/components/TableGridCard";
 import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type TableViewMode } from "@/shared/components/TableToolbar";
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ProviderInterviewModal from "./ProviderInterviewModal";
-import ProviderEditModal from "./ProviderEditModal";
+import ProviderFormModal from "./ProviderFormModal";
 import ProviderViewModal from "./ProviderViewModal";
 import ProviderSuccessModal from "./ProviderSuccessModal";
 import type { Provider } from "@/modules/providers/providers.data";
@@ -51,18 +52,8 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
     const [successMode, setSuccessMode] = useState<"edit" | "interview">("edit");
 
     /** Exporta los proveedores visibles a CSV y lo descarga */
-    const handleExportCSV = () => {
-        const header = ["Nombre", "DNI", "Fruta", "Categoría", "Estado"];
-        const rows = data.map((row) => [row.nombre, row.dni, row.fruta, row.categoria, row.estado]);
-        const csvContent = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-        const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "proveedores.csv";
-        link.click();
-        URL.revokeObjectURL(url);
-    };
+    const handleExportCSV = () =>
+        downloadCsv("proveedores.csv", ["Nombre", "DNI", "Fruta", "Categoría", "Estado"], data.map((row) => [row.nombre, row.dni, row.fruta, row.categoria, row.estado]));
 
     /** Editar y Ver detalles quedan siempre visibles; el resto se agrupa en el menú de "más opciones" */
     const getRowActions = (row: Provider) => {
@@ -75,6 +66,8 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
         ];
         return { primary, secondary };
     };
+
+    const editingProvider = data.find((row) => row.id === editingProviderId) ?? null;
 
     const pageCount = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
@@ -179,9 +172,16 @@ export default function ProvidersTable({ data, hasActiveFilters, onClearFilters 
                     setIsSuccessModalOpen(true);
                 }}
             />
-            <ProviderEditModal
+            <ProviderFormModal
                 open={editingProviderId !== null}
                 onOpenChange={(open) => !open && setEditingProviderId(null)}
+                mode="edit"
+                initialValues={editingProvider ? {
+                    nombres: editingProvider.nombre,
+                    dni: editingProvider.dni,
+                    tipoDoc: "dni",
+                    frutas: [editingProvider.categoria],
+                } : undefined}
                 onSuccess={() => {
                     setEditingProviderId(null);
                     setSuccessMode("edit");

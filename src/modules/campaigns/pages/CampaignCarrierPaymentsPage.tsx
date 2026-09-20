@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Wallet, Clock, TrendingUp, CheckCircle2, Banknote, Eye, Truck, ListFilter, Plus } from "lucide-react";
+import { Wallet, Clock, TrendingUp, CheckCircle2, Banknote, Eye, Truck, ListFilter } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -15,6 +15,7 @@ import FilterBar, { FilterDateField, FilterSearch } from "@/shared/components/Fi
 import StatusBadge from "@/shared/components/StatusBadge";
 import RowActions from "@/shared/components/RowActions";
 import TableCard from "@/shared/components/TableCard";
+import { downloadCsv } from "@/shared/utils/downloadCsv";
 import { TABLE_HEAD_BG, TableRowAccent, TableRowLead } from "@/shared/components/DataTableRow";
 import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared/components/TableGridCard";
 import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type TableViewMode } from "@/shared/components/TableToolbar";
@@ -89,18 +90,8 @@ export default function CampaignCarrierPaymentsPage() {
     const statusTabs = useMemo(() => getStatusTabsWithCount(), []);
 
     /** Exporta los pagos visibles (del estado y filtros actuales) a CSV y lo descarga */
-    const handleExportCSV = () => {
-        const header = ["Transportista", "Cantidad", "Boleta", "Estado"];
-        const rows = filteredPayments.map((payment) => [payment.transportista, payment.cantidad, payment.boleta ?? "Sin adjuntar", payment.estado]);
-        const csvContent = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-        const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "pagos_transportista.csv";
-        link.click();
-        URL.revokeObjectURL(url);
-    };
+    const handleExportCSV = () =>
+        downloadCsv("pagos_transportista.csv", ["Transportista", "Cantidad", "Boleta", "Estado"], filteredPayments.map((payment) => [payment.transportista, payment.cantidad, payment.boleta ?? "Sin adjuntar", payment.estado]));
 
     const pageCount = Math.max(1, Math.ceil(filteredPayments.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);

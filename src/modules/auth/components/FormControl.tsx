@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupInput, InputGroupButton } from "@/shared/components/ui/input-group";
-import { User, Lock, Eye, EyeOff, ArrowRight, LogIn } from "lucide-react";
+import { User, Lock, Eye, EyeOff, LogIn } from "lucide-react";
 import Hint from "@/shared/components/Hint";
 
 interface FormControlProps {

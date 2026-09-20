@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Save } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
@@ -24,14 +26,12 @@ export default function CampaignLinkProviderModal({ open, onOpenChange, onSave }
         { value: "juan", label: "Juan Perez" }
     ];
 
-    useEffect(() => {
-        if (!open) {
-            setProviderType("productor");
-            setSelectedProvider("");
-            setCantidad("");
-            setExamenCampo(null);
-        }
-    }, [open]);
+    useResetOnToggle(open, () => {
+        setProviderType("productor");
+        setSelectedProvider("");
+        setCantidad("");
+        setExamenCampo(null);
+    });
 
     return (
         <AppModal
@@ -53,20 +53,20 @@ export default function CampaignLinkProviderModal({ open, onOpenChange, onSave }
         >
                 <div className="flex flex-col gap-5">
                     {/* Seleccionar Proveedor */}
-                    <div className="flex flex-col gap-2.5">
-                        <label className="text-[13px] font-semibold text-ink">Seleccionar Proveedor:</label>
+                    <Field>
+                        <FieldLabel>Seleccionar Proveedor:</FieldLabel>
                         <Combobox
                             options={ALL_PROVIDERS}
                             value={selectedProvider}
                             onChange={setSelectedProvider}
                             placeholder="Seleccione un proveedor..."
                         />
-                    </div>
+                    </Field>
 
                     {/* Tipo y cantidad */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Tipo de Proveedor:</label>
+                        <Field>
+                            <FieldLabel>Tipo de Proveedor:</FieldLabel>
                             <SegmentedControl
                                 options={[
                                     { label: "Productor", value: "productor" },
@@ -75,18 +75,17 @@ export default function CampaignLinkProviderModal({ open, onOpenChange, onSave }
                                 value={providerType}
                                 onChange={setProviderType}
                             />
-                        </div>
+                        </Field>
 
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Cantidad Estimada:</label>
+                        <Field>
+                            <FieldLabel>Cantidad Estimada:</FieldLabel>
                             <Input
                                 type="number"
                                 placeholder="0"
                                 value={cantidad}
                                 onChange={(e) => setCantidad(e.target.value)}
-                                className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
-                        </div>
+                        </Field>
                     </div>
 
                     {/* Examen de campo */}

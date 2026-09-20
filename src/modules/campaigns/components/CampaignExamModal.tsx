@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Save } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import FileDropzone from "@/shared/components/FileDropzone";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
@@ -22,16 +24,14 @@ export default function CampaignExamModal({ open, onOpenChange, onSave }: Campai
     const [file, setFile] = useState<File | null>(null);
 
     // Resetear estados cuando se cierra el modal
-    useEffect(() => {
-        if (!open) {
-            setDate("");
-            setResult("");
-            setType("");
-            setOrigin("");
-            setObs("");
-            setFile(null);
-        }
-    }, [open]);
+    useResetOnToggle(open, () => {
+        setDate("");
+        setResult("");
+        setType("");
+        setOrigin("");
+        setObs("");
+        setFile(null);
+    });
 
     return (
         <AppModal
@@ -55,29 +55,29 @@ export default function CampaignExamModal({ open, onOpenChange, onSave }: Campai
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         {/* Columna Izquierda - Inputs */}
                         <div className="flex flex-col gap-4 sm:gap-5">
-                            <div className="flex flex-col gap-2.5">
-                                <label className="text-[13px] font-semibold text-ink">Fecha:</label>
+                            <Field>
+                                <FieldLabel>Fecha:</FieldLabel>
                                 <Input
                                     type="date"
+                                    value={date}
                                     onChange={(e) => setDate(e.target.value)}
-                                    className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                 />
-                            </div>
-                            <div className="flex flex-col gap-2.5">
-                                <label className="text-[13px] font-semibold text-ink">Resultado:</label>
+                            </Field>
+                            <Field>
+                                <FieldLabel>Resultado:</FieldLabel>
                                 <Input
                                     placeholder="Ingrese el resultado"
                                     value={result}
                                     onChange={(e) => setResult(e.target.value)}
-                                    className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
+                                    className="placeholder:text-muted-foreground"
                                 />
-                            </div>
+                            </Field>
                         </div>
 
                         {/* Columna Derecha - Inputs */}
                         <div className="flex flex-col gap-4 sm:gap-5">
-                            <div className="flex flex-col gap-2.5">
-                                <label className="text-[13px] font-semibold text-ink">Tipo de examen:</label>
+                            <Field>
+                                <FieldLabel>Tipo de examen:</FieldLabel>
                                 <Combobox
                                     options={[
                                         { value: "suelo", label: "Análisis de suelo" },
@@ -89,29 +89,29 @@ export default function CampaignExamModal({ open, onOpenChange, onSave }: Campai
                                     onChange={setType}
                                     placeholder="Seleccionar tipo..."
                                 />
-                            </div>
-                            <div className="flex flex-col gap-2.5">
-                                <label className="text-[13px] font-semibold text-ink">Origen:</label>
+                            </Field>
+                            <Field>
+                                <FieldLabel>Origen:</FieldLabel>
                                 <Input
                                     placeholder="Origen"
                                     value={origin}
                                     onChange={(e) => setOrigin(e.target.value)}
-                                    className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
+                                    className="placeholder:text-muted-foreground"
                                 />
-                            </div>
+                            </Field>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         {/* Observaciones (Ocupa la misma altura visual que el Dropzone) */}
-                        <div className="flex flex-col gap-2.5 h-full">
-                            <label className="text-[13px] font-semibold text-ink">Observaciones/Detalles:</label>
+                        <Field className="h-full">
+                            <FieldLabel>Observaciones/Detalles:</FieldLabel>
                             <Textarea
                                 value={obs}
                                 onChange={(e) => setObs(e.target.value)}
                                 className="resize-none h-full min-h-35.5 rounded-2xl border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                             />
-                        </div>
+                        </Field>
 
                         {/* File Dropzone */}
                         <div className="flex flex-col">

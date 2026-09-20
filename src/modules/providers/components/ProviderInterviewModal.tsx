@@ -1,5 +1,6 @@
 import AppModal from "@/shared/components/AppModal";
-import { Plus, X, CalendarPlus } from "lucide-react";
+import { X, CalendarPlus } from "lucide-react";
+import { Separator } from "@/shared/components/ui/separator";
 import { Button } from "@/shared/components/ui/button";
 
 interface ProviderInterviewModalProps {
@@ -39,24 +40,24 @@ export default function ProviderInterviewModal({ open, onOpenChange, onSuccess }
                 </span>
             </div>
 
-            <div className="border-t border-border my-5" />
+            <Separator className="my-5" />
 
             {/* Details */}
             <div className="flex flex-col gap-4">
                 <div className="flex justify-between items-center">
-                    <span className="text-[11.5px] font-bold">CONTACTO</span>
+                    <span className="text-[11.5px] font-bold text-ink-muted">CONTACTO</span>
                     <span className="text-[13.5px] font-semibold text-ink">Carlos Mendoza</span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <span className="text-[11.5px] font-bold">TELÉFONO</span>
+                    <span className="text-[11.5px] font-bold text-ink-muted">TELÉFONO</span>
                     <span className="text-[13.5px] font-semibold text-ink">+51 973 441 220</span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <span className="text-[11.5px] font-bold">UBICACIÓN</span>
+                    <span className="text-[11.5px] font-bold text-ink-muted">UBICACIÓN</span>
                     <span className="text-[13.5px] font-semibold text-ink">Piura</span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <span className="text-[11.5px] font-bold">HECTÁREAS</span>
+                    <span className="text-[11.5px] font-bold text-ink-muted">HECTÁREAS</span>
                     <span className="text-[13.5px] font-semibold text-ink">45 ha</span>
                 </div>
             </div>

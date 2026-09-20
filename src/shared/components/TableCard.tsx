@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { SearchX } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
-import EmptyState from "@/shared/components/EmptyState";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/components/ui/empty";
 import TablePagination from "@/shared/components/TablePagination";
 import { cn } from "@/lib/utils";
 
@@ -64,9 +64,14 @@ export default function TableCard({
                 {!isEmpty && children}
 
                 {isEmpty && (
-                    <div className="rounded-xl border border-border">
-                        <EmptyState icon={emptyIcon} title={emptyTitle} description={emptyDescription} action={emptyAction} />
-                    </div>
+                    <Empty className="rounded-xl border border-border py-16">
+                        <EmptyHeader>
+                            <EmptyMedia variant="brand">{emptyIcon}</EmptyMedia>
+                            <EmptyTitle>{emptyTitle}</EmptyTitle>
+                            <EmptyDescription>{emptyDescription}</EmptyDescription>
+                        </EmptyHeader>
+                        {emptyAction && <EmptyContent>{emptyAction}</EmptyContent>}
+                    </Empty>
                 )}
 
                 <TablePagination page={page} pageCount={pageCount} onPageChange={onPageChange} />

@@ -20,7 +20,7 @@ export default function ModuleCard({
   return (
     <div
       onClick={onClick}
-      className="group relative flex items-stretch w-full h-full min-h-35 bg-white rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden borderl-[-3px] border-transparent hover:border-brand"
+      className="group relative flex items-stretch w-full h-full min-h-35 bg-white rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden border-l-[3px] border-transparent hover:border-brand"
     >
 
       {/* Efecto de iluminación (Shimmer on hover) */}

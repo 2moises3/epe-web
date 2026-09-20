@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Save, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -22,15 +24,13 @@ export default function CampaignCertificationModal({ open, onOpenChange, onSave 
     const [document, setDocument] = useState<File | null>(null);
 
     // Al cerrar el modal se limpia todo, así la próxima vez que se abra no arrastra datos de otro proveedor
-    useEffect(() => {
-        if (!open) {
-            setCertification("");
-            setExpiryDate("");
-            setCost("");
-            setReceipt(null);
-            setDocument(null);
-        }
-    }, [open]);
+    useResetOnToggle(open, () => {
+        setCertification("");
+        setExpiryDate("");
+        setCost("");
+        setReceipt(null);
+        setDocument(null);
+    });
 
     const handleSave = () => {
         if (onSave) onSave();
@@ -58,8 +58,8 @@ export default function CampaignCertificationModal({ open, onOpenChange, onSave 
         >
                 <div className="flex flex-col gap-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Certificación:</label>
+                        <Field>
+                            <FieldLabel>Certificación:</FieldLabel>
                             <Select value={certification} onValueChange={(value) => setCertification(value ?? "")}>
                                 <SelectTrigger className="w-full !h-11 rounded-lg border-border shadow-none text-ink font-medium [&>svg]:opacity-50 focus:ring-1 focus:ring-brand/30 focus:border-brand">
                                     <SelectValue placeholder="Seleccionar" />
@@ -70,20 +70,19 @@ export default function CampaignCertificationModal({ open, onOpenChange, onSave 
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </div>
+                        </Field>
 
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Fecha Vencimiento:</label>
+                        <Field>
+                            <FieldLabel>Fecha Vencimiento:</FieldLabel>
                             <Input
                                 type="date"
                                 value={expiryDate}
                                 onChange={(event) => setExpiryDate(event.target.value)}
-                                className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
-                        </div>
+                        </Field>
 
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Costo:</label>
+                        <Field>
+                            <FieldLabel>Costo:</FieldLabel>
                             <div className="relative">
                                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink-muted">$</span>
                                 <Input
@@ -96,7 +95,7 @@ export default function CampaignCertificationModal({ open, onOpenChange, onSave 
                                     className="rounded-lg h-11 pl-7 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                                 />
                             </div>
-                        </div>
+                        </Field>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

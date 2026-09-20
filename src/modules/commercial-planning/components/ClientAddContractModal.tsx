@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Save, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import FileDropzone from "@/shared/components/FileDropzone";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 
@@ -17,13 +19,11 @@ export default function ClientAddContractModal({ open, onOpenChange, onSuccess }
     const [fichaFile, setFichaFile] = useState<File | null>(null);
 
     // Resetear estados cuando se cierra el modal
-    useEffect(() => {
-        if (!open) {
-            setKg("");
-            setContractFile(null);
-            setFichaFile(null);
-        }
-    }, [open]);
+    useResetOnToggle(open, () => {
+        setKg("");
+        setContractFile(null);
+        setFichaFile(null);
+    });
 
     return (
         <AppModal
@@ -47,9 +47,9 @@ export default function ClientAddContractModal({ open, onOpenChange, onSuccess }
                 {/* Left Column */}
                 <div className="flex flex-col gap-6">
                     <div>
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4">Datos del contrato</h3>
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Kilos Acordados:</label>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-muted mb-4">Datos del contrato</h3>
+                        <Field>
+                            <FieldLabel>Kilos Acordados:</FieldLabel>
                             <div className="relative">
                                 <Input
                                     placeholder="0"
@@ -57,18 +57,18 @@ export default function ClientAddContractModal({ open, onOpenChange, onSuccess }
                                     onChange={(e) => setKg(e.target.value)}
                                     className="rounded-xl h-12 border-border/60 bg-surface-page/50 pr-12 text-[15px] font-medium shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand focus-visible:bg-white placeholder:text-muted-foreground text-ink transition-all"
                                 />
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[13px] px-2 py-1 bg-muted/50 rounded-md">
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[13px] text-ink-muted px-2 py-1 bg-muted/50 rounded-md">
                                     kg
                                 </div>
                             </div>
-                        </div>
+                        </Field>
                     </div>
                 </div>
 
                 {/* Right Column */}
                 <div className="flex flex-col gap-6">
                     <div>
-                        <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4">Documentos adjuntos</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-widest text-ink-muted mb-4">Documentos adjuntos</h3>
 
                         <div className="flex flex-col gap-5">
                             <FileDropzone 

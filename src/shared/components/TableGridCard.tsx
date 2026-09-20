@@ -23,7 +23,7 @@ interface TableGridCardProps {
  */
 export default function TableGridCard({ accentColor, icon, title, subtitle, badge, children, actions, className }: TableGridCardProps) {
     return (
-        <div className={cn("rounded-xl border border-border bg-white overflow-hidden", accentColor && cn("borderl-[-3px]", accentColor), className)}>
+        <div className={cn("rounded-xl border border-border bg-white overflow-hidden", accentColor && cn("border-l-[3px]", accentColor), className)}>
             <div className="flex items-start justify-between gap-3 p-4 pb-3">
                 <div className="flex items-center gap-3 min-w-0">
                     {icon && (
@@ -33,7 +33,7 @@ export default function TableGridCard({ accentColor, icon, title, subtitle, badg
                     )}
                     <div className="flex flex-col min-w-0">
                         <span className="text-[15px] font-bold text-ink leading-tight truncate">{title}</span>
-                        {subtitle && <span className="text-[12.5px] font-medium truncate">{subtitle}</span>}
+                        {subtitle && <span className="text-[12.5px] font-medium text-ink-muted truncate">{subtitle}</span>}
                     </div>
                 </div>
                 {badge}
@@ -58,7 +58,7 @@ interface TableGridCardFieldProps {
 export function TableGridCardField({ label, value, className }: TableGridCardFieldProps) {
     return (
         <div className={cn("flex flex-col min-w-0", className)}>
-            <span className="text-[11px] font-bold uppercase tracking-wider">{label}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{label}</span>
             <span className="text-[13px] font-semibold text-ink truncate">{value}</span>
         </div>
     );

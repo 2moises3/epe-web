@@ -1,7 +1,7 @@
 import { useState, useRef, type KeyboardEvent, type ChangeEvent } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { FieldLabel } from "@/shared/components/ui/field";
-import { ArrowRight, KeyRound, Check } from "lucide-react";
+import { KeyRound, Check } from "lucide-react";
 
 interface ConfirmSuccessProps {
     onBack?: () => void;

@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import ClientsFilters from "@/modules/commercial-planning/components/ClientsFilters";
 import ClientsTable from "@/modules/commercial-planning/components/ClientsTable";
-import ClientCreateModal from "@/modules/commercial-planning/components/ClientCreateModal";
+import ClientFormModal from "@/modules/commercial-planning/components/ClientFormModal";
 import ClientSuccessModal from "@/modules/commercial-planning/components/ClientSuccessModal";
 import PageHeader from "@/shared/layout/PageHeader";
-import { Contact, Plus, UserPlus } from "lucide-react";
+import { Contact, UserPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { clients } from "@/modules/commercial-planning/clients.data";
 
@@ -75,7 +75,7 @@ export default function CommercialPlanningPage() {
                 onClearFilters={clearFilters}
             />
 
-            <ClientCreateModal
+            <ClientFormModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 onSuccess={handleCreateSuccess}
