@@ -115,6 +115,26 @@ La variable alimenta al [cliente Axios compartido](src/shared/api/client.ts). Pu
 | `pnpm preview` | Sirve el resultado de una compilación local |
 | `pnpm lint` | Ejecuta ESLint sobre el proyecto |
 
+### 🐳 Ejecutar con Docker
+
+La imagen usa dos etapas: Node compila la aplicación y Nginx sirve los archivos estáticos. La configuración de Nginx incluye fallback para las rutas de React Router.
+
+Construye la imagen pasando la URL del backend:
+
+```bash
+docker build --build-arg VITE_API_BASE_URL=https://api.ejemplo.com -t epe-web .
+```
+
+Ejecuta el contenedor:
+
+```bash
+docker run --rm -p 8080:80 epe-web
+```
+
+Abre `http://localhost:8080`.
+
+> `VITE_API_BASE_URL` queda incorporada en el bundle durante `docker build`; cambiar variables al ejecutar el contenedor no modifica una imagen ya construida. Para otro backend, vuelve a construir la imagen.
+
 <details>
 <summary><strong>🧩 Notas de ejecución y publicación</strong></summary>
 
