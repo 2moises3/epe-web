@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import './App.css'
@@ -7,11 +6,12 @@ import UsersModulesPage from './modules/users/pages/UsersModulesPage'
 import CampaignsPage from './modules/campaigns/pages/CampaignsPage'
 import CampaignDetailsPage from './modules/campaigns/pages/CampaignDetailsPage'
 import CampaignProvidersPage from './modules/campaigns/pages/CampaignProvidersPage'
+import CampaignCarrierPaymentsPage from './modules/campaigns/pages/CampaignCarrierPaymentsPage'
 import ProvidersPage from './modules/providers/pages/ProvidersPage'
-import ClientsPage from './modules/clients/pages/ClientsPage'
-import CertificationsPage from './modules/certifications/pages/CertificationsPage'
-import CertificationsCreatePage from './modules/certifications/pages/CertificationsCreatePage'
+import CommercialPlanningPage from './modules/commercial-planning/pages/CommercialPlanningPage'
 import DashboardLayout from '@/shared/layout/DashboardLayout'
+import OfflinePage from '@/shared/components/OfflinePage'
+import { clearSession, getSession, saveSession } from '@/shared/offline/session'
 
 // Persistent layout wrapper for authenticated routes
 const ProtectedLayout = ({ isAuthenticated, onLogout }: { isAuthenticated: boolean, onLogout: () => void }) => {
@@ -25,25 +25,48 @@ const ProtectedLayout = ({ isAuthenticated, onLogout }: { isAuthenticated: boole
   );
 };
 
-const AUTH_STORAGE_KEY = 'epe_auth'
-
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => localStorage.getItem(AUTH_STORAGE_KEY) === 'true'
-  )
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine)
+  const [justReconnected, setJustReconnected] = useState(false)
 
   useEffect(() => {
-    localStorage.setItem(AUTH_STORAGE_KEY, String(isAuthenticated))
-  }, [isAuthenticated])
+    void getSession().then((session) => setIsAuthenticated(Boolean(session?.authenticated))).catch(() => setIsAuthenticated(false))
+  }, [])
 
-  const handleLogout = () => setIsAuthenticated(false);
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      setJustReconnected(true)
+      window.setTimeout(() => setJustReconnected(false), 1400)
+    }
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  const handleLogin = () => {
+    setIsAuthenticated(true)
+    void saveSession({ authenticated: true, savedAt: Date.now() })
+  }
+  const handleLogout = () => {
+    setIsAuthenticated(false)
+    void clearSession()
+  };
+
+  if (!isOnline) return <OfflinePage />
+  if (isAuthenticated === null) return null
 
   return (
     <BrowserRouter>
       <Routes>
         <Route 
           path="/login" 
-          element={!isAuthenticated ? <AdminLoginPage onLogin={() => setIsAuthenticated(true)} /> : <Navigate to="/modules" />} 
+          element={!isAuthenticated ? <AdminLoginPage onLogin={handleLogin} /> : <Navigate to="/modules" />} 
         />
         
         <Route element={<ProtectedLayout isAuthenticated={isAuthenticated} onLogout={handleLogout} />}>
@@ -51,15 +74,15 @@ function App() {
           <Route path="/campaigns" element={<CampaignsPage />} />
           <Route path="/campaigns/:id" element={<CampaignDetailsPage />} />
           <Route path="/campaigns/:id/providers" element={<CampaignProvidersPage />} />
+          <Route path="/campaigns/:id/carrier-payments" element={<CampaignCarrierPaymentsPage />} />
           <Route path="/proveedores" element={<ProvidersPage />} />
-          <Route path="/clientes" element={<ClientsPage />} />
-          <Route path="/certificaciones" element={<CertificationsPage />} />
-          <Route path="/certificaciones/nueva" element={<CertificationsCreatePage />} />
+          <Route path="/planificacion-comercial" element={<CommercialPlanningPage />} />
         </Route>
         
         <Route path="/" element={<Navigate to="/modules" />} />
         <Route path="*" element={<Navigate to="/modules" />} />
       </Routes>
+      {justReconnected && <div className="online-transition" role="status">Conexión restaurada</div>}
     </BrowserRouter>
   )
 }

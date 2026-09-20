@@ -11,6 +11,8 @@ interface StatCardProps {
         direction: "up" | "down" | "neutral";
     };
     sparklineVariant?: "green" | "grey" | "yellow";
+    onClick?: () => void;
+    active?: boolean;
 }
 
 /** Mini sparkline SVG decorativa para el fondo de la card */
@@ -38,7 +40,7 @@ function Sparkline({ variant = "green" }: { variant?: "green" | "grey" | "yellow
 
     return (
         <svg
-            className="absolute bottom-0 right-0 w-[60%] h-[60%] z-0 rounded-br-2xl pointer-events-none"
+            className="hidden sm:block absolute bottom-0 right-0 w-[60%] h-[60%] z-0 rounded-br-2xl pointer-events-none"
             viewBox="0 0 120 60"
             preserveAspectRatio="none"
             fill="none"
@@ -55,7 +57,7 @@ function Sparkline({ variant = "green" }: { variant?: "green" | "grey" | "yellow
     );
 }
 
-export default function StatCard({ title, value, icon, trend, sparklineVariant = "green" }: StatCardProps) {
+export default function StatCard({ title, value, icon, trend, sparklineVariant = "green", onClick, active = false }: StatCardProps) {
     const trendColor =
         trend?.direction === "down"
             ? "text-status-warning"
@@ -63,17 +65,66 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
             ? "text-brand"
             : "text-ink-muted";
 
+    const isInteractive = Boolean(onClick);
+
     return (
-        <Card className="relative rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] h-[160px] bg-white transition-all hover:shadow-[0_4px_20px_rgb(0,0,0,0.06)] border-l-[3px] border-l-transparent hover:-translate-y-0.5 hover:border-l-brand">
-            <CardContent className="p-5 pt-1 flex flex-col h-full relative z-10 justify-between">
-                {/* Top Section: Icon on left, Title & Value on right */}
-                <div className="flex items-start gap-4">
-                    {/* Icon */}
-                    <div className="w-16 h-16 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0 border border-brand-border/50">
+        <Card
+            onClick={onClick}
+            role={isInteractive ? "button" : undefined}
+            tabIndex={isInteractive ? 0 : undefined}
+            aria-pressed={isInteractive ? active : undefined}
+            onKeyDown={(event) => {
+                if (!isInteractive) return;
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onClick?.();
+                }
+            }}
+            className={`relative rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] h-33 sm:h-40 bg-white transition-all borderl-[-3px] outline-none ${
+                isInteractive ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/40" : ""
+            } ${
+                active
+                    ? "border-l-brand shadow-[0_4px_20px_rgb(0,0,0,0.06)] ring-1 ring-brand/20"
+                    : "border-l-transparent hover:shadow-[0_4px_20px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 hover:border-l-brand"
+            }`}
+        >
+            {/* MÓVIL: ícono y tendencia arriba, cifra y rótulo abajo. Con el rótulo
+                al final, un título de dos líneas ya no empuja la cifra hacia abajo
+                y todas las tarjetas alinean sus números a la misma altura. */}
+            <CardContent className="sm:hidden p-3.5 flex flex-col h-full relative z-10">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="w-8 h-8 rounded-full bg-brand-surface flex items-center justify-center shrink-0 border border-brand-border/50 [&>svg]:size-4" style={{ color: "var(--brand-gradient-mid)" }}>
                         {icon}
                     </div>
-                    {/* Title and Value */}
-                    <div className="flex flex-col pt-1">
+                    {trend && (
+                        <div className={`flex items-center gap-0.5 shrink-0 ${trendColor}`}>
+                            {trend.direction === "up" ? (
+                                <ArrowUpRight size={14} strokeWidth={2.5} />
+                            ) : (
+                                <ArrowDownRight size={14} strokeWidth={2.5} />
+                            )}
+                            <span className="text-[12px] font-bold leading-none">{trend.value}</span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-auto min-w-0">
+                    <span className="block text-[28px] font-bold text-ink leading-none tracking-tight">
+                        {value}
+                    </span>
+                    <span className="block text-[11.5px] font-semibold text-ink-muted leading-tight mt-1 line-clamp-2">
+                        {title}
+                    </span>
+                </div>
+            </CardContent>
+
+            {/* ESCRITORIO: hay espacio para el ícono grande, la comparativa y la sparkline */}
+            <CardContent className="hidden sm:flex p-5 pt-1 flex-col h-full relative z-10 justify-between">
+                <div className="flex items-start gap-4 min-w-0">
+                    <div className="w-16 h-16 rounded-full bg-brand-surface flex items-center justify-center shrink-0 border border-brand-border/50" style={{ color: "var(--brand-gradient-mid)" }}>
+                        {icon}
+                    </div>
+                    <div className="flex flex-col pt-1 min-w-0">
                         <span className="text-[14px] font-semibold text-ink leading-snug">
                             {title}
                         </span>
@@ -83,7 +134,6 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
                     </div>
                 </div>
 
-                {/* Bottom Section: Trend and VS text */}
                 <div className="flex flex-col gap-0.5 mt-auto">
                     {trend && (
                         <>
@@ -103,7 +153,8 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
                 </div>
             </CardContent>
 
-            {/* Sparkline Decorativa en el fondo derecho */}
+            {/* Sparkline decorativa: en móvil la tarjeta es demasiado compacta y la
+                curva termina cruzando la cifra y la tendencia. */}
             {trend && <Sparkline variant={sparklineVariant} />}
         </Card>
     );

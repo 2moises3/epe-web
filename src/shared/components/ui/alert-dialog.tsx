@@ -67,7 +67,7 @@ function AlertDialogHeader({
     <div
       data-slot="alert-dialog-header"
       className={cn(
-        "grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]",
+        "grid gridrows-[-auto_1fr] place-items-center gap-1.5 text-center hasdata-[-slot=alert-dialog-media]:gridrows-[-auto_auto_1fr] hasdata-[-slot=alert-dialog-media]:gap-x-4 sm:groupdata-[-size=default]/alert-dialog-content:place-items-start sm:groupdata-[-size=default]/alert-dialog-content:text-left sm:groupdata-[-size=default]/alert-dialog-content:hasdata-[-slot=alert-dialog-media]:gridrows-[-auto_1fr]",
         className
       )}
       {...props}
@@ -83,7 +83,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 groupdata-[-size=sm]/alert-dialog-content:grid groupdata-[-size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -99,7 +99,7 @@ function AlertDialogMedia({
     <div
       data-slot="alert-dialog-media"
       className={cn(
-        "mb-2 inline-flex size-10 items-center justify-center rounded-md bg-muted sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-6",
+        "mb-2 inline-flex size-10 items-center justify-center rounded-md bg-muted sm:groupdata-[-size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-6",
         className
       )}
       {...props}
@@ -115,7 +115,7 @@ function AlertDialogTitle({
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        "font-heading text-base font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2",
+        "font-heading text-base font-medium sm:groupdata-[-size=default]/alert-dialog-content:group-hasdata-[-slot=alert-dialog-media]/alert-dialog-content:col-start-2",
         className
       )}
       {...props}

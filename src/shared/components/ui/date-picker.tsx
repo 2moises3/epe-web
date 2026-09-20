@@ -52,8 +52,8 @@ function DatePicker({
             type="button"
             variant="outline"
             className={cn(
-              "h-11 w-full justify-start gap-2 rounded-lg px-2.5 font-normal shadow-none",
-              !selected && "text-muted-foreground",
+              "h-11 w-full justify-start gap-2 rounded-lg px-2.5 shadow-none",
+              selected ? "text-ink font-medium" : "text-ink-muted font-normal",
               className
             )}
           />

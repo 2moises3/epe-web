@@ -1,9 +1,5 @@
-import { MapPin, Sprout, Leaf, Users } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-} from "@/shared/components/ui/dialog";
+import { MapPin, Sprout, Leaf, X, Save } from "lucide-react";
+import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 
@@ -15,25 +11,27 @@ interface CampaignInterviewModalProps {
 
 export default function CampaignInterviewModal({ open, onOpenChange, onSave }: CampaignInterviewModalProps) {
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[1100px] sm:max-w-[1100px] p-0 rounded-2xl bg-white border-none shadow-2xl overflow-hidden gap-0">
-                {/* Header Custom */}
-                <div className="flex items-center gap-4 px-8 py-6 border-b border-border">
-                    <div className="w-12 h-12 rounded-2xl bg-brand-surface flex items-center justify-center text-brand">
-                        <Users size={24} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex flex-col">
-                        <DialogTitle className="text-[20px] font-bold text-ink">
-                            Informe de Entrevista
-                        </DialogTitle>
-                        <span className="text-[14px] text-ink-muted font-medium">Fundo Los Olivos</span>
-                    </div>
-                </div>
-
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Informe de Entrevista"
+            description="Fundo Los Olivos"
+            className="sm:max-w-275"
+            footer={
+                <>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                        <X size={20} strokeWidth={2.5} /> Cancelar
+                    </Button>
+                    <Button size="xl" onClick={() => onSave ? onSave() : onOpenChange(false)}>
+                        <Save size={20} strokeWidth={2.5} /> Guardar entrevista
+                    </Button>
+                </>
+            }
+        >
                 {/* Content */}
-                <div className="p-8 grid grid-cols-2 gap-x-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-x-12">
                     {/* Left Column */}
-                    <div className="flex flex-col gap-8 border-r border-border pr-12">
+                    <div className="flex flex-col gap-8 lg:border-r lg:border-border lg:pr-12">
                         {/* Datos del cultivo */}
                         <div className="flex flex-col gap-5">
                             <div className="flex items-center gap-2 text-brand pb-2 border-b border-border">
@@ -41,7 +39,7 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                                 <h3 className="text-[13px] font-bold uppercase tracking-wider">Datos del cultivo</h3>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[12px] font-bold text-muted-foreground uppercase">Densidad plantación</label>
                                     <Input
@@ -69,7 +67,7 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[12px] font-bold text-muted-foreground uppercase">Ha total finca</label>
                                     <Input
@@ -97,7 +95,7 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                                 <h3 className="text-[13px] font-bold uppercase tracking-wider">Fertilización</h3>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-2">
                                     <label className="text-[12px] font-bold text-muted-foreground uppercase">Nombre de aplicación</label>
                                     <Input
@@ -142,10 +140,10 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         </div>
 
                         {/* Fake Map */}
-                        <div className="h-[200px] w-full rounded-2xl border-brand-surface bg-brand-surface/20 overflow-hidden relative mt-2 flex flex-col items-center justify-center gap-2">
+                        <div className="h-50 w-full rounded-2xl border-brand-surface bg-brand-surface/20 overflow-hidden relative mt-2 flex flex-col items-center justify-center gap-2">
                             {/* Grid overlay for map look */}
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(var(--brand) 1px, transparent 1px), linear-gradient(90deg, var(--brand) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                            <div className="relative z-10 w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center text-brand">
+                            <div className="relative z-10 w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center" style={{ color: "var(--brand-gradient-mid)" }}>
                                 <MapPin size={24} strokeWidth={2.5} />
                             </div>
                             <span className="relative z-10 text-[13px] font-bold text-brand">Mapa de ubicación</span>
@@ -163,24 +161,6 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         </div>
                     </div>
                 </div>
-
-                {/* Botones Footer */}
-                <div className="flex justify-end gap-3 px-8 py-5 border-t border-border bg-surface-page/60">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-11 px-6 border-border text-ink-body font-bold shadow-none hover:bg-muted transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={() => onSave ? onSave() : onOpenChange(false)}
-                        className="rounded-lg h-11 px-8 bg-brand hover:bg-brand-dark text-white font-bold shadow-sm transition-colors active:scale-95"
-                    >
-                        Guardar entrevista
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </AppModal>
     );
 }

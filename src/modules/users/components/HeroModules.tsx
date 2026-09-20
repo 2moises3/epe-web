@@ -10,11 +10,13 @@ export default function HeroModules() {
   return (
     /* Alto en % del área disponible: el hero cede espacio al grid en pantallas
        bajas, así todo entra sin scroll sin depender de un alto fijo en px. */
-    <section className="relative w-full h-[30.6%] shrink-0 overflow-hidden">
+    <section className="relative w-full h-auto py-8 lg:py-0 lg:h-[30.6%] shrink-0 overflow-hidden">
       {/* Foto. El borde curvo se recorta por CSS (no viene incrustado en el asset),
-          así la altura del hero y la forma de la curva se ajustan por separado. */}
+          así la altura del hero y la forma de la curva se ajustan por separado.
+          En móvil se oculta: el recorte curvo y el 67% de ancho dejarían el texto
+          ilegible, y el valor de la pantalla está en las tarjetas de módulo. */}
       <div
-        className="absolute inset-y-0 right-0"
+        className="hidden lg:block absolute inset-y-0 right-0"
         style={{ width: PHOTO_WIDTH, clipPath: `url(#${HERO_CLIP_ID})` }}
       >
         <img
@@ -32,7 +34,7 @@ export default function HeroModules() {
           clip-path, y `vectorEffect="non-scaling-stroke"` evita que ese estirado
           deforme el grosor del trazo. */}
       <svg
-        className="absolute inset-y-0 right-0 h-full z-10 pointer-events-none -translate-x-[14px]"
+        className="hidden lg:block absolute inset-y-0 right-0 h-full z-10 pointer-events-none -translatex-[-14px]"
         style={{ width: PHOTO_WIDTH }}
         viewBox="0 0 1 1"
         preserveAspectRatio="none"
@@ -50,33 +52,28 @@ export default function HeroModules() {
 
       {/* Lema. Antes venía incrustado en la foto; como asset aparte se puede
           reubicar y escalar sin volver a exportar la imagen de fondo. */}
+      {/* Lema decorativo: se omite en móvil, donde compite con el título por el
+          poco ancho disponible sin aportar información. */}
       <img
         src={HeroPhraseImg}
         alt="Del campo al mundo. Frutas que conectan futuros."
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-[115%] w-auto object-contain pointer-events-none"
+        className="hidden lg:block absolute right-4 top-1/2 -translate-y-1/2 z-10 h-[115%] w-auto object-contain pointer-events-none"
       />
 
       {/* Columna de textos */}
-      <div className="relative z-20 h-full flex flex-col justify-center pl-14 lg:pl-20 max-w-[40%]">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles size={16} className="text-brand" strokeWidth={2} />
-          <span className="text-[14px] md:text-[16px] font-medium tracking-[0.2em] md:tracking-[0.25em]">
+      <div className="relative z-20 h-full flex flex-col justify-center px-4 sm:px-8 lg:px-0 lg:pl-16 max-w-full lg:maxw-[-35%] xl:maxw-[-38%]">
+        <div className="flex items-center gap-2 mb-2 lg:mb-3">
+          <Sparkles size={16} className="text-brand shrink-0" strokeWidth={2} />
+          <span className="text-[12px] sm:text-[14px] md:text-[16px] xl:text-[18px] font-medium tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em]">
             Bienvenido a tu
           </span>
         </div>
 
-        <h1 className="text-4xl lg:text-[40px] leading-[1.08] text-brand-dark font-semibold tracking-tight">
+        <h1 className="text-[28px] sm:text-4xl lg:text-[42px] xl:text-[52px] leading-[1.1] lg:leading-[1.05] text-brand-dark font-semibold tracking-tight text-balance break-words">
           Centro de operaciones
           <br />
           <span className="text-brand font-medium">Agro F.V.</span>
         </h1>
-
-        <div className="flex gap-4 items-start mt-5">
-          <div className="h-0.5 w-8 bg-brand shrink-0 mt-2.5"></div>
-          <p className="text-ink-muted text-[14px] leading-relaxed max-w-95">
-            Selecciona un área para gestionar y continuar con tus actividades.
-          </p>
-        </div>
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import { useState, useRef, type KeyboardEvent, type ChangeEvent } from "react";
 import { Button } from "@/shared/components/ui/button";
 import { FieldLabel } from "@/shared/components/ui/field";
-import { ArrowRight, KeyRound } from "lucide-react";
+import { ArrowRight, KeyRound, Check } from "lucide-react";
 
 interface ConfirmSuccessProps {
     onBack?: () => void;
@@ -69,11 +69,10 @@ export default function ConfirmSuccessFormControl({ onBack, onConfirm }: Confirm
 
             <Button
                 onClick={onConfirm}
-                className="bg-brand hover:bg-brand-dark w-full h-11 rounded-lg font-bold text-white shadow-sm flex items-center justify-between px-6 transition-all text-[15px] mt-6 active:scale-95"
+                size="xl" className="w-full mt-6"
             >
-                <span className="flex-1 text-center pr-2">Confirmar</span>
-                <ArrowRight size={20} strokeWidth={2.5} className="shrink-0" />
-            </Button>
+                        <Check size={20} strokeWidth={2.5} /> Confirmar
+                    </Button>
 
             {onBack && (
                 <div className="mt-6 w-full flex justify-center">
