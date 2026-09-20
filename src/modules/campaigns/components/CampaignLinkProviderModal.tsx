@@ -138,7 +138,11 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                                 <SelectValue placeholder="Seleccione un proveedor..." />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg">
-                                {proveedores.map((p) => (
+                                {proveedores.length === 0 ? (
+                                    <SelectItem value="__no-providers__" disabled className="justify-center text-ink-muted">
+                                        No hay proveedores registrados.
+                                    </SelectItem>
+                                ) : proveedores.map((p) => (
                                     <SelectItem key={p.proveedorId} value={String(p.proveedorId)} className="rounded-lg">
                                         {p.nombres} {p.apellido}
                                     </SelectItem>

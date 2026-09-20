@@ -149,7 +149,11 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg">
-                                    {frutas.map((fruta) => (
+                                    {frutas.length === 0 ? (
+                                        <SelectItem value="__no-fruits__" disabled className="justify-center text-ink-muted">
+                                            No hay frutas registradas.
+                                        </SelectItem>
+                                    ) : frutas.map((fruta) => (
                                         <SelectItem key={fruta.frutaId} value={String(fruta.frutaId)} className="rounded-lg">
                                             {fruta.name}
                                         </SelectItem>

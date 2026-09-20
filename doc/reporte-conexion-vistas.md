@@ -1,5 +1,7 @@
 # Reporte de conexión de vistas al backend — epe-web
 
+> **Actualización de estados vacíos: 2026-09-20.** Los selectores alimentados por API para frutas, proveedores y clientes muestran ahora un mensaje explícito cuando la lista no contiene opciones (`No hay ... registrados/disponibles`); las opciones informativas son deshabilitadas y no seleccionables.
+
 > **Actualización de validaciones: 2026-09-20.** Se agregaron esquemas Zod y visualización de errores `400 Bad Request` debajo de los campos correspondientes en formularios que escriben vía API: crear/editar campañas, crear/editar clientes y vincular clientes/proveedores a campañas. Esto mejora validación de formularios; no cambia las operaciones API disponibles ni los estados de integración indicados en la auditoría.
 
 > **Actualización de auditoría: 2026-09-20.** Esta entrada complementa, no reemplaza, los estados históricos de 2026-09-08 que siguen abajo. En esta iteración se conectaron clientes (listar/crear/editar/eliminar e historial de contratos) y derivados de fruta en detalle de campaña, se reemplazaron KPIs de muestra por conteos de campañas reales y se deshabilitaron funciones sin API. Se conservan sus archivos fixture; las vistas activas no deben leerlos.

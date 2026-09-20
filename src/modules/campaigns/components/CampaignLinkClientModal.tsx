@@ -109,7 +109,11 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                                     <SelectValue placeholder="Selecciona un cliente" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg">
-                                    {availableClientes.map((cliente) => (
+                                    {availableClientes.length === 0 ? (
+                                        <SelectItem value="__no-clients__" disabled className="justify-center text-ink-muted">
+                                            No hay clientes disponibles para esta campaña.
+                                        </SelectItem>
+                                    ) : availableClientes.map((cliente) => (
                                         <SelectItem key={cliente.clienteNegocioId} value={String(cliente.clienteNegocioId)} className="rounded-lg">
                                             {cliente.nombreEmpresa}
                                         </SelectItem>
