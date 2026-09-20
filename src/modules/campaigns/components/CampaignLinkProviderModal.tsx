@@ -8,6 +8,9 @@ import { getProveedores } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import { createCampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.api";
 import type { TipoProveedorCampania } from "@/modules/campaigns/api/campania-proveedor.dto";
+import { linkProviderSchema } from "@/modules/campaigns/api/campaign-form.schema";
+import { getBadRequestFieldErrors, getZodFieldErrors, type FormFieldErrors } from "@/shared/validation/api-form-errors";
+import FieldError from "@/shared/components/FieldError";
 
 interface CampaignLinkProviderModalProps {
     open: boolean;
@@ -32,6 +35,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
     const [addedProviders, setAddedProviders] = useState<PendingProvider[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<FormFieldErrors>({});
 
     useEffect(() => {
         if (!open) return;
@@ -45,7 +49,8 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
     };
 
     const handleAdd = () => {
-        if (!selectedProvider) return;
+        const validation = linkProviderSchema.safeParse({ proveedorId: Number(selectedProvider), cantidad });
+        if (!validation.success) { setFieldErrors(getZodFieldErrors(validation.error)); return; }
         const proveedor = proveedores.find((p) => String(p.proveedorId) === selectedProvider);
         if (!proveedor) return;
 
@@ -60,15 +65,18 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
         ]);
         setSelectedProvider("");
         setCantidad("");
+        setFieldErrors({});
     };
 
     const handleGuardar = async () => {
         if (campaniaId === null || addedProviders.length === 0) {
-            onSave ? onSave() : onOpenChange(false);
+            if (onSave) onSave();
+            else onOpenChange(false);
             return;
         }
         setIsSaving(true);
         setError(null);
+        setFieldErrors({});
         try {
             await Promise.all(
                 addedProviders.map((p) =>
@@ -83,9 +91,14 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                 )
             );
             setAddedProviders([]);
-            onSave ? onSave() : onOpenChange(false);
-        } catch {
-            setError("No se pudieron vincular los proveedores.");
+            if (onSave) onSave();
+            else onOpenChange(false);
+        } catch (requestError) {
+            const parsed = getBadRequestFieldErrors(requestError, {
+                proveedorId: "proveedorId", cantidadProveedor: "cantidad", mtdCeratitis: "_form", tipoProveedor: "_form",
+            });
+            setFieldErrors(parsed);
+            if (parsed._form) setError(parsed._form);
         } finally {
             setIsSaving(false);
         }
@@ -120,7 +133,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                     {/* Seleccionar Proveedor */}
                     <div className="flex flex-col gap-2.5">
                         <label className="text-[13px] font-semibold text-ink">Seleccionar Proveedor:</label>
-                        <Select value={selectedProvider} onValueChange={(val) => setSelectedProvider(val || "")}>
+                        <Select value={selectedProvider} onValueChange={(val) => { setSelectedProvider(val || ""); setFieldErrors((p) => ({ ...p, proveedorId: undefined })); }}>
                             <SelectTrigger className="w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
                                 <SelectValue placeholder="Seleccione un proveedor..." />
                             </SelectTrigger>
@@ -132,6 +145,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                                 ))}
                             </SelectContent>
                         </Select>
+                        <FieldError message={fieldErrors.proveedorId} />
                     </div>
 
                     {/* Toggle and Cantidad */}
@@ -155,9 +169,10 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                                 type="number"
                                 placeholder="0"
                                 value={cantidad}
-                                onChange={(e) => setCantidad(e.target.value)}
+                                onChange={(e) => { setCantidad(e.target.value); setFieldErrors((p) => ({ ...p, cantidad: undefined })); }}
                                 className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
+                            <FieldError message={fieldErrors.cantidad} />
                         </div>
                     </div>
 

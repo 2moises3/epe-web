@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, Leaf } from "lucide-react";
+import { Leaf } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -14,6 +14,9 @@ import { getFrutas, getFrutaDerivadas, getCampana, updateCampana } from "@/modul
 import type { FrutaDto, FrutaDerivadaDto, CampanaEstado } from "@/modules/campaigns/api/campaign.dto";
 import { parseFecha, formatFecha } from "@/modules/campaigns/api/fecha.util";
 import { DatePicker } from "@/shared/components/ui/date-picker";
+import { campaignFormSchema } from "@/modules/campaigns/api/campaign-form.schema";
+import { getBadRequestFieldErrors, getZodFieldErrors, type FormFieldErrors } from "@/shared/validation/api-form-errors";
+import FieldError from "@/shared/components/FieldError";
 
 interface CampaignEditModalProps {
     open: boolean;
@@ -32,15 +35,15 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
     const [requerimientoComercial, setRequerimientoComercial] = useState("");
     const [derivadas, setDerivadas] = useState<FrutaDerivadaDto[]>([]);
     const [derivadasLoading, setDerivadasLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<FormFieldErrors>({});
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (!open || campaniaId === null) return;
-        setError(null);
+        setErrors({});
         getFrutas()
             .then(setFrutas)
-            .catch(() => setError("No se pudieron cargar las frutas."));
+            .catch(() => setErrors({ _form: "No se pudieron cargar las frutas." }));
         getCampana(campaniaId)
             .then((campana) => {
                 setNombre(campana.nombre);
@@ -50,7 +53,7 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                 setEstado(campana.estado);
                 setRequerimientoComercial(String(campana.requerimientoComercial));
             })
-            .catch(() => setError("No se pudo cargar la campaña."));
+            .catch(() => setErrors({ _form: "No se pudo cargar la campaña." }));
     }, [open, campaniaId]);
 
     useEffect(() => {
@@ -65,35 +68,25 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
             .finally(() => setDerivadasLoading(false));
     }, [open, frutaId]);
 
-    const isValid =
-        nombre.trim() !== "" &&
-        frutaId !== null &&
-        fechaInicio !== "" &&
-        fechaFin !== "" &&
-        requerimientoComercial.trim() !== "";
-
     const handleSubmit = async () => {
-        if (!isValid || frutaId === null || campaniaId === null) return;
+        if (campaniaId === null) return;
+        const validation = campaignFormSchema.safeParse({ nombre, frutaId, fechaInicio, fechaFin, estado, requerimientoComercial });
+        if (!validation.success) { setErrors(getZodFieldErrors(validation.error)); return; }
         setSaving(true);
-        setError(null);
+        setErrors({});
         try {
             await updateCampana(campaniaId, {
-                nombre,
-                frutaId,
-                fechaInicio: parseFecha(fechaInicio),
-                fechaFin: parseFecha(fechaFin),
-                estado,
-                requerimientoComercial,
+                ...validation.data,
+                fechaInicio: parseFecha(validation.data.fechaInicio),
+                fechaFin: parseFecha(validation.data.fechaFin),
             });
             onSuccess?.();
-        } catch {
-            setError("No se pudo actualizar la campaña.");
+        } catch (requestError) {
+            setErrors(getBadRequestFieldErrors(requestError, { nombre: "nombre", frutaId: "frutaId", fechaInicio: "fechaInicio", fechaFin: "fechaFin", requerimientoComercial: "requerimientoComercial", estado: "estado" }));
         } finally {
             setSaving(false);
         }
     }
-
-    const [fruitError] = useState<string | null>(null);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,10 +113,11 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                         <label className="text-[13px] font-semibold text-ink">Nombre de Campaña:</label>
                         <Input
                             value={nombre}
-                            onChange={(e) => setNombre(e.target.value)}
+                            onChange={(e) => { setNombre(e.target.value); setErrors((p) => ({ ...p, nombre: undefined })); }}
                             placeholder="Ej: Campaña Mango 2026"
                             className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                         />
+                        <FieldError message={errors.nombre} />
                     </div>
 
                     {/* Fechas */}
@@ -132,17 +126,19 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                             <label className="text-[13px] font-semibold text-ink">Fecha Inicio:</label>
                             <DatePicker
                                 value={fechaInicio}
-                                onChange={setFechaInicio}
+                                onChange={(value) => { setFechaInicio(value); setErrors((p) => ({ ...p, fechaInicio: undefined })); }}
                                 className="rounded-lg h-11 border-border text-ink-muted shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
+                            <FieldError message={errors.fechaInicio} />
                         </div>
                         <div className="flex flex-col gap-2.5">
                             <label className="text-[13px] font-semibold text-ink">Fecha Fin:</label>
                             <DatePicker
                                 value={fechaFin}
-                                onChange={setFechaFin}
+                                onChange={(value) => { setFechaFin(value); setErrors((p) => ({ ...p, fechaFin: undefined })); }}
                                 className="rounded-lg h-11 border-border text-ink-muted shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
+                            <FieldError message={errors.fechaFin} />
                         </div>
                     </div>
 
@@ -152,9 +148,9 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                             <label className="text-[13px] font-semibold text-ink">Seleccionar Frutas:</label>
                             <Select
                                 value={frutaId !== null ? String(frutaId) : ""}
-                                onValueChange={(val) => setFrutaId(val ? Number(val) : null)}
+                                onValueChange={(val) => { setFrutaId(val ? Number(val) : null); setErrors((p) => ({ ...p, frutaId: undefined })); }}
                             >
-                                <SelectTrigger className={`w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand transition-colors ${fruitError ? "border-destructive focus:ring-destructive" : ""}`}>
+                                <SelectTrigger className="w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand transition-colors">
                                     <SelectValue placeholder="Selecciona una fruta">
                                         {frutas.find((f) => f.frutaId === frutaId)?.name}
                                     </SelectValue>
@@ -167,11 +163,7 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {/* Validación Micro-animada */}
-                            <div className={`transition-all duration-300 overflow-hidden flex items-center gap-2 text-destructive ${fruitError ? "opacity-100 max-h-10 mt-1" : "opacity-0 max-h-0 mt-0"}`}>
-                                <AlertCircle size={14} />
-                                <span className="text-[13px] font-medium">{fruitError}</span>
-                            </div>
+                            <FieldError message={errors.frutaId} />
                         </div>
                     </div>
 
@@ -202,7 +194,7 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                         <div className="relative">
                             <Input
                                 value={requerimientoComercial}
-                                onChange={(e) => setRequerimientoComercial(e.target.value)}
+                                onChange={(e) => { setRequerimientoComercial(e.target.value); setErrors((p) => ({ ...p, requerimientoComercial: undefined })); }}
                                 placeholder="Ej: 3000"
                                 className="rounded-lg h-11 border-border pr-12 shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                             />
@@ -210,9 +202,10 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                                 KG
                             </div>
                         </div>
+                        <FieldError message={errors.requerimientoComercial} />
                     </div>
 
-                    {error && <p className="text-[13px] text-red-500 font-medium">{error}</p>}
+                    {errors._form && <p role="alert" className="text-[13px] text-red-500 font-medium">{errors._form}</p>}
                 </div>
 
                 <div className="flex justify-center gap-4 mt-8">
@@ -225,7 +218,7 @@ export default function CampaignEditModal({ open, campaniaId, onOpenChange, onSu
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={!isValid || saving}
+                        disabled={saving}
                         className="rounded-lg h-11 px-8 bg-brand hover:bg-brand-dark text-white font-semibold gap-2 shadow-sm transition-colors active:scale-95"
                     >
                         Guardar

@@ -14,6 +14,9 @@ import { getFrutas, getFrutaDerivadas, createCampana } from "@/modules/campaigns
 import type { FrutaDto, FrutaDerivadaDto } from "@/modules/campaigns/api/campaign.dto";
 import { parseFecha } from "@/modules/campaigns/api/fecha.util";
 import { DatePicker } from "@/shared/components/ui/date-picker";
+import { campaignFormSchema } from "@/modules/campaigns/api/campaign-form.schema";
+import { getBadRequestFieldErrors, getZodFieldErrors, type FormFieldErrors } from "@/shared/validation/api-form-errors";
+import FieldError from "@/shared/components/FieldError";
 
 interface CampaignCreateModalProps {
     open: boolean;
@@ -30,7 +33,7 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
     const [requerimientoComercial, setRequerimientoComercial] = useState("");
     const [derivadas, setDerivadas] = useState<FrutaDerivadaDto[]>([]);
     const [derivadasLoading, setDerivadasLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<FormFieldErrors>({});
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -41,7 +44,7 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
         setFechaFin("");
         setRequerimientoComercial("");
         setDerivadas([]);
-        setError(null);
+        setErrors({});
         getFrutas()
             .then(setFrutas)
             .catch(() => setFrutas([]));
@@ -59,29 +62,20 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
             .finally(() => setDerivadasLoading(false));
     }, [open, frutaId]);
 
-    const isValid =
-        nombre.trim() !== "" &&
-        frutaId !== null &&
-        fechaInicio !== "" &&
-        fechaFin !== "" &&
-        requerimientoComercial.trim() !== "";
-
     const handleSubmit = async () => {
-        if (!isValid || frutaId === null) return;
+        const validation = campaignFormSchema.safeParse({ nombre, frutaId, fechaInicio, fechaFin, estado: "planificacion", requerimientoComercial });
+        if (!validation.success) { setErrors(getZodFieldErrors(validation.error)); return; }
         setSaving(true);
-        setError(null);
+        setErrors({});
         try {
             await createCampana({
-                nombre,
-                frutaId,
-                fechaInicio: parseFecha(fechaInicio),
-                fechaFin: parseFecha(fechaFin),
-                estado: "planificacion",
-                requerimientoComercial,
+                ...validation.data,
+                fechaInicio: parseFecha(validation.data.fechaInicio),
+                fechaFin: parseFecha(validation.data.fechaFin),
             });
             onSuccess?.();
-        } catch {
-            setError("No se pudo crear la campaña.");
+        } catch (requestError) {
+            setErrors(getBadRequestFieldErrors(requestError, { nombre: "nombre", frutaId: "frutaId", fechaInicio: "fechaInicio", fechaFin: "fechaFin", requerimientoComercial: "requerimientoComercial" }));
         } finally {
             setSaving(false);
         }
@@ -112,10 +106,11 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                         <label className="text-[13px] font-semibold text-ink">Nombre de Campaña:</label>
                         <Input
                             value={nombre}
-                            onChange={(e) => setNombre(e.target.value)}
+                            onChange={(e) => { setNombre(e.target.value); setErrors((p) => ({ ...p, nombre: undefined })); }}
                             placeholder="Ej: Campaña Mango 2026"
                             className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                         />
+                        <FieldError message={errors.nombre} />
                     </div>
 
                     {/* Fechas */}
@@ -124,17 +119,19 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                             <label className="text-[13px] font-semibold text-ink">Fecha Inicio:</label>
                             <DatePicker
                                 value={fechaInicio}
-                                onChange={setFechaInicio}
+                                onChange={(value) => { setFechaInicio(value); setErrors((p) => ({ ...p, fechaInicio: undefined })); }}
                                 className="rounded-lg h-11 border-border text-ink-muted shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
+                            <FieldError message={errors.fechaInicio} />
                         </div>
                         <div className="flex flex-col gap-2.5">
                             <label className="text-[13px] font-semibold text-ink">Fecha Fin:</label>
                             <DatePicker
                                 value={fechaFin}
-                                onChange={setFechaFin}
+                                onChange={(value) => { setFechaFin(value); setErrors((p) => ({ ...p, fechaFin: undefined })); }}
                                 className="rounded-lg h-11 border-border text-ink-muted shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
+                            <FieldError message={errors.fechaFin} />
                         </div>
                     </div>
                     
@@ -144,7 +141,7 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                             <label className="text-[13px] font-semibold text-ink">Seleccionar Frutas:</label>
                             <Select
                                 value={frutaId !== null ? String(frutaId) : ""}
-                                onValueChange={(val) => setFrutaId(val ? Number(val) : null)}
+                                onValueChange={(val) => { setFrutaId(val ? Number(val) : null); setErrors((p) => ({ ...p, frutaId: undefined })); }}
                             >
                                 <SelectTrigger className="w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
                                     <SelectValue placeholder="Selecciona una fruta">
@@ -159,6 +156,7 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <FieldError message={errors.frutaId} />
                         </div>
                     </div>
 
@@ -189,7 +187,7 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                         <div className="relative">
                             <Input
                                 value={requerimientoComercial}
-                                onChange={(e) => setRequerimientoComercial(e.target.value)}
+                                onChange={(e) => { setRequerimientoComercial(e.target.value); setErrors((p) => ({ ...p, requerimientoComercial: undefined })); }}
                                 placeholder="Ej: 3000"
                                 className="rounded-lg h-11 border-border pr-12 shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                             />
@@ -197,9 +195,10 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                                 KG
                             </div>
                         </div>
+                        <FieldError message={errors.requerimientoComercial} />
                     </div>
 
-                    {error && <p className="text-[13px] text-red-500 font-medium">{error}</p>}
+                    {errors._form && <p role="alert" className="text-[13px] text-red-500 font-medium">{errors._form}</p>}
                 </div>
 
                 <div className="flex justify-center gap-4 mt-8">
@@ -212,7 +211,7 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={!isValid || saving}
+                        disabled={saving}
                         className="rounded-lg h-11 px-6 bg-brand hover:bg-brand-dark text-white font-semibold gap-2 shadow-sm transition-colors active:scale-95"
                     >
                         <Leaf size={18} strokeWidth={2.5} />

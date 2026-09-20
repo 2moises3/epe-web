@@ -12,6 +12,9 @@ import {
     getClientesNegocioCampana,
 } from "@/modules/campaigns/api/cliente-negocio-campana.api";
 import type { ClienteNegocioCampana } from "@/modules/campaigns/api/cliente-negocio-campana.mapper";
+import { linkClientSchema } from "@/modules/campaigns/api/campaign-form.schema";
+import { getBadRequestFieldErrors, getZodFieldErrors, type FormFieldErrors } from "@/shared/validation/api-form-errors";
+import FieldError from "@/shared/components/FieldError";
 
 interface CampaignLinkClientModalProps {
     open: boolean;
@@ -28,6 +31,7 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
     const [cantidad, setCantidad] = useState<string>("");
     const [documentoUrl, setDocumentoUrl] = useState<string>("");
     const [isSaving, setIsSaving] = useState(false);
+    const [errors, setErrors] = useState<FormFieldErrors>({});
 
     useEffect(() => {
         if (!open) return;
@@ -50,13 +54,14 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
     };
 
     const handleAdd = () => {
-        if (!campaniaId || !selectedClienteId || !cantidad || !documentoUrl) return;
+        if (!campaniaId) return;
+        const validation = linkClientSchema.safeParse({ clienteNegocioId: Number(selectedClienteId), cantidadKg: Number(cantidad), documentoUrl: documentoUrl.trim() });
+        if (!validation.success) { setErrors(getZodFieldErrors(validation.error)); return; }
 
         setIsSaving(true);
+        setErrors({});
         createClienteNegocioCampana(campaniaId, {
-            clienteNegocioId: Number(selectedClienteId),
-            documentoUrl,
-            cantidadKg: Number(cantidad),
+            ...validation.data,
         })
             .then((created) => {
                 setLinkedClients((prev) => [...prev, created]);
@@ -64,6 +69,9 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                 setCantidad("");
                 setDocumentoUrl("");
             })
+            .catch((requestError: unknown) => setErrors(getBadRequestFieldErrors(requestError, {
+                clienteNegocioId: "clienteNegocioId", documentoUrl: "documentoUrl", cantidadKg: "cantidadKg",
+            })))
             .finally(() => setIsSaving(false));
     };
 
@@ -96,7 +104,7 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                     <div className="flex gap-4 items-start">
                         <div className="flex-1 flex flex-col gap-2.5">
                             <label className="text-[13px] font-semibold text-ink">Seleccionar Cliente:</label>
-                            <Select value={selectedClienteId} onValueChange={(val) => setSelectedClienteId(val || "")}>
+                            <Select value={selectedClienteId} onValueChange={(val) => { setSelectedClienteId(val || ""); setErrors((p) => ({ ...p, clienteNegocioId: undefined })); }}>
                                 <SelectTrigger className="w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
                                     <SelectValue placeholder="Selecciona un cliente" />
                                 </SelectTrigger>
@@ -108,6 +116,7 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <FieldError message={errors.clienteNegocioId} />
                         </div>
 
                         <div className="w-[140px] flex flex-col gap-2.5">
@@ -116,9 +125,10 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                                 type="number"
                                 placeholder="0"
                                 value={cantidad}
-                                onChange={(e) => setCantidad(e.target.value)}
+                                onChange={(e) => { setCantidad(e.target.value); setErrors((p) => ({ ...p, cantidadKg: undefined })); }}
                                 className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
+                            <FieldError message={errors.cantidadKg} />
                         </div>
                     </div>
 
@@ -130,9 +140,10 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                                 type="url"
                                 placeholder="https://..."
                                 value={documentoUrl}
-                                onChange={(e) => setDocumentoUrl(e.target.value)}
+                                onChange={(e) => { setDocumentoUrl(e.target.value); setErrors((p) => ({ ...p, documentoUrl: undefined })); }}
                                 className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                             />
+                            <FieldError message={errors.documentoUrl} />
                         </div>
 
                         <Button
@@ -148,6 +159,7 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                             No se pudo determinar la campaña para vincular clientes.
                         </p>
                     )}
+                    {errors._form && <p role="alert" className="text-xs text-destructive">{errors._form}</p>}
 
                     {/* Clientes Agregados */}
                     <div className="flex flex-col gap-3 mt-2">
