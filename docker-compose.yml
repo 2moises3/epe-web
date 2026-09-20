@@ -1,8 +1,6 @@
 services:
   api:
-    build:
-      context: ../epe-backend
-      target: production
+    image: luiskeny001/app-backend:latest
     environment:
       NODE_ENV: production
       PORT: 3000
