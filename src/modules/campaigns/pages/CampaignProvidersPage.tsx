@@ -19,7 +19,6 @@ import PageHeader from "@/shared/layout/PageHeader";
 import CampaignLinkProviderModal from "@/modules/campaigns/components/CampaignLinkProviderModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
 import CampaignExamModal from "@/modules/campaigns/components/CampaignExamModal";
-import CampaignInterviewModal from "@/modules/campaigns/components/CampaignInterviewModal";
 import { getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
 import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
 
@@ -35,9 +34,8 @@ export default function CampaignProvidersPage() {
     const [activeTab, setActiveTab] = useState<"Productor" | "Acopiador">("Productor");
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
     const [isExamModalOpen, setIsExamModalOpen] = useState(false);
-    const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-    const [successMode, setSuccessMode] = useState<"provider" | "exam" | "interview">("provider");
+    const [successMode, setSuccessMode] = useState<"provider" | "exam">("provider");
 
     const [campaniaProveedores, setCampaniaProveedores] = useState<CampaniaProveedor[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -221,7 +219,9 @@ export default function CampaignProvidersPage() {
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    onClick={() => setIsInterviewModalOpen(true)}
+                                                                    disabled
+                                                                    title="Entrevistas: API no disponible"
+                                                                    aria-label="Entrevistas no disponibles: API no disponible"
                                                                     className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95"
                                                                 >
                                                                     <UserPlus size={18} strokeWidth={2.5} />
@@ -269,16 +269,6 @@ export default function CampaignProvidersPage() {
                 onSave={() => {
                     setIsExamModalOpen(false);
                     setSuccessMode("exam");
-                    setIsSuccessModalOpen(true);
-                }}
-            />
-
-            <CampaignInterviewModal
-                open={isInterviewModalOpen}
-                onOpenChange={setIsInterviewModalOpen}
-                onSave={() => {
-                    setIsInterviewModalOpen(false);
-                    setSuccessMode("interview");
                     setIsSuccessModalOpen(true);
                 }}
             />

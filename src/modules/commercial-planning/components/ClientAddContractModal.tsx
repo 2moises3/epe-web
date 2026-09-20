@@ -10,10 +10,9 @@ import { Button } from "@/shared/components/ui/button";
 interface ClientAddContractModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSuccess?: () => void;
 }
 
-export default function ClientAddContractModal({ open, onOpenChange, onSuccess }: ClientAddContractModalProps) {
+export default function ClientAddContractModal({ open, onOpenChange }: ClientAddContractModalProps) {
     const [kg, setKg] = useState("");
     const [contractFile, setContractFile] = useState<File | null>(null);
     const [fichaFile, setFichaFile] = useState<File | null>(null);
@@ -37,13 +36,16 @@ export default function ClientAddContractModal({ open, onOpenChange, onSuccess }
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" onClick={onSuccess}>
+                    <Button size="xl" disabled>
                         <Save size={20} strokeWidth={2.5} /> Guardar contrato
                     </Button>
                 </>
             }
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                <p className="md:col-span-2 rounded-lg border border-status-warning/30 bg-status-warning/10 p-3 text-sm text-ink-body" role="status">
+                    El registro está pendiente: el backend requiere una campaña y URLs del contrato y ficha técnica. Esta pantalla todavía no puede enviar los archivos seleccionados.
+                </p>
                 {/* Left Column */}
                 <div className="flex flex-col gap-6">
                     <div>

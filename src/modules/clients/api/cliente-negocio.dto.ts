@@ -12,3 +12,18 @@ export interface ClienteNegocioDto {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ContratoClienteNegocioDto {
+  clienteNegocioCampanaId: number;
+  documentoUrl: string;
+  fichaTecnicaUrl: string;
+  kilosAcordados: number;
+  campaniaId: number;
+  nombreCampania: string;
+  fechaRegistro: string;
+}
+
+export interface ContratosClienteNegocioDto {
+  clienteNegocio: ClienteNegocioDto;
+  contratos: ContratoClienteNegocioDto[];
+}

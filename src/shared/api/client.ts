@@ -2,6 +2,10 @@ import axios from "axios";
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: {
+    "Cache-Control": "no-store",
+    Pragma: "no-cache",
+  },
 });
 
 // TODO: agregar un interceptor de request que adjunte el bearer token

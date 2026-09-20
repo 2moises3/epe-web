@@ -46,6 +46,17 @@ Todo lo transversal / no-dominio vive aquí:
 - Regla dura: si no es obvio cómo conectar una vista al backend (falta contrato de API, el dato no existe, o requiere una decisión de producto), el agente **nunca** debe inventar datos ni endpoints — debe preguntarle al usuario antes de escribir código, y mientras tanto dejar esa vista listada como pendiente/ambigua en el reporte.
 - Cada vez que se trabaje en la rama `developer`, el agente debe revisar `doc/reporte-conexion-vistas.md` y `doc/entidades-vistas.md` para identificar qué vistas/documentos quedaron pendientes de avanzar y priorizar continuarlos. Existe un hook de `SessionStart` (configurado en `.claude/settings.json`) que ya inyecta automáticamente la rama actual en cada sesión, así que esta regla se cumple **incluso sin que el usuario lo recuerde**.
 
+### Seguimiento por fecha de integración de APIs y vistas (obligatorio)
+
+- En toda auditoría o cambio de integración, actualizar el archivo único `doc/reporte-conexion-vistas.md`; no crear reportes paralelos. Registrar la fecha ISO (`YYYY-MM-DD`) de la revisión y por vista/componente un estado explícito: **Completo — YYYY-MM-DD**, **Parcial — YYYY-MM-DD** o **Sin cambios — YYYY-MM-DD**. Añadir el motivo/alcance y las APIs/operaciones cubiertas o pendientes.
+- “Completo” significa que las operaciones necesarias y evidentes para el alcance funcional de esa vista consumen la API real; no significa simplemente que exista un `GET`. “Parcial” identifica exactamente qué operaciones están conectadas y cuáles no. “Sin cambios” debe indicar si es intencional/no aplica o si sigue pendiente.
+- Mantener historial por fecha: no reescribir entradas anteriores como si hubieran tenido el estado nuevo. Añadir una actualización fechada y conservar el estado anterior como historial cuando cambie.
+- Auditar las rutas declaradas por los controladores de `epe-backend/src` y contrastarlas con llamadas reales del frontend, incluyendo operaciones de lectura, creación, edición y eliminación; documentar endpoints backend sin vista como tales, sin inventar una vista destino.
+- Antes de implementar una integración ambigua (concepto/dato de negocio sin correspondencia clara, ausencia de endpoint, o decisión de producto), detenerse y consultar al usuario. Registrar la pregunta y dejar esa vista **Sin cambios — fecha / requiere definición** hasta recibir respuesta. No inferir ni fabricar datos o endpoints.
+- Al incorporar APIs nuevas o modificadas, repetir el cruce API↔vista, actualizar estados con la fecha actual y revisar las pruebas pertinentes.
+- No usar datos de prueba/mock/fixtures del frontend como fallback ni en vistas activas. Si no existe un endpoint backend para una vista/operación, deshabilitar el bloque y mostrar claramente que está pendiente de API; registrar la ausencia con fecha en `doc/reporte-conexion-vistas.md`. Conservar los archivos de datos de prueba como referencia histórica si existen; no borrarlos salvo solicitud explícita del usuario.
+- El cache de la aplicación está deshabilitado intencionalmente en desarrollo y producción: no agregar estrategias cache-first/service-worker para documentos, assets ni llamadas API sin autorización explícita. Si se modifica SW o servidor, preservar `no-store` y verificar que no existan cachés antiguos activos.
+
 ## Organización de archivos — checklist
 
 Antes de crear un archivo nuevo, decidir en este orden:
