@@ -1,71 +1,111 @@
-import { useState } from "react";
-import { X, UserSquare, Upload } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/shared/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { X, UserSquare } from "lucide-react";
+import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
-import Hint from "@/shared/components/Hint";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { getClientesNegocio } from "@/modules/clients/api/cliente-negocio.api";
+import type { ClienteNegocio } from "@/modules/clients/api/cliente-negocio.mapper";
+import {
+    createClienteNegocioCampana,
+    deleteClienteNegocioCampana,
+    getClientesNegocioCampana,
+} from "@/modules/campaigns/api/cliente-negocio-campana.api";
+import type { ClienteNegocioCampana } from "@/modules/campaigns/api/cliente-negocio-campana.mapper";
 
 interface CampaignLinkClientModalProps {
     open: boolean;
+    // ponytail: opcional porque CampaignTable aún no pasa el campaniaId de la fila (lo maneja otro agente en paralelo).
+    campaniaId?: number | null;
     onOpenChange: (open: boolean) => void;
     onSave?: () => void;
 }
 
-export default function CampaignLinkClientModal({ open, onOpenChange, onSave }: CampaignLinkClientModalProps) {
-    const [selectedClient, setSelectedClient] = useState<string>("");
+export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange, onSave }: CampaignLinkClientModalProps) {
+    const [clientes, setClientes] = useState<ClienteNegocio[]>([]);
+    const [linkedClients, setLinkedClients] = useState<ClienteNegocioCampana[]>([]);
+    const [selectedClienteId, setSelectedClienteId] = useState<string>("");
     const [cantidad, setCantidad] = useState<string>("");
+    const [documentoUrl, setDocumentoUrl] = useState<string>("");
+    const [isSaving, setIsSaving] = useState(false);
 
-    const [addedClients, setAddedClients] = useState([
-        { id: 1, contact: "Pepe Alonso", company: "Sutrimex" },
-        { id: 2, contact: "Pepe Alonso", company: "Fixgrom" }
-    ]);
+    useEffect(() => {
+        if (!open) return;
+        getClientesNegocio().then(setClientes);
+    }, [open]);
 
-    const handleRemove = (id: number) => {
-        setAddedClients(addedClients.filter(c => c.id !== id));
+    useEffect(() => {
+        if (!open || !campaniaId) return;
+        getClientesNegocioCampana(campaniaId).then(setLinkedClients);
+    }, [open, campaniaId]);
+
+    const linkedClienteIds = new Set(linkedClients.map((l) => l.clienteNegocioId));
+    const availableClientes = clientes.filter((c) => !linkedClienteIds.has(c.clienteNegocioId));
+
+    const handleRemove = (clienteNegocioCampanaId: number) => {
+        if (!campaniaId) return;
+        deleteClienteNegocioCampana(campaniaId, clienteNegocioCampanaId).then(() => {
+            setLinkedClients((prev) => prev.filter((l) => l.clienteNegocioCampanaId !== clienteNegocioCampanaId));
+        });
     };
 
     const handleAdd = () => {
-        if (!selectedClient) return;
+        if (!campaniaId || !selectedClienteId || !cantidad || !documentoUrl) return;
 
-        const company = selectedClient === "sutrimex" ? "Sutrimex" : "Fixgrom";
-        const newClient = {
-            id: Date.now(),
-            contact: "Pepe Alonso",
-            company
-        };
-
-        setAddedClients([...addedClients, newClient]);
-        setSelectedClient("");
-        setCantidad("");
+        setIsSaving(true);
+        createClienteNegocioCampana(campaniaId, {
+            clienteNegocioId: Number(selectedClienteId),
+            documentoUrl,
+            cantidadKg: Number(cantidad),
+        })
+            .then((created) => {
+                setLinkedClients((prev) => [...prev, created]);
+                setSelectedClienteId("");
+                setCantidad("");
+                setDocumentoUrl("");
+            })
+            .finally(() => setIsSaving(false));
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[550px] md:max-w-xl p-5 sm:p-8 rounded-2xl bg-white border-none shadow-2xl gap-0 max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="mb-6">
-                    <DialogTitle className="text-xl font-bold text-ink">
-                        Registrar Clientes
-                    </DialogTitle>
-                </DialogHeader>
-
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Registrar Clientes"
+            className="sm:max-w-xl"
+            footer={
+                <>
+                    <Button
+                        variant="outline"
+                        size="xl"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <X size={20} strokeWidth={2.5} /> Cancelar
+                    </Button>
+                    <Button
+                        size="xl"
+                        onClick={() => onSave ? onSave() : onOpenChange(false)}
+                    >
+                        Guardar
+                    </Button>
+                </>
+            }
+        >
                 <div className="flex flex-col gap-5">
                     {/* Cliente + Cantidad */}
                     <div className="flex gap-4 items-start">
                         <div className="flex-1 flex flex-col gap-2.5">
                             <label className="text-[13px] font-semibold text-ink">Seleccionar Cliente:</label>
-                            <Select value={selectedClient} onValueChange={(val) => setSelectedClient(val || "")}>
+                            <Select value={selectedClienteId} onValueChange={(val) => setSelectedClienteId(val || "")}>
                                 <SelectTrigger className="w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
                                     <SelectValue placeholder="Selecciona un cliente" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg">
-                                    <SelectItem value="sutrimex" className="rounded-lg">Sutrimex</SelectItem>
-                                    <SelectItem value="fixgrom" className="rounded-lg">Fixgrom</SelectItem>
+                                    {availableClientes.map((cliente) => (
+                                        <SelectItem key={cliente.clienteNegocioId} value={String(cliente.clienteNegocioId)} className="rounded-lg">
+                                            {cliente.nombreEmpresa}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -82,71 +122,66 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave }: 
                         </div>
                     </div>
 
-                    {/* Adjuntar + Agregar */}
-                    <div className="flex items-center justify-between gap-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="rounded-lg h-11 border-dashed border-brand-border text-ink-body hover:border-brand hover:text-brand hover:bg-brand-surface font-semibold px-5 flex gap-2 transition-colors active:scale-95"
-                        >
-                            <Upload size={18} />
-                            Adjuntar requerimientos
-                        </Button>
+                    {/* Documento (URL) + Agregar */}
+                    <div className="flex items-end justify-between gap-4">
+                        <div className="flex-1 flex flex-col gap-2.5">
+                            <label className="text-[13px] font-semibold text-ink">URL de requerimientos:</label>
+                            <Input
+                                type="url"
+                                placeholder="https://..."
+                                value={documentoUrl}
+                                onChange={(e) => setDocumentoUrl(e.target.value)}
+                                className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
+                            />
+                        </div>
 
                         <Button
                             onClick={handleAdd}
-                            disabled={!selectedClient}
+                            disabled={!campaniaId || !selectedClienteId || !cantidad || !documentoUrl || isSaving}
                             className="h-11 rounded-lg bg-brand hover:bg-brand-dark text-white font-bold px-8 shadow-sm disabled:opacity-50 transition-colors active:scale-95 shrink-0"
                         >
                             Agregar
                         </Button>
                     </div>
+                    {!campaniaId && (
+                        <p className="text-[12px] text-destructive font-medium -mt-2">
+                            No se pudo determinar la campaña para vincular clientes.
+                        </p>
+                    )}
 
                     {/* Clientes Agregados */}
                     <div className="flex flex-col gap-3 mt-2">
                         <label className="text-[13px] font-semibold text-ink">Clientes agregados:</label>
-                        <div className="flex flex-wrap gap-3">
-                            {addedClients.map((client) => (
-                                <div key={client.id} className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-white min-w-[200px]">
-                                    <div className="w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0">
-                                        <UserSquare size={20} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="flex flex-col flex-1">
-                                        <span className="text-[13px] font-bold text-ink leading-tight mb-0.5">{client.contact}</span>
-                                        <span className="text-[11px] font-medium text-ink-muted">Cliente - {client.company}</span>
-                                    </div>
-                                    <Hint label="Quitar">
+                        {linkedClients.length === 0 ? (
+                            <p className="text-[13px] text-ink-muted">Aún no hay clientes vinculados a esta campaña.</p>
+                        ) : (
+                            <div className="flex flex-wrap gap-3">
+                                {linkedClients.map((client) => (
+                                    <div key={client.clienteNegocioCampanaId} className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-white min-w-[200px]">
+                                        <div className="w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0">
+                                            <UserSquare size={20} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="flex flex-col flex-1">
+                                            <span className="text-[13px] font-bold text-ink leading-tight mb-0.5">
+                                                {client.clienteNegocio?.nombreContacto ?? "-"}
+                                            </span>
+                                            <span className="text-[11px] font-medium text-ink-muted">
+                                                Cliente - {client.clienteNegocio?.nombreEmpresa ?? "-"}
+                                            </span>
+                                        </div>
                                         <button
-                                            onClick={() => handleRemove(client.id)}
+                                            onClick={() => handleRemove(client.clienteNegocioCampanaId)}
                                             className="text-ink-muted hover:text-destructive transition-colors shrink-0"
-                                            aria-label={`Quitar ${client.contact}`}
                                         >
                                             <X size={16} strokeWidth={2.5} />
                                         </button>
-                                    </Hint>
-                                </div>
-                            ))}
-                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* Botones Footer */}
-                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-8 [&>button]:w-full sm:[&>button]:w-auto">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-11 px-6 border-border text-ink-body font-bold hover:bg-muted transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={() => onSave ? onSave() : onOpenChange(false)}
-                        className="rounded-lg h-11 px-8 bg-brand hover:bg-brand-dark text-white font-bold shadow-sm transition-colors active:scale-95"
-                    >
-                        Guardar
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </AppModal>
     );
 }

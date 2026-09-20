@@ -89,7 +89,7 @@ function DrawerSwipeHandle({
       data-slot="drawer-swipe-handle"
       aria-hidden="true"
       className={cn(
-        "relative z-10 flex shrink-0 cursor-grab transition-opacity duration-200 group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 group-data-[swipe-axis=x]/drawer-popup:h-full group-data-[swipe-axis=x]/drawer-popup:w-3 group-data-[swipe-axis=x]/drawer-popup:items-center group-data-[swipe-axis=y]/drawer-popup:h-3 group-data-[swipe-axis=y]/drawer-popup:w-full group-data-[swipe-axis=y]/drawer-popup:justify-center group-data-[swipe-direction=down]/drawer-popup:items-end group-data-[swipe-direction=left]/drawer-popup:order-last group-data-[swipe-direction=left]/drawer-popup:justify-start group-data-[swipe-direction=right]/drawer-popup:justify-end group-data-[swipe-direction=up]/drawer-popup:order-last group-data-[swipe-direction=up]/drawer-popup:items-start after:block after:shrink-0 after:rounded-full after:bg-muted group-data-[swipe-axis=x]/drawer-popup:after:h-24 group-data-[swipe-axis=x]/drawer-popup:after:w-1 group-data-[swipe-axis=y]/drawer-popup:after:h-1 group-data-[swipe-axis=y]/drawer-popup:after:w-24 active:cursor-grabbing",
+        "relative z-10 flex shrink-0 cursor-grab transition-opacity duration-200 group-data-nested-drawer-open/drawer-popup:opacity-0 group-data-nested-drawer-swiping/drawer-popup:opacity-100 groupdata-[-swipe-axis=x]/drawer-popup:h-full groupdata-[-swipe-axis=x]/drawer-popup:w-3 groupdata-[-swipe-axis=x]/drawer-popup:items-center groupdata-[-swipe-axis=y]/drawer-popup:h-3 groupdata-[-swipe-axis=y]/drawer-popup:w-full groupdata-[-swipe-axis=y]/drawer-popup:justify-center groupdata-[-swipe-direction=down]/drawer-popup:items-end groupdata-[-swipe-direction=left]/drawer-popup:order-last groupdata-[-swipe-direction=left]/drawer-popup:justify-start groupdata-[-swipe-direction=right]/drawer-popup:justify-end groupdata-[-swipe-direction=up]/drawer-popup:order-last groupdata-[-swipe-direction=up]/drawer-popup:items-start after:block after:shrink-0 after:rounded-full after:bg-muted groupdata-[-swipe-axis=x]/drawer-popup:after:h-24 groupdata-[-swipe-axis=x]/drawer-popup:after:w-1 groupdata-[-swipe-axis=y]/drawer-popup:after:h-1 groupdata-[-swipe-axis=y]/drawer-popup:after:w-24 active:cursor-grabbing",
         className
       )}
       {...props}
@@ -169,7 +169,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="drawer-header"
       className={cn(
-        "flex shrink-0 flex-col gap-0.5 p-4 pb-0 group-data-[swipe-axis=y]/drawer-popup:text-center md:gap-0.5 md:text-left",
+        "flex shrink-0 flex-col gap-0.5 p-4 pb-0 groupdata-[-swipe-axis=y]/drawer-popup:text-center md:gap-0.5 md:text-left",
         className
       )}
       {...props}

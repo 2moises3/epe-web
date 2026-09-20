@@ -1,9 +1,6 @@
-import { MapPin, Sprout, Leaf, Users } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-} from "@/shared/components/ui/dialog";
+import { MapPin, Sprout, Leaf, X, Save } from "lucide-react";
+import AppModal from "@/shared/components/AppModal";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 
@@ -15,78 +12,77 @@ interface CampaignInterviewModalProps {
 
 export default function CampaignInterviewModal({ open, onOpenChange, onSave }: CampaignInterviewModalProps) {
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[1100px] p-0 rounded-2xl bg-white border-none shadow-2xl overflow-hidden gap-0 max-h-[90vh] overflow-y-auto">
-                {/* Header Custom */}
-                <div className="flex items-center gap-3 sm:gap-4 px-5 sm:px-8 py-4 sm:py-6 border-b border-border">
-                    <div className="w-12 h-12 rounded-full bg-brand-surface flex items-center justify-center text-brand">
-                        <Users size={24} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex flex-col">
-                        <DialogTitle className="text-[20px] font-bold text-ink">
-                            Informe de Entrevista
-                        </DialogTitle>
-                        <span className="text-[14px] text-ink-muted font-medium">Fundo Los Olivos</span>
-                    </div>
-                </div>
-
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Informe de Entrevista"
+            description="Fundo Los Olivos"
+            className="sm:max-w-275"
+            footer={
+                <>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                        <X size={20} strokeWidth={2.5} /> Cancelar
+                    </Button>
+                    <Button size="xl" onClick={() => onSave ? onSave() : onOpenChange(false)}>
+                        <Save size={20} strokeWidth={2.5} /> Guardar entrevista
+                    </Button>
+                </>
+            }
+        >
                 {/* Content */}
-                <div className="p-5 sm:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-x-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-x-12">
                     {/* Left Column */}
                     <div className="flex flex-col gap-8 lg:border-r lg:border-border lg:pr-12">
                         {/* Datos del cultivo */}
                         <div className="flex flex-col gap-5">
                             <div className="flex items-center gap-2 text-brand pb-2 border-b border-border">
                                 <Sprout size={18} strokeWidth={2.5} />
-                                <h3 className="text-[13px] font-bold uppercase tracking-wider">Datos del cultivo</h3>
+                                <h3 className="text-[13px] font-bold uppercase tracking-wider text-brand">Datos del cultivo</h3>
                             </div>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Densidad plantación</label>
+                                <Field>
+                                    <FieldLabel variant="compact">Densidad plantación</FieldLabel>
                                     <Input
                                         placeholder="0.00"
-                                        className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                     />
-                                </div>
-                                <div className="flex flex-col gap-2 relative">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Distanciamiento</label>
+                                </Field>
+                                <Field className="relative">
+                                    <FieldLabel variant="compact">Distanciamiento</FieldLabel>
                                     <div className="relative">
                                         <Input
                                             placeholder="0.00"
-                                            className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand pr-8"
+                                            className="pr-8"
                                         />
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink">m</span>
                                     </div>
-                                </div>
+                                </Field>
                             </div>
 
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[12px] font-bold text-muted-foreground uppercase">Frecuencia de riego (Cantidad / día)</label>
+                            <Field>
+                                <FieldLabel variant="compact">Frecuencia de riego (Cantidad / día)</FieldLabel>
                                 <Input
                                     placeholder="40"
-                                    className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                 />
-                            </div>
+                            </Field>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Ha total finca</label>
+                                <Field>
+                                    <FieldLabel variant="compact">Ha total finca</FieldLabel>
                                     <Input
                                         placeholder="0"
-                                        className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                     />
-                                </div>
-                                <div className="flex flex-col gap-2 relative">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Ha del cultivo</label>
+                                </Field>
+                                <Field className="relative">
+                                    <FieldLabel variant="compact">Ha del cultivo</FieldLabel>
                                     <div className="relative">
                                         <Input
                                             placeholder="0"
-                                            className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand pr-8"
+                                            className="pr-8"
                                         />
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink">ha</span>
                                     </div>
-                                </div>
+                                </Field>
                             </div>
                         </div>
 
@@ -94,27 +90,26 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         <div className="flex flex-col gap-5">
                             <div className="flex items-center gap-2 text-brand pb-2 border-b border-border">
                                 <Leaf size={18} strokeWidth={2.5} />
-                                <h3 className="text-[13px] font-bold uppercase tracking-wider">Fertilización</h3>
+                                <h3 className="text-[13px] font-bold uppercase tracking-wider text-brand">Fertilización</h3>
                             </div>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Nombre de aplicación</label>
+                                <Field>
+                                    <FieldLabel variant="compact">Nombre de aplicación</FieldLabel>
                                     <Input
                                         placeholder="Fertilizante X"
-                                        className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                     />
-                                </div>
-                                <div className="flex flex-col gap-2 relative">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Aplicaciones al año</label>
+                                </Field>
+                                <Field className="relative">
+                                    <FieldLabel variant="compact">Aplicaciones al año</FieldLabel>
                                     <div className="relative">
                                         <Input
                                             placeholder="3"
-                                            className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand pr-10"
+                                            className="pr-10"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink">/año</span>
                                     </div>
-                                </div>
+                                </Field>
                             </div>
                         </div>
                     </div>
@@ -123,64 +118,46 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                     <div className="flex flex-col gap-5">
                         <div className="flex items-center gap-2 text-brand pb-2 border-b border-border">
                             <MapPin size={18} strokeWidth={2.5} />
-                            <h3 className="text-[13px] font-bold uppercase tracking-wider">Ubicación</h3>
+                            <h3 className="text-[13px] font-bold uppercase tracking-wider text-brand">Ubicación</h3>
                         </div>
 
                         <div className="grid grid-cols-3 gap-3">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] font-bold text-muted-foreground uppercase">Departamento</label>
-                                <Input placeholder="Piura" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand text-[13px]" />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] font-bold text-muted-foreground uppercase">Provincia</label>
-                                <Input placeholder="Sullana" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand text-[13px]" />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] font-bold text-muted-foreground uppercase">Distrito</label>
-                                <Input placeholder="Marcavelica" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand text-[13px]" />
-                            </div>
+                            <Field>
+                                <FieldLabel variant="compact" className="text-[10px]">Departamento</FieldLabel>
+                                <Input placeholder="Piura" className="text-[13px]" />
+                            </Field>
+                            <Field>
+                                <FieldLabel variant="compact" className="text-[10px]">Provincia</FieldLabel>
+                                <Input placeholder="Sullana" className="text-[13px]" />
+                            </Field>
+                            <Field>
+                                <FieldLabel variant="compact" className="text-[10px]">Distrito</FieldLabel>
+                                <Input placeholder="Marcavelica" className="text-[13px]" />
+                            </Field>
                         </div>
 
                         {/* Fake Map */}
-                        <div className="h-[200px] w-full rounded-2xl border-brand-surface bg-brand-surface/20 overflow-hidden relative mt-2 flex flex-col items-center justify-center gap-2">
+                        <div className="h-50 w-full rounded-2xl border-brand-surface bg-brand-surface/20 overflow-hidden relative mt-2 flex flex-col items-center justify-center gap-2">
                             {/* Grid overlay for map look */}
                             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(var(--brand) 1px, transparent 1px), linear-gradient(90deg, var(--brand) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                            <div className="relative z-10 w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center text-brand">
+                            <div className="relative z-10 w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center" style={{ color: "var(--brand-gradient-mid)" }}>
                                 <MapPin size={24} strokeWidth={2.5} />
                             </div>
                             <span className="relative z-10 text-[13px] font-bold text-brand">Mapa de ubicación</span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-2">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[12px] font-bold text-muted-foreground uppercase">Latitud</label>
-                                <Input placeholder="4" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[12px] font-bold text-muted-foreground uppercase">Longitud</label>
-                                <Input placeholder="5" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
-                            </div>
+                            <Field>
+                                <FieldLabel variant="compact">Latitud</FieldLabel>
+                                <Input placeholder="4" />
+                            </Field>
+                            <Field>
+                                <FieldLabel variant="compact">Longitud</FieldLabel>
+                                <Input placeholder="5" />
+                            </Field>
                         </div>
                     </div>
                 </div>
-
-                {/* Botones Footer */}
-                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 px-5 sm:px-8 py-4 sm:py-5 border-t border-border bg-surface-page/60 [&>button]:w-full sm:[&>button]:w-auto">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-11 px-6 border-border text-ink-body font-bold shadow-none hover:bg-muted transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={() => onSave ? onSave() : onOpenChange(false)}
-                        className="rounded-lg h-11 px-8 bg-brand hover:bg-brand-dark text-white font-bold shadow-sm transition-colors active:scale-95"
-                    >
-                        Guardar entrevista
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </AppModal>
     );
 }

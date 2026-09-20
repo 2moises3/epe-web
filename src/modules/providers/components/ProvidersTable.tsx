@@ -1,167 +1,94 @@
-import { useState } from "react";
-import { Pencil, Eye, FileArchive, Truck } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/components/ui/table";
-import { Card, CardContent } from "@/shared/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import { FileArchive, MapPin, Phone, Truck, UserRound } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
+import TableCard from "@/shared/components/TableCard";
+import { TABLE_HEAD_BG, TableRowLead } from "@/shared/components/DataTableRow";
+import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared/components/TableGridCard";
+import { TableToolbar, TableCountPill, TableViewToggle, type TableViewMode } from "@/shared/components/TableToolbar";
+import RowActions from "@/shared/components/RowActions";
 import { Button } from "@/shared/components/ui/button";
-import StatusBadge from "@/shared/components/StatusBadge";
-import RowActions, { type RowAction } from "@/shared/components/RowActions";
-import ProviderInterviewModal from "./ProviderInterviewModal";
-import ProviderEditModal from "./ProviderEditModal";
-import ProviderViewModal from "./ProviderViewModal";
+import ProviderInterviewModal from "@/modules/providers/components/ProviderInterviewModal";
+import { getProveedores } from "@/modules/providers/api/proveedor.api";
+import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 
-interface ProvidersTableProps {
-    data: any[];
-    hasActiveFilters: boolean;
-    onClearFilters: () => void;
-}
+const PAGE_SIZE = 8;
 
-export default function ProvidersTable({ data, hasActiveFilters, onClearFilters }: ProvidersTableProps) {
+export default function ProvidersTable({ search = "" }: { search?: string }) {
     const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
-    const [editingProviderId, setEditingProviderId] = useState<number | null>(null);
-    const [viewingProviderId, setViewingProviderId] = useState<number | null>(null);
+    const [providers, setProviders] = useState<Proveedor[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [viewMode, setViewMode] = useState<TableViewMode>("table");
 
-    /** Editar y Ver detalles quedan siempre visibles; el resto se agrupa en el menú de "más opciones" */
-    const getRowActions = (row: { id: number }) => {
-        const primary: RowAction[] = [
-            { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditingProviderId(row.id) },
-            { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => setViewingProviderId(row.id) },
-        ];
-        const secondary: RowAction[] = [
-            { label: "Ver entrevista", icon: <FileArchive size={16} strokeWidth={2.5} />, onClick: () => setIsInterviewModalOpen(true) },
-        ];
-        return { primary, secondary };
-    };
+    useEffect(() => {
+        getProveedores()
+            .then(setProviders)
+            .catch(() => setError("No se pudieron cargar los proveedores."))
+            .finally(() => setIsLoading(false));
+    }, []);
+
+    if (isLoading || error) {
+        return <div className={`rounded-2xl border border-border bg-white p-6 text-center ${error ? "text-red-600" : "text-ink-muted"}`}>{error ?? "Cargando proveedores..."}</div>;
+    }
+
+    const filteredProviders = useMemo(() => {
+        const query = search.trim().toLocaleLowerCase();
+        if (!query) return providers;
+        return providers.filter((provider) =>
+            `${provider.nombres} ${provider.apellido} ${provider.tipoDocumento} ${provider.nmrDocumento} ${provider.email} ${provider.zona}`
+                .toLocaleLowerCase()
+                .includes(query),
+        );
+    }, [providers, search]);
+    const pageCount = Math.ceil(filteredProviders.length / PAGE_SIZE);
+    const currentPage = Math.min(page, Math.max(1, pageCount));
+    const pageItems = filteredProviders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const interviewAction = [{ label: "Ver entrevista", icon: <FileArchive size={18} strokeWidth={2.5} />, onClick: () => setIsInterviewModalOpen(true) }];
 
     return (
         <>
-            <Card className="rounded-2xl border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-                <CardContent className="p-4 sm:p-6 flex flex-col gap-5 sm:gap-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0">
-                                <Truck size={24} strokeWidth={2.5} />
-                            </div>
-                            <div className="flex flex-col">
-                                <h2 className="text-[15px] sm:text-[17px] font-bold text-ink leading-tight mb-1">Proveedores Registrados</h2>
-                                <p className="text-[12.5px] sm:text-[13px] text-ink-muted font-medium">Gestiona, consulta y da seguimiento a todos tus proveedores registrados.</p>
-                            </div>
-                        </div>
-                        <div className="text-[13px] text-muted-foreground font-medium">
-                            Mostrando <span className="font-bold">{data.length}</span> de <span className="font-bold">{data.length}</span> proveedores
-                        </div>
-                    </div>
+            <TableCard
+                icon={<Truck size={24} strokeWidth={2.5} />}
+                title="Proveedores Registrados"
+                description="Gestiona, consulta y da seguimiento a todos tus proveedores registrados."
+                headerRight={<TableToolbar><TableCountPill icon={<Truck size={16} strokeWidth={2.5} className="text-brand" />} count={filteredProviders.length} label="proveedores" /><TableViewToggle value={viewMode} onChange={setViewMode} /></TableToolbar>}
+                isEmpty={pageItems.length === 0}
+                emptyTitle={search.trim() ? "Sin resultados" : "Aún no hay proveedores"}
+                emptyDescription={search.trim() ? "No hay proveedores que coincidan con la búsqueda." : "Los proveedores registrados aparecerán acá."}
+                page={currentPage}
+                pageCount={pageCount}
+                onPageChange={setPage}
+            >
+                <div className={`flex flex-col gap-3 ${viewMode === "grid" ? "sm:grid sm:grid-cols-2 lg:grid-cols-3" : "sm:hidden"}`}>
+                    {pageItems.map((row) => <TableGridCard key={row.proveedorId} icon={<UserRound size={18} strokeWidth={2} />} title={`${row.nombres} ${row.apellido}`} subtitle={`DNI ${row.nmrDocumento}`} actions={<RowActions primary={interviewAction} />}>
+                        <TableGridCardFields>
+                            <TableGridCardField label="Zona" value={row.zona || "—"} />
+                            <TableGridCardField label="Teléfono" value={row.telefono || "—"} />
+                        </TableGridCardFields>
+                    </TableGridCard>)}
+                </div>
 
-                    {data.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center bg-surface-page/30 rounded-xl border border-dashed border-border/60">
-                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-border">
-                                <Truck className="text-ink-muted/50" size={32} strokeWidth={1.5} />
-                            </div>
-                            <h3 className="text-[16px] font-bold text-ink mb-1">No se encontraron resultados</h3>
-                            <p className="text-[13.5px] text-ink-muted mb-4 max-w-md">
-                                {hasActiveFilters 
-                                    ? "No hay proveedores que coincidan con los filtros aplicados. Intenta con otros criterios de búsqueda."
-                                    : "Aún no hay proveedores registrados. Haz clic en 'Nuevo Proveedor' para comenzar."}
-                            </p>
-                            {hasActiveFilters && (
-                                <Button 
-                                    onClick={onClearFilters}
-                                    variant="outline" 
-                                    className="h-9 px-4 rounded-lg font-semibold border-border text-brand hover:text-brand-dark hover:bg-brand-surface shadow-none transition-colors"
-                                >
-                                    Limpiar filtros
-                                </Button>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            {/* Móvil: tarjeta por proveedor en vez de tabla con scroll lateral */}
-                            <div className="flex flex-col gap-3 sm:hidden">
-                                {data.map((row) => (
-                            <div
-                                key={row.id}
-                                className={`rounded-xl border border-border border-l-[3px] bg-white overflow-hidden ${row.estado === "Aprobado" ? "border-l-brand" : "border-l-status-highlight"}`}
-                            >
-                                <div className="flex items-start justify-between gap-3 p-4 pb-3">
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-[15px] font-bold text-ink leading-tight truncate">{row.nombre}</span>
-                                        <span className="text-[12.5px] text-ink-muted font-medium">DNI {row.dni}</span>
-                                    </div>
-                                    <StatusBadge status={row.estado} />
-                                </div>
-
-                                <div className="mx-4 grid grid-cols-2 gap-3 rounded-lg bg-surface-page border border-border p-3">
-                                    <div className="flex flex-col">
-                                        <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Fruta</span>
-                                        <span className="text-[13px] font-semibold text-ink">{row.fruta}</span>
-                                    </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">Categoría</span>
-                                        <span className="text-[13px] font-semibold text-ink truncate">{row.categoria}</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center mt-3 px-2.5 py-1.5 border-t border-border bg-surface-page/50 text-ink-muted">
-                                    <RowActions {...getRowActions(row)} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="hidden sm:block rounded-xl overflow-hidden border border-border">
-                        <Table>
-                            <TableHeader className="bg-surface-page">
-                                <TableRow className="border-b border-border hover:bg-transparent">
-                                    <TableHead className="text-ink font-semibold h-14 px-6">Nombre</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">DNI</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">Fruta</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">Categoría de Fruta</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">Estado</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-40">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {data.map((row) => (
-                                    <TableRow key={row.id} className="border-b border-border hover:bg-surface-page/60 transition-colors">
-                                        <TableCell className="font-medium text-ink h-16 px-6">{row.nombre}</TableCell>
-                                        <TableCell className="text-ink-body font-medium">{row.dni}</TableCell>
-                                        <TableCell className="text-ink-body font-medium">{row.fruta}</TableCell>
-                                        <TableCell className="text-ink-body font-medium">{row.categoria}</TableCell>
-                                        <TableCell>
-                                            <StatusBadge status={row.estado} />
-                                        </TableCell>
-                                        <TableCell className="px-6">
-                                            <RowActions {...getRowActions(row)} className="justify-end text-ink-muted" />
-                                        </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        </>
-                    )}
-                </CardContent>
-            </Card>
-            <ProviderInterviewModal 
-                open={isInterviewModalOpen} 
-                onOpenChange={setIsInterviewModalOpen}
-            />
-            <ProviderEditModal 
-                open={editingProviderId !== null}
-                onOpenChange={(open) => !open && setEditingProviderId(null)}
-                onSuccess={() => setEditingProviderId(null)}
-            />
-            <ProviderViewModal 
-                open={viewingProviderId !== null}
-                onOpenChange={(open) => !open && setViewingProviderId(null)}
-                providerId={viewingProviderId}
-            />
+                {viewMode === "table" && <div className="hidden overflow-hidden rounded-xl border border-border sm:block">
+                    <Table>
+                        <TableHeader className={TABLE_HEAD_BG}><TableRow className="border-b border-border hover:bg-transparent">
+                            <TableHead className="h-14 px-6 font-semibold text-ink">Proveedor</TableHead>
+                            <TableHead className="h-14 font-semibold text-ink">Documento</TableHead>
+                            <TableHead className="h-14 font-semibold text-ink">Zona</TableHead>
+                            <TableHead className="h-14 font-semibold text-ink">Teléfono</TableHead>
+                            <TableHead className="h-14 w-40 px-6 text-center font-semibold text-ink">Acciones</TableHead>
+                        </TableRow></TableHeader>
+                        <TableBody>{pageItems.map((row) => <TableRow key={row.proveedorId} className="border-b border-border transition-colors hover:bg-surface-page/60">
+                            <TableCell className="h-20 px-6"><TableRowLead icon={<UserRound size={20} strokeWidth={2} />} title={`${row.nombres} ${row.apellido}`} subtitle={row.email} /></TableCell>
+                            <TableCell className="font-medium text-ink-body">{row.tipoDocumento} {row.nmrDocumento}</TableCell>
+                            <TableCell><div className="flex items-center gap-2 text-ink-body"><MapPin size={16} className="text-ink-muted" />{row.zona || "—"}</div></TableCell>
+                            <TableCell><div className="flex items-center gap-2 text-ink-body"><Phone size={16} className="text-ink-muted" />{row.telefono || "—"}</div></TableCell>
+                            <TableCell className="px-6"><div className="flex justify-center"><Button variant="ghost" size="icon" aria-label="Ver entrevista" title="Ver entrevista" onClick={() => setIsInterviewModalOpen(true)} className="h-9 w-9 rounded-lg text-ink-muted transition-colors hover:bg-brand-surface hover:text-brand"><FileArchive size={18} strokeWidth={2.5} /></Button></div></TableCell>
+                        </TableRow>)}</TableBody>
+                    </Table>
+                </div>}
+            </TableCard>
+            <ProviderInterviewModal open={isInterviewModalOpen} onOpenChange={setIsInterviewModalOpen} />
         </>
     );
 }

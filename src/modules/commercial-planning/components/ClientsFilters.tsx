@@ -1,79 +1,46 @@
-import { Search, Settings2, CalendarDays } from "lucide-react";
-import { Input } from "@/shared/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent } from "@/shared/components/ui/card";
+import FilterBar, { FilterDateField, FilterSearch, FilterSelectField, type FilterSelectOption } from "@/shared/components/FilterBar";
 
-export default function ClientsFilters() {
+const TYPE_OPTIONS: FilterSelectOption[] = [
+    { value: "productor", label: "Productor" },
+    { value: "acopiador", label: "Acopiador" },
+];
+
+const STATUS_OPTIONS: FilterSelectOption[] = [
+    { value: "aprobado", label: "Aprobado" },
+    { value: "por aprobar", label: "Por aprobar" },
+];
+
+interface ClientsFiltersProps {
+    search: string;
+    onSearchChange: (value: string) => void;
+    type: string;
+    onTypeChange: (value: string) => void;
+    registrationDate: string;
+    onRegistrationDateChange: (value: string) => void;
+    status: string;
+    onStatusChange: (value: string) => void;
+    hasActiveFilters: boolean;
+    onClear: () => void;
+}
+
+export default function ClientsFilters({
+    search,
+    onSearchChange,
+    type,
+    onTypeChange,
+    registrationDate,
+    onRegistrationDateChange,
+    status,
+    onStatusChange,
+    hasActiveFilters,
+    onClear,
+}: ClientsFiltersProps) {
     return (
-        <Card className="mb-8 border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] rounded-2xl">
-            <CardContent className="p-4 sm:p-6 flex flex-col gap-5 sm:gap-6">
-                <div className="flex items-start gap-3">
-                    <Search className="text-brand mt-0.5" size={22} strokeWidth={2.5} />
-                    <div className="flex flex-col">
-                        <h2 className="text-[16px] font-bold text-ink leading-tight">Filtros de Búsqueda</h2>
-                        <p className="text-[13px] text-ink-muted font-medium">Encuentra y filtra tus clientes</p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 sm:items-end w-full">
-                    <div className="w-full sm:flex-[2] sm:min-w-[250px] relative">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} strokeWidth={2} />
-                        <Input
-                            placeholder="Buscar cliente..."
-                            className="pl-10 rounded-lg h-11 border-border bg-white shadow-none text-[14px] focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
-                        />
-                    </div>
-
-                    <div className="w-full sm:flex-1 sm:min-w-[150px] flex flex-col gap-1.5">
-                        <label className="text-[13px] font-bold text-ink">Tipo</label>
-                        <Select defaultValue="todos">
-                            <SelectTrigger className="w-full rounded-lg !h-11 border-border shadow-none text-ink font-medium [&>svg]:opacity-50 focus:ring-1 focus:ring-brand/30 focus:border-brand">
-                                <SelectValue placeholder="todos" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-lg">
-                                <SelectItem value="todos" className="rounded-lg">todos</SelectItem>
-                                <SelectItem value="productor" className="rounded-lg">productor</SelectItem>
-                                <SelectItem value="acopiador" className="rounded-lg">acopiador</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="w-full sm:flex-1 sm:min-w-[150px] flex flex-col gap-1.5">
-                        <label className="text-[13px] font-bold text-ink">Fecha Registro</label>
-                        <Select>
-                            <SelectTrigger className="w-full rounded-lg !h-11 border-border shadow-none text-ink-muted font-medium [&>svg]:opacity-50 focus:ring-1 focus:ring-brand/30 focus:border-brand">
-                                <div className="flex items-center gap-2">
-                                    <CalendarDays size={16} className="opacity-70" />
-                                    <SelectValue placeholder="--/--/----" />
-                                </div>
-                            </SelectTrigger>
-                            <SelectContent className="rounded-lg">
-                                <SelectItem value="today" className="rounded-lg">Hoy</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="w-full sm:flex-1 sm:min-w-[150px] flex flex-col gap-1.5">
-                        <label className="text-[13px] font-bold text-ink">Estado</label>
-                        <Select defaultValue="estados">
-                            <SelectTrigger className="w-full rounded-lg !h-11 border-border shadow-none text-ink font-medium [&>svg]:opacity-50 focus:ring-1 focus:ring-brand/30 focus:border-brand">
-                                <SelectValue placeholder="estados" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-lg">
-                                <SelectItem value="estados" className="rounded-lg">estados</SelectItem>
-                                <SelectItem value="aprobado" className="rounded-lg">aprobado</SelectItem>
-                                <SelectItem value="por_aprobar" className="rounded-lg">por aprobar</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <Button variant="outline" className="h-11 rounded-lg px-6 border-border text-ink-muted gap-2 hover:bg-muted hover:text-ink shadow-none font-semibold transition-colors active:scale-95">
-                        <Settings2 size={16} strokeWidth={2.5} />
-                        Limpiar Filtros
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
+        <FilterBar onClear={onClear} canClear={hasActiveFilters} className="mb-8">
+            <FilterSearch value={search} onChange={onSearchChange} placeholder="Buscar cliente..." />
+            <FilterSelectField label="Tipo" options={TYPE_OPTIONS} value={type} onChange={onTypeChange} />
+            <FilterDateField label="Fecha registro" value={registrationDate} onChange={onRegistrationDateChange} />
+            <FilterSelectField label="Estado" options={STATUS_OPTIONS} value={status} onChange={onStatusChange} />
+        </FilterBar>
     );
 }

@@ -93,6 +93,9 @@ function Carousel({
 
   React.useEffect(() => {
     if (!api) return
+    // Embla es un sistema externo: al suscribirse hay que leer su estado actual una vez, porque
+    // "select" solo avisa de los cambios posteriores. No es un render en cascada evitable.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     onSelect(api)
     api.on("reInit", onSelect)
     api.on("select", onSelect)

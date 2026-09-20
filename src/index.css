@@ -76,6 +76,12 @@
     --brand-dark: #1b4322;
     --brand-surface: #EBF3EC;
     --brand-border: #d2e5d5;
+    /* Mismo degradado que BRAND_ACTIVE_SURFACE (shared/styles/brandGradients.ts) usa en los botones,
+       expuesto como variable para que cualquier hover/estado activo jale este único color en vez de
+       inventar un hex propio. */
+    --brand-gradient: linear-gradient(135deg, oklch(from var(--brand) calc(l + 0.13) calc(c * 1.35) h), oklch(from var(--brand) calc(l + 0.03) calc(c * 1.3) h));
+    --brand-gradient-glow: color-mix(in oklch, var(--brand) 45%, transparent);
+    --brand-gradient-mid: oklch(from var(--brand) calc(l + 0.08) calc(c * 1.2) h);
     --ink: #1a2f22;
     --ink-body: #545454;
     --ink-muted: #8898aa;
@@ -160,4 +166,50 @@
   html {
     @apply font-sans;
     }
+}
+
+@layer components {
+  /*
+   * Hover/estado activo con el degradado de marca (--brand-gradient): para íconos y controles chicos
+   * que antes tenían su propio verde plano. Es una clase CSS -no un estilo inline- porque necesita
+   * reaccionar a :hover y a [data-state=open] (menú abierto).
+   */
+  .brand-gradient-hover {
+    transition: background-color 300ms, transform 300ms, box-shadow 300ms, color 300ms;
+    }
+  .brand-gradient-hover:hover,
+  .brand-gradient-hover[data-state="open"] {
+    background-image: var(--brand-gradient);
+    color: white;
+    box-shadow: 0 4px 12px -2px var(--brand-gradient-glow);
+    transform: translateY(-2px);
+    }
+  .brand-gradient-hover:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px -1px var(--brand-gradient-glow);
+    }
+}
+
+/* Micro-interacción del ícono de SuccessModal: aparece con un pequeño rebote y un halo que se disipa */
+@keyframes success-pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    65% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes success-ring {
+    0% { transform: scale(0.6); opacity: 0.5; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Rayitas alrededor del check: salen hacia afuera una tras otra */
+@keyframes success-dash {
+    0% { transform: translateY(10px) scaleY(0.3); opacity: 0; }
+    100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+
+/* Barra inferior que marca el tiempo antes del cierre automático */
+@keyframes success-progress {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
 }

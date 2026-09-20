@@ -1,132 +1,110 @@
+import { useEffect, useState } from "react";
+import { UserRound } from "lucide-react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from "@/shared/components/ui/dialog";
+import { getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
+import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
 
 interface CampaignManagementProvidersModalProps {
     open: boolean;
+    campaniaId?: number | null;
     onOpenChange: (open: boolean) => void;
 }
 
-export default function CampaignManagementProvidersModal({ open, onOpenChange }: CampaignManagementProvidersModalProps) {
-    const providers = [
-        {
-            initial: "F",
-            name: "Fundo Los Olivos",
-            location: "Piura",
-            hectares: "45",
-            owner: "Carlos Mendoza",
-            phone: "+51 973 441 220",
-            varieties: [
-                { name: "Mango Kent", color: "bg-brand", text: "text-brand" },
-                { name: "Mango Tommy", color: "bg-purple-500", text: "text-purple-500" }
-            ]
-        },
-        {
-            initial: "A",
-            name: "Agrícola San Martín",
-            location: "Lambayeque",
-            hectares: "28",
-            owner: "Rosa Gutiérrez",
-            phone: "+51 945 882 331",
-            varieties: [
-                { name: "Mango Kent", color: "bg-brand", text: "text-brand" },
-                { name: "Mango Ataulfo", color: "bg-orange-500", text: "text-orange-500" }
-            ]
-        },
-        {
-            initial: "F",
-            name: "Fundo El Milagro",
-            location: "La Libertad",
-            hectares: "62",
-            owner: "Jorge Paredes",
-            phone: "+51 961 334 775",
-            varieties: [
-                { name: "Mango Dulce", color: "bg-yellow-500", text: "text-yellow-600" },
-                { name: "Mango Haden", color: "bg-red-500", text: "text-red-500" }
-            ]
-        },
-        {
-            initial: "C",
-            name: "Cooperativa Valle Verde",
-            location: "Piura",
-            hectares: "110",
-            owner: "Ana Flores",
-            phone: "+51 987 221 004",
-            varieties: [
-                { name: "Mango Kent", color: "bg-brand", text: "text-brand" },
-                { name: "Mango Eduard", color: "bg-teal-500", text: "text-teal-500" },
-                { name: "Mango Tommy", color: "bg-purple-500", text: "text-purple-500" }
-            ]
-        }
-    ];
+const TIPO_LABEL: Record<string, string> = {
+    productor: "Productor",
+    acopio: "Acopiador",
+};
+
+export default function CampaignManagementProvidersModal({ open, campaniaId, onOpenChange }: CampaignManagementProvidersModalProps) {
+    const [proveedores, setProveedores] = useState<CampaniaProveedor[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!open || !campaniaId) return;
+        setIsLoading(true);
+        setError(null);
+        getCampaniaProveedoresByCampania(campaniaId)
+            .then(setProveedores)
+            .catch(() => setError("No se pudieron cargar los proveedores de la campaña."))
+            .finally(() => setIsLoading(false));
+    }, [open, campaniaId]);
+
+    const productores = proveedores.filter((p) => p.tipoProveedor === "productor").length;
+    const acopiadores = proveedores.filter((p) => p.tipoProveedor === "acopio").length;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-[500px] md:max-w-[800px] p-5 sm:p-8 rounded-2xl bg-white border-none shadow-2xl gap-6 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-[500px] md:max-w-[800px] p-8 rounded-2xl bg-white border-none shadow-2xl gap-6">
                 <DialogHeader className="mb-2">
                     <DialogTitle className="text-[22px] font-bold text-ink">
                         Gestión de Proveedores
                     </DialogTitle>
-                    <p className="text-[13px] font-medium text-ink-muted">4 proveedores activos · Mango 2026</p>
+                    <p className="text-[13px] font-medium text-ink-muted">{proveedores.length} proveedores vinculados</p>
                 </DialogHeader>
 
                 {/* Resumen */}
                 <div className="grid grid-cols-3 border-y border-border py-4">
                     <div className="flex flex-col items-center justify-center border-r border-border">
-                        <span className="text-2xl font-black text-ink">4</span>
+                        <span className="text-2xl font-black text-ink">{proveedores.length}</span>
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Proveedores</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center border-r border-border px-1">
-                        <span className="text-2xl font-black text-ink">245 ha</span>
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider text-center">Hectáreas Totales</span>
+                    <div className="flex flex-col items-center justify-center border-r border-border">
+                        <span className="text-2xl font-black text-ink">{productores}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Productores</span>
                     </div>
                     <div className="flex flex-col items-center justify-center">
-                        <span className="text-2xl font-black text-ink">2</span>
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Variedades</span>
+                        <span className="text-2xl font-black text-ink">{acopiadores}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Acopiadores</span>
                     </div>
                 </div>
 
                 {/* Lista de Proveedores */}
-                <div className="flex flex-col gap-6 mt-2 max-h-[350px] overflow-y-auto pr-2">
-                    {providers.map((provider, index) => (
-                        <div key={index} className="flex items-start gap-4 pb-6 border-b border-border last:border-0 last:pb-0">
-                            {/* Avatar */}
-                            <div className="w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center shrink-0">
-                                <span className="text-[15px] font-bold text-brand">{provider.initial}</span>
-                            </div>
-
-                            {/* Info Principal */}
-                            <div className="flex-1 flex flex-col gap-2.5">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h4 className="text-[14px] font-bold text-ink">{provider.name}</h4>
-                                        <p className="text-[12px] text-ink-muted font-medium">{provider.location} · {provider.hectares} ha</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <h4 className="text-[13px] font-bold text-ink">{provider.owner}</h4>
-                                        <p className="text-[12px] text-ink-muted font-medium">{provider.phone}</p>
-                                    </div>
+                {isLoading ? (
+                    <div className="text-center text-ink-muted py-6">Cargando proveedores...</div>
+                ) : error ? (
+                    <div className="text-center text-red-600 py-6">{error}</div>
+                ) : !campaniaId ? (
+                    <div className="text-center text-ink-muted py-6">No se pudo determinar la campaña.</div>
+                ) : proveedores.length === 0 ? (
+                    <div className="text-center text-ink-muted py-6">Esta campaña aún no tiene proveedores vinculados.</div>
+                ) : (
+                    <div className="flex flex-col gap-6 mt-2 max-h-[350px] overflow-y-auto pr-2">
+                        {proveedores.map((cp) => (
+                            <div key={cp.cxpId} className="flex items-start gap-4 pb-6 border-b border-border last:border-0 last:pb-0">
+                                {/* Avatar */}
+                                <div className="w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center shrink-0">
+                                    {cp.proveedor?.nombres ? (
+                                        <span className="text-[15px] font-bold text-brand">{cp.proveedor.nombres[0]}</span>
+                                    ) : (
+                                        <UserRound size={18} className="text-brand" />
+                                    )}
                                 </div>
 
-                                {/* Chips */}
-                                <div className="flex flex-wrap gap-2">
-                                    {provider.varieties.map((variety, vIndex) => (
-                                        <div 
-                                            key={vIndex}
-                                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border border-border shadow-sm ${variety.text}`}
-                                        >
-                                            <div className={`w-1.5 h-1.5 rounded-full ${variety.color}`}></div>
-                                            <span className="text-[11px] font-bold">{variety.name}</span>
+                                {/* Info Principal */}
+                                <div className="flex-1 flex flex-col gap-2.5">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h4 className="text-[14px] font-bold text-ink">
+                                                {cp.proveedor ? `${cp.proveedor.nombres} ${cp.proveedor.apellido}` : "Proveedor"}
+                                            </h4>
+                                            <p className="text-[12px] text-ink-muted font-medium">{cp.proveedor?.zona ?? "-"} · {cp.cantidadProveedor} kg est.</p>
                                         </div>
-                                    ))}
+                                        <div className="text-right">
+                                            <h4 className="text-[13px] font-bold text-ink">{TIPO_LABEL[cp.tipoProveedor] ?? cp.tipoProveedor}</h4>
+                                            <p className="text-[12px] text-ink-muted font-medium">{cp.proveedor?.telefono ?? "-"}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );

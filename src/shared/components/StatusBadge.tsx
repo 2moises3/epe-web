@@ -39,7 +39,7 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
     return (
         <Badge
             variant="outline"
-            className={cn("rounded-full px-3.5 py-1.5 font-semibold text-[13px] border-none gap-2", tone.badge)}
+            className={cn("rounded-full px-3.5 py-1.5 font-semibold text-[13px] border-0 gap-2", tone.badge)}
         >
             <div className={cn("w-1.5 h-1.5 rounded-full", tone.dot)} />
             {status}

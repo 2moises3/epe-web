@@ -32,6 +32,9 @@ const emptyMediaVariants = cva(
       variant: {
         default: "bg-transparent",
         icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-4",
+        // Círculo de marca: es el vacío que usan las tablas de la app
+        brand:
+          "size-16 rounded-full bg-brand-surface border border-brand-border text-[color:var(--brand-gradient-mid)]",
       },
     },
     defaultVariants: {
@@ -60,7 +63,7 @@ function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="empty-title"
       className={cn(
-        "font-heading text-sm font-medium tracking-tight",
+        "text-[16px] font-bold tracking-tight text-ink",
         className
       )}
       {...props}
@@ -73,7 +76,7 @@ function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
     <div
       data-slot="empty-description"
       className={cn(
-        "text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
+        "text-[13px] font-medium text-ink-muted [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
         className
       )}
       {...props}
