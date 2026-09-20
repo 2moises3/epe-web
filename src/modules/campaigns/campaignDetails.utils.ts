@@ -11,6 +11,12 @@ export function parseCampaignDate(value: string): number | null {
         ? timestamp : null;
 }
 
+/** Pasa una fecha de campaña (dd/mm/yyyy) al formato que pide `<input type="date">`. */
+export function toDateInputValue(value: string) {
+    const timestamp = parseCampaignDate(value);
+    return timestamp === null ? "" : new Date(timestamp).toISOString().slice(0, 10);
+}
+
 export function getCampaignTiming(start: string, end: string, now = new Date()) {
     const startDate = parseCampaignDate(start);
     const endDate = parseCampaignDate(end);
@@ -67,4 +73,15 @@ export function identifyCampaignFruit(name: string, fruit?: string): CampaignFru
         }
     }
     return null;
+}
+
+/** Duración de la campaña en meses, ya formateada ("3 meses"). Para la tabla de campañas. */
+export function getCampaignDurationLabel(start: string, end: string) {
+    const from = parseCampaignDate(start);
+    const to = parseCampaignDate(end);
+    if (from === null || to === null) return "—";
+    const a = new Date(from);
+    const b = new Date(to);
+    const months = Math.abs((b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth())) || 1;
+    return `${months} ${months === 1 ? "mes" : "meses"}`;
 }

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import { InfoField, InfoSection, StatTile, LocationTrail } from "@/shared/components/InfoField";
 import { MapPin, Sprout, Leaf, FlaskConical, UserCheck, Ruler, Droplets, LandPlot } from "lucide-react";
@@ -26,11 +27,9 @@ export default function CampaignProviderDetailsModal({
 }: CampaignProviderDetailsModalProps) {
     const [activeTab, setActiveTab] = useState<"examen" | "entrevista">("examen");
 
-    useEffect(() => {
-        if (!open) {
-            setActiveTab("examen");
-        }
-    }, [open]);
+    useResetOnToggle(open, () => {
+        setActiveTab("examen");
+    });
 
     return (
         <AppModal
@@ -94,7 +93,7 @@ export default function CampaignProviderDetailsModal({
                                     </span>
                                     <div className="min-w-0">
                                         <p className="truncate text-[13.5px] font-bold text-ink">Fertilizante X</p>
-                                        <p className="text-[12px]">3 aplicaciones al año</p>
+                                        <p className="text-[12px] text-ink-muted">3 aplicaciones al año</p>
                                     </div>
                                 </div>
                             </InfoSection>

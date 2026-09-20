@@ -19,4 +19,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Los componentes de shadcn agrupan varias piezas (variantes, hooks, contextos) por archivo,
+    // que es justo lo que react-refresh desaconseja. Separarlos rompería su estructura y no gana nada:
+    // el coste real es perder el hot reload en esos archivos, que casi no se tocan.
+    files: ['src/shared/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

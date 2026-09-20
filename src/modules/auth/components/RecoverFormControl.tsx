@@ -1,7 +1,7 @@
 import { Button } from "@/shared/components/ui/button";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupInput } from "@/shared/components/ui/input-group";
-import { ArrowRight, Mail, KeyRound } from "lucide-react";
+import { Mail, KeyRound } from "lucide-react";
 
 interface RecoverFormControlProps {
     onBack: () => void;

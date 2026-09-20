@@ -12,6 +12,16 @@ export default function CampaignsPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [tableKey, setTableKey] = useState(0);
+    const [search, setSearch] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+
+    const hasActiveFilters = search.trim() !== "" || startDate !== "" || endDate !== "";
+    const clearFilters = () => {
+        setSearch("");
+        setStartDate("");
+        setEndDate("");
+    };
 
     const handleCreateSuccess = () => {
         setIsCreateModalOpen(false);
@@ -20,7 +30,7 @@ export default function CampaignsPage() {
     };
 
     return (
-        <div className="px-14 py-5">
+        <div className="px-4 py-5 sm:px-8 lg:px-14">
             <PageHeader
                 icon={<Leaf size={24} strokeWidth={2.5} />}
                 title="Planificación de Campaña"
@@ -34,9 +44,25 @@ export default function CampaignsPage() {
 
             <CampaignStatsOverview />
 
-            <CampaignFilters />
+            <CampaignFilters
+                search={search}
+                onSearchChange={setSearch}
+                startDate={startDate}
+                onStartDateChange={setStartDate}
+                endDate={endDate}
+                onEndDateChange={setEndDate}
+                hasActiveFilters={hasActiveFilters}
+                onClear={clearFilters}
+            />
 
-            <CampaignTable key={tableKey} />
+            <CampaignTable
+                key={tableKey}
+                search={search}
+                startDate={startDate}
+                endDate={endDate}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearFilters}
+            />
 
             <CampaignCreateModal 
                 open={isCreateModalOpen} 

@@ -17,10 +17,10 @@ interface InfoFieldProps {
 export function InfoField({ label, value, suffix, className }: InfoFieldProps) {
     return (
         <div className={cn("flex min-w-0 flex-col gap-2", className)}>
-            <label className="text-[10px] font-bold uppercase tracking-wide">{label}</label>
+            <label className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{label}</label>
             <div className="relative flex h-10 items-center rounded-lg border border-border/60 bg-white px-3 text-[13px] font-medium text-ink">
                 <span className="truncate">{value}</span>
-                {suffix && <span className="absolute right-3 text-xs font-bold">{suffix}</span>}
+                {suffix && <span className="absolute right-3 text-xs font-bold text-ink-muted">{suffix}</span>}
             </div>
         </div>
     );
@@ -39,7 +39,7 @@ export function InfoSection({ icon: Icon, title, children, className }: InfoSect
         <div className={cn("flex flex-col gap-4", className)}>
             <div className="flex items-center gap-2 text-brand">
                 <Icon size={18} strokeWidth={2.5} />
-                <h3 className="text-xs font-bold uppercase tracking-wider">{title}</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-brand">{title}</h3>
             </div>
             {children}
         </div>
@@ -66,9 +66,9 @@ export function StatTile({ icon: Icon, label, value, hint, className }: StatTile
                 <Icon size={17} strokeWidth={2.5} />
             </span>
             <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase leading-snug tracking-wide">{label}</p>
+                <p className="text-[10px] font-bold uppercase leading-snug tracking-wide text-ink-muted">{label}</p>
                 <p className="truncate text-[18px] font-bold leading-tight text-ink">{value}</p>
-                {hint && <p className="text-[11px] leading-snug">{hint}</p>}
+                {hint && <p className="text-[11px] leading-snug text-ink-muted">{hint}</p>}
             </div>
         </div>
     );

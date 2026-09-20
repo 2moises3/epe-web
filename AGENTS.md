@@ -12,7 +12,10 @@ Guía rápida de arquitectura para agentes que trabajen en este proyecto (React 
 
 Todo lo transversal / no-dominio vive aquí:
 
-- `shared/components/ui/` — catálogo shadcn vendorizado. **Nunca** meter lógica de negocio ahí a mano; se actualiza vía `npx shadcn@latest add`.
+- `shared/components/ui/` — catálogo shadcn vendorizado. Se trae con `npx shadcn@latest add`, pero **es código nuestro y se personaliza ahí mismo**: estilos por defecto de la app, variantes (`cva`) y la lógica propia del control (estado interno, accesibilidad) van dentro del componente.
+  - **No envolver un componente de `ui/` en otro archivo solo para darle estilo o lógica.** Ese envoltorio duplica la API, obliga a mantener dos piezas y esconde el componente real. Si a un `Input` le falta algo, se le agrega a `ui/input.tsx` y se usa `<Input>` directo.
+  - Un componente propio en `shared/components/` se justifica cuando compone **varias** piezas en un patrón nuevo (p. ej. `AppModal`, `RowActions`), no cuando reexporta una sola con clases encima.
+  - Lo que sí queda fuera: lógica de negocio/dominio. Eso vive en el módulo.
 - `shared/layout/` — chrome de la app: `Sidebar.tsx`, `TopNavBar.tsx`, `DashboardLayout.tsx`.
 
 ## Convención de imports

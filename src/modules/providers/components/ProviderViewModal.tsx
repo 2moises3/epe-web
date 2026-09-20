@@ -58,7 +58,7 @@ export default function ProviderViewModal({ open, onOpenChange, providerId }: Pr
             <div className="flex flex-col">
                 {mockProvider.details.map((detail, idx) => (
                     <div key={idx} className="flex items-center justify-between py-3.5 border-b border-border/50 last:border-0">
-                        <span className="text-[11px] font-bold uppercase tracking-wider">{detail.label}</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{detail.label}</span>
                         <span className="text-[14px] font-semibold text-ink">{detail.value}</span>
                     </div>
                 ))}

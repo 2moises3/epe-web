@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, UserRound } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/shared/components/ui/dialog";
+import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -97,14 +92,30 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[850px] sm:max-w-[700px] p-8 rounded-2xl bg-white border-none shadow-2xl gap-0">
-                <DialogHeader className="mb-6">
-                    <DialogTitle className="text-xl font-bold text-ink">
-                        Vincular Proveedores
-                    </DialogTitle>
-                </DialogHeader>
-
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Vincular Proveedores"
+            className="sm:max-w-175"
+            footer={
+                <>
+                    <Button
+                        variant="outline"
+                        size="xl"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <X size={20} strokeWidth={2.5} /> Cancelar
+                    </Button>
+                    <Button
+                        size="xl"
+                        onClick={handleGuardar}
+                        disabled={isSaving || addedProviders.length === 0}
+                    >
+                        {isSaving ? "Guardando..." : "Guardar"}
+                    </Button>
+                </>
+            }
+        >
                 <div className="flex flex-col gap-6">
                     {/* Seleccionar Proveedor */}
                     <div className="flex flex-col gap-2.5">
@@ -188,24 +199,6 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                     </div>
                 </div>
 
-                {/* Botones Footer */}
-                <div className="flex justify-end gap-3 mt-8">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-10 px-6 border-transparent bg-muted hover:bg-border text-ink-body font-bold shadow-none transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleGuardar}
-                        disabled={isSaving || addedProviders.length === 0}
-                        className="rounded-lg h-10 px-8 bg-brand hover:bg-brand-dark text-white font-bold shadow-sm disabled:opacity-50 transition-colors active:scale-95"
-                    >
-                        {isSaving ? "Guardando..." : "Guardar"}
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </AppModal>
     );
 }

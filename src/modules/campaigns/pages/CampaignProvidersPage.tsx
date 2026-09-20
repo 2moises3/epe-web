@@ -66,7 +66,7 @@ export default function CampaignProvidersPage() {
     );
 
     return (
-        <div className="px-14 py-5">
+        <div className="px-4 py-5 sm:px-8 lg:px-14">
             <PageHeader
                 icon={<Users size={24} strokeWidth={2.5} />}
                 title="Proveedores de la Campaña"

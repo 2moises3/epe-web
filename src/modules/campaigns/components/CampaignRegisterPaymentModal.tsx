@@ -1,6 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Save, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import { useResetOnToggle } from "@/shared/hooks/useModalForm";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -26,20 +28,17 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `open` es la señal para regenerar, no una dependencia real de la función
     const paymentCode = useMemo(() => generatePaymentCode(), [open]);
 
-    useEffect(() => {
-        if (!open) {
-            setTipo("");
-            setCantidad("");
-            setCantidadTotal("");
-            setFecha("");
-            setBoleta(null);
-        }
-    }, [open]);
+    useResetOnToggle(open, () => {
+        setTipo("");
+        setCantidad("");
+        setCantidadTotal("");
+        setFecha("");
+        setBoleta(null);
+    });
 
     const handleSave = () => {
         if (onSave) onSave();
         else onOpenChange(false);
-        resetForm();
     };
 
     return (
@@ -51,7 +50,7 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
             className="sm:max-w-150"
             footer={
                 <>
-                    <Button variant="outline" size="xl" onClick={() => handleOpenChange(false)}>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={handleSave}>
@@ -61,11 +60,11 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
             }
         >
                 <div className="flex flex-col gap-5">
-                    <span className="self-start rounded-full border border-border bg-surface-page px-3 py-1.5 text-[11px] font-mono font-semibold">
+                    <span className="self-start rounded-full border border-border bg-surface-page px-3 py-1.5 text-[11px] font-mono font-semibold text-ink-muted">
                         {paymentCode}
                     </span>
-                    <div className="flex flex-col gap-2.5">
-                        <label className="text-[13px] font-semibold text-ink">Tipo de pago:</label>
+                    <Field>
+                        <FieldLabel>Tipo de pago:</FieldLabel>
                         <Select value={tipo} onValueChange={(value) => setTipo((value as PaymentType) ?? "")}>
                             <SelectTrigger className="w-full !h-11 rounded-lg border-border shadow-none text-ink font-medium [&>svg]:opacity-50 focus:ring-1 focus:ring-brand/30 focus:border-brand">
                                 <SelectValue placeholder="Seleccionar" />
@@ -75,7 +74,7 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
                                 <SelectItem value="Completo" className="rounded-lg">Completo</SelectItem>
                             </SelectContent>
                         </Select>
-                    </div>
+                    </Field>
 
                     {/*
                         Adelanto = se paga una parte ahora y el resto queda pendiente, por eso pide el total
@@ -84,8 +83,8 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
                     {tipo === "Adelanto" && (
                         <div className="flex flex-col gap-5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                                <div className="flex flex-col gap-2.5">
-                                    <label className="text-[13px] font-semibold text-ink">Cantidad:</label>
+                                <Field>
+                                    <FieldLabel>Cantidad:</FieldLabel>
                                     <div className="relative">
                                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink-muted">S/</span>
                                         <Input
@@ -98,9 +97,9 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
                                             className="rounded-lg h-11 pl-9 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                                         />
                                     </div>
-                                </div>
-                                <div className="flex flex-col gap-2.5">
-                                    <label className="text-[13px] font-semibold text-ink">Cantidad Total:</label>
+                                </Field>
+                                <Field>
+                                    <FieldLabel>Cantidad Total:</FieldLabel>
                                     <div className="relative">
                                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink-muted">S/</span>
                                         <Input
@@ -113,34 +112,32 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
                                             className="rounded-lg h-11 pl-9 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                                         />
                                     </div>
-                                </div>
+                                </Field>
                             </div>
 
-                            <div className="flex flex-col gap-2.5">
-                                <label className="text-[13px] font-semibold text-ink">Fecha de pago final:</label>
+                            <Field>
+                                <FieldLabel>Fecha de pago final:</FieldLabel>
                                 <Input
                                     type="date"
                                     value={fecha}
                                     onChange={(event) => setFecha(event.target.value)}
-                                    className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                 />
-                            </div>
+                            </Field>
                         </div>
                     )}
 
                     {tipo === "Completo" && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                            <div className="flex flex-col gap-2.5">
-                                <label className="text-[13px] font-semibold text-ink">Fecha acordada:</label>
+                            <Field>
+                                <FieldLabel>Fecha acordada:</FieldLabel>
                                 <Input
                                     type="date"
                                     value={fecha}
                                     onChange={(event) => setFecha(event.target.value)}
-                                    className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                 />
-                            </div>
-                            <div className="flex flex-col gap-2.5">
-                                <label className="text-[13px] font-semibold text-ink">Cantidad:</label>
+                            </Field>
+                            <Field>
+                                <FieldLabel>Cantidad:</FieldLabel>
                                 <div className="relative">
                                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink-muted">S/</span>
                                     <Input
@@ -153,7 +150,7 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
                                         className="rounded-lg h-11 pl-9 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
                                     />
                                 </div>
-                            </div>
+                            </Field>
                         </div>
                     )}
 

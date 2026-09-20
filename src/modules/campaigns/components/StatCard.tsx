@@ -80,7 +80,7 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
                     onClick?.();
                 }
             }}
-            className={`relative rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] h-33 sm:h-40 bg-white transition-all borderl-[-3px] outline-none ${
+            className={`relative rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] h-33 sm:h-40 bg-white transition-all border-l-[3px] outline-none ${
                 isInteractive ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/40" : ""
             } ${
                 active

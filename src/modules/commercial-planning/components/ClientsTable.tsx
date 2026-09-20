@@ -10,11 +10,12 @@ import {
 } from "@/shared/components/ui/table";
 import { Button } from "@/shared/components/ui/button";
 import TableCard from "@/shared/components/TableCard";
+import { downloadCsv } from "@/shared/utils/downloadCsv";
 import { TABLE_HEAD_BG, TableRowAccent, TableRowLead } from "@/shared/components/DataTableRow";
 import TableGridCard from "@/shared/components/TableGridCard";
 import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type TableViewMode } from "@/shared/components/TableToolbar";
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
-import ClientEditModal from "./ClientEditModal";
+import ClientFormModal from "./ClientFormModal";
 import ClientViewModal from "./ClientViewModal";
 import ClientAddContractModal from "./ClientAddContractModal";
 import ClientSuccessModal from "./ClientSuccessModal";
@@ -38,18 +39,8 @@ export default function ClientsTable({ data, hasActiveFilters, onClearFilters }:
     const [successMode, setSuccessMode] = useState<"edit" | "contract">("edit");
 
     /** Exporta los clientes visibles a CSV y lo descarga */
-    const handleExportCSV = () => {
-        const header = ["Empresa", "Representante", "Número", "Correo", "RUC"];
-        const rows = data.map((row) => [row.empresa, row.representante, row.numero, row.correo, row.ruc]);
-        const csvContent = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-        const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "clientes.csv";
-        link.click();
-        URL.revokeObjectURL(url);
-    };
+    const handleExportCSV = () =>
+        downloadCsv("clientes.csv", ["Empresa", "Representante", "Número", "Correo", "RUC"], data.map((row) => [row.empresa, row.representante, row.numero, row.correo, row.ruc]));
 
     /** Editar y Ver detalles quedan siempre visibles; el resto se agrupa en el menú de "más opciones" */
     const getRowActions = (row: Client) => {
@@ -62,6 +53,8 @@ export default function ClientsTable({ data, hasActiveFilters, onClearFilters }:
         ];
         return { primary, secondary };
     };
+
+    const editingClient = data.find((row) => row.id === editingClientId) ?? null;
 
     const pageCount = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
@@ -115,7 +108,7 @@ export default function ClientsTable({ data, hasActiveFilters, onClearFilters }:
                         >
                             <div className="mx-4 flex flex-col gap-2.5 rounded-lg bg-surface-page border border-border p-3">
                                 <div className="flex justify-between gap-3">
-                                    <span className="text-[11px] font-bold uppercase tracking-wider shrink-0">Número</span>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted shrink-0">Número</span>
                                     <span className="text-[13px] font-semibold text-ink truncate">{row.numero}</span>
                                 </div>
                                 <div className="flex justify-between gap-3">
@@ -164,9 +157,17 @@ export default function ClientsTable({ data, hasActiveFilters, onClearFilters }:
                 )}
             </TableCard>
 
-            <ClientEditModal
+            <ClientFormModal
                 open={editingClientId !== null}
                 onOpenChange={(open) => !open && setEditingClientId(null)}
+                mode="edit"
+                initialValues={editingClient ? {
+                    name: editingClient.representante,
+                    empresa: editingClient.empresa,
+                    telefono: editingClient.numero,
+                    ruc: editingClient.ruc,
+                    email: editingClient.correo,
+                } : undefined}
                 onSuccess={() => {
                     setEditingClientId(null);
                     setSuccessMode("edit");

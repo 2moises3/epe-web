@@ -45,8 +45,8 @@ function Combobox({
 
     return (
         <ComboboxRoot
-            selectedValue={value}
-            onSelectedValueChange={(val) => onChange(val || "")}
+            value={value}
+            onValueChange={(val: string | null) => onChange(val ?? "")}
             inputValue={searchQuery}
             onInputValueChange={setSearchQuery}
         >

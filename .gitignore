@@ -15,6 +15,16 @@ dist-ssr
 # Env vars
 .env
 
+# Volcados temporales de auditorías/refactors automatizados
+build-errors.txt
+git_diff.txt
+*_report.json
+*_audit.json
+scratch/
+
+# Este proyecto usa pnpm; un package-lock.json paralelo desincroniza las versiones
+package-lock.json
+
 # Claude skills (downloaded from registry, reproducible via skills-lock.json)
 .agents/skills/
 .claude/skills/

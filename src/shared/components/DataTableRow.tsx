@@ -31,7 +31,7 @@ export function TableRowLead({ icon, title, subtitle, className }: TableRowLeadP
             </div>
             <div className="flex flex-col min-w-0">
                 <span className="font-bold text-[14px] text-ink truncate leading-tight">{title}</span>
-                {subtitle && <span className="text-[12.5px] font-medium mt-1 truncate">{subtitle}</span>}
+                {subtitle && <span className="text-[12.5px] font-medium text-ink-muted mt-1 truncate">{subtitle}</span>}
             </div>
         </div>
     );

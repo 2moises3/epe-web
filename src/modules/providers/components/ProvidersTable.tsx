@@ -1,24 +1,25 @@
-import { useEffect, useState } from "react";
-import { Pencil, Eye, FileArchive, Truck } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/components/ui/table";
-import { Card, CardContent } from "@/shared/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import { FileArchive, MapPin, Phone, Truck, UserRound } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
+import TableCard from "@/shared/components/TableCard";
+import { TABLE_HEAD_BG, TableRowLead } from "@/shared/components/DataTableRow";
+import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared/components/TableGridCard";
+import { TableToolbar, TableCountPill, TableViewToggle, type TableViewMode } from "@/shared/components/TableToolbar";
+import RowActions from "@/shared/components/RowActions";
 import { Button } from "@/shared/components/ui/button";
-import ProviderInterviewModal from "./ProviderInterviewModal";
+import ProviderInterviewModal from "@/modules/providers/components/ProviderInterviewModal";
 import { getProveedores } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 
-export default function ProvidersTable() {
+const PAGE_SIZE = 8;
+
+export default function ProvidersTable({ search = "" }: { search?: string }) {
     const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
     const [providers, setProviders] = useState<Proveedor[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [viewMode, setViewMode] = useState<TableViewMode>("table");
 
     useEffect(() => {
         getProveedores()
@@ -27,86 +28,67 @@ export default function ProvidersTable() {
             .finally(() => setIsLoading(false));
     }, []);
 
-    if (isLoading) {
-        return (
-            <div className="bg-white rounded-[1.5rem] p-6 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-gray-100 text-center text-[#545454]">
-                Cargando proveedores...
-            </div>
-        );
+    if (isLoading || error) {
+        return <div className={`rounded-2xl border border-border bg-white p-6 text-center ${error ? "text-red-600" : "text-ink-muted"}`}>{error ?? "Cargando proveedores..."}</div>;
     }
 
-    if (error) {
-        return (
-            <div className="bg-white rounded-[1.5rem] p-6 shadow-[0_2px_12px_rgb(0,0,0,0.02)] border border-gray-100 text-center text-red-600">
-                {error}
-            </div>
+    const filteredProviders = useMemo(() => {
+        const query = search.trim().toLocaleLowerCase();
+        if (!query) return providers;
+        return providers.filter((provider) =>
+            `${provider.nombres} ${provider.apellido} ${provider.tipoDocumento} ${provider.nmrDocumento} ${provider.email} ${provider.zona}`
+                .toLocaleLowerCase()
+                .includes(query),
         );
-    }
+    }, [providers, search]);
+    const pageCount = Math.ceil(filteredProviders.length / PAGE_SIZE);
+    const currentPage = Math.min(page, Math.max(1, pageCount));
+    const pageItems = filteredProviders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const interviewAction = [{ label: "Ver entrevista", icon: <FileArchive size={18} strokeWidth={2.5} />, onClick: () => setIsInterviewModalOpen(true) }];
 
     return (
         <>
-            <Card className="rounded-2xl border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)]">
-                <CardContent className="p-6 flex flex-col gap-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0">
-                                <Truck size={24} strokeWidth={2.5} />
-                            </div>
-                            <div className="flex flex-col">
-                                <h2 className="text-[17px] font-bold text-ink leading-tight mb-1">Proveedores Registrados</h2>
-                                <p className="text-[13px] text-ink-muted font-medium">Gestiona, consulta y da seguimiento a todos tus proveedores registrados.</p>
-                            </div>
-                        </div>
-                        <div className="text-[13px] text-muted-foreground font-medium">
-                            Mostrando <span className="font-bold">{providers.length}</span> de <span className="font-bold">{providers.length}</span> proveedores
-                        </div>
-                    </div>
+            <TableCard
+                icon={<Truck size={24} strokeWidth={2.5} />}
+                title="Proveedores Registrados"
+                description="Gestiona, consulta y da seguimiento a todos tus proveedores registrados."
+                headerRight={<TableToolbar><TableCountPill icon={<Truck size={16} strokeWidth={2.5} className="text-brand" />} count={filteredProviders.length} label="proveedores" /><TableViewToggle value={viewMode} onChange={setViewMode} /></TableToolbar>}
+                isEmpty={pageItems.length === 0}
+                emptyTitle={search.trim() ? "Sin resultados" : "Aún no hay proveedores"}
+                emptyDescription={search.trim() ? "No hay proveedores que coincidan con la búsqueda." : "Los proveedores registrados aparecerán acá."}
+                page={currentPage}
+                pageCount={pageCount}
+                onPageChange={setPage}
+            >
+                <div className={`flex flex-col gap-3 ${viewMode === "grid" ? "sm:grid sm:grid-cols-2 lg:grid-cols-3" : "sm:hidden"}`}>
+                    {pageItems.map((row) => <TableGridCard key={row.proveedorId} icon={<UserRound size={18} strokeWidth={2} />} title={`${row.nombres} ${row.apellido}`} subtitle={`DNI ${row.nmrDocumento}`} actions={<RowActions primary={interviewAction} />}>
+                        <TableGridCardFields>
+                            <TableGridCardField label="Zona" value={row.zona || "—"} />
+                            <TableGridCardField label="Teléfono" value={row.telefono || "—"} />
+                        </TableGridCardFields>
+                    </TableGridCard>)}
+                </div>
 
-                    <div className="rounded-xl overflow-hidden border border-border">
-                        <Table>
-                            <TableHeader className="bg-surface-page">
-                                <TableRow className="border-b border-border hover:bg-transparent">
-                                    <TableHead className="text-ink font-semibold h-14 px-6">Nombre</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">DNI</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">Fruta</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">Categoría de Fruta</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14">Estado</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-44">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {providers.map((row) => (
-                                    <TableRow key={row.proveedorId} className="border-b border-border hover:bg-surface-page/60 transition-colors">
-                                        <TableCell className="font-medium text-ink h-16 px-6">{row.nombres} {row.apellido}</TableCell>
-                                        <TableCell className="text-ink-body font-medium">{row.nmrDocumento}</TableCell>
-                                        <TableCell className="text-ink-body font-medium">—</TableCell>
-                                        <TableCell className="text-ink-body font-medium">—</TableCell>
-                                        <TableCell className="text-ink-body font-medium">—</TableCell>
-                                        <TableCell className="px-6">
-                                            <div className="flex items-center justify-end gap-1.5 text-ink-muted">
-                                                <Button variant="ghost" size="icon" className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                    <Pencil size={18} strokeWidth={2.5} />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                    <Eye size={18} strokeWidth={2.5} />
-                                                </Button>
-                                                <Button variant="ghost" size="icon"
-                                                onClick={() => setIsInterviewModalOpen(true)} className="h-9 w-9 hover:text-brand hover:bg-brand-surface rounded-lg transition-colors active:scale-95">
-                                                    <FileArchive size={18} strokeWidth={2.5} />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
-            <ProviderInterviewModal
-                open={isInterviewModalOpen}
-                onOpenChange={setIsInterviewModalOpen}
-            />
+                {viewMode === "table" && <div className="hidden overflow-hidden rounded-xl border border-border sm:block">
+                    <Table>
+                        <TableHeader className={TABLE_HEAD_BG}><TableRow className="border-b border-border hover:bg-transparent">
+                            <TableHead className="h-14 px-6 font-semibold text-ink">Proveedor</TableHead>
+                            <TableHead className="h-14 font-semibold text-ink">Documento</TableHead>
+                            <TableHead className="h-14 font-semibold text-ink">Zona</TableHead>
+                            <TableHead className="h-14 font-semibold text-ink">Teléfono</TableHead>
+                            <TableHead className="h-14 w-40 px-6 text-center font-semibold text-ink">Acciones</TableHead>
+                        </TableRow></TableHeader>
+                        <TableBody>{pageItems.map((row) => <TableRow key={row.proveedorId} className="border-b border-border transition-colors hover:bg-surface-page/60">
+                            <TableCell className="h-20 px-6"><TableRowLead icon={<UserRound size={20} strokeWidth={2} />} title={`${row.nombres} ${row.apellido}`} subtitle={row.email} /></TableCell>
+                            <TableCell className="font-medium text-ink-body">{row.tipoDocumento} {row.nmrDocumento}</TableCell>
+                            <TableCell><div className="flex items-center gap-2 text-ink-body"><MapPin size={16} className="text-ink-muted" />{row.zona || "—"}</div></TableCell>
+                            <TableCell><div className="flex items-center gap-2 text-ink-body"><Phone size={16} className="text-ink-muted" />{row.telefono || "—"}</div></TableCell>
+                            <TableCell className="px-6"><div className="flex justify-center"><Button variant="ghost" size="icon" aria-label="Ver entrevista" title="Ver entrevista" onClick={() => setIsInterviewModalOpen(true)} className="h-9 w-9 rounded-lg text-ink-muted transition-colors hover:bg-brand-surface hover:text-brand"><FileArchive size={18} strokeWidth={2.5} /></Button></div></TableCell>
+                        </TableRow>)}</TableBody>
+                    </Table>
+                </div>}
+            </TableCard>
+            <ProviderInterviewModal open={isInterviewModalOpen} onOpenChange={setIsInterviewModalOpen} />
         </>
     );
 }

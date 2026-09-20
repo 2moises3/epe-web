@@ -5,6 +5,7 @@ import fresa from "@/assets/fresa.webp";
 import banana from "@/assets/banana.webp";
 import maracuya from "@/assets/maracuya.webp";
 import campo from "@/assets/campo.webp";
+import { Apple, Banana, Cherry, Citrus, Grape, Leaf, Sprout, type LucideIcon } from "lucide-react";
 import { identifyCampaignFruit } from "@/modules/campaigns/campaignDetails.utils";
 import type { CampaignFruit } from "@/modules/campaigns/campaignDetails.utils";
 
@@ -36,3 +37,18 @@ export function getCampaignFruitVisual(name: string, fruit?: string): FruitVisua
 }
 
 export { campo as campaignLandscape };
+
+const FRUIT_ICONS: Record<CampaignFruit, LucideIcon> = {
+    mango: Apple,
+    palta: Leaf,
+    arandano: Grape,
+    fresa: Cherry,
+    banana: Banana,
+    maracuya: Citrus,
+};
+
+/** Ícono de la fruta de la campaña, con la misma detección que usa la imagen de portada. */
+export function getCampaignFruitIcon(name: string, fruit?: string): LucideIcon {
+    const key = identifyCampaignFruit(name, fruit);
+    return key ? FRUIT_ICONS[key] : Sprout;
+}

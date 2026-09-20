@@ -1,5 +1,6 @@
 import { MapPin, Sprout, Leaf, X, Save } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 
@@ -36,55 +37,52 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         <div className="flex flex-col gap-5">
                             <div className="flex items-center gap-2 text-brand pb-2 border-b border-border">
                                 <Sprout size={18} strokeWidth={2.5} />
-                                <h3 className="text-[13px] font-bold uppercase tracking-wider">Datos del cultivo</h3>
+                                <h3 className="text-[13px] font-bold uppercase tracking-wider text-brand">Datos del cultivo</h3>
                             </div>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Densidad plantación</label>
+                                <Field>
+                                    <FieldLabel variant="compact">Densidad plantación</FieldLabel>
                                     <Input
                                         placeholder="0.00"
-                                        className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                     />
-                                </div>
-                                <div className="flex flex-col gap-2 relative">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Distanciamiento</label>
+                                </Field>
+                                <Field className="relative">
+                                    <FieldLabel variant="compact">Distanciamiento</FieldLabel>
                                     <div className="relative">
                                         <Input
                                             placeholder="0.00"
-                                            className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand pr-8"
+                                            className="pr-8"
                                         />
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink">m</span>
                                     </div>
-                                </div>
+                                </Field>
                             </div>
 
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[12px] font-bold text-muted-foreground uppercase">Frecuencia de riego (Cantidad / día)</label>
+                            <Field>
+                                <FieldLabel variant="compact">Frecuencia de riego (Cantidad / día)</FieldLabel>
                                 <Input
                                     placeholder="40"
-                                    className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                 />
-                            </div>
+                            </Field>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Ha total finca</label>
+                                <Field>
+                                    <FieldLabel variant="compact">Ha total finca</FieldLabel>
                                     <Input
                                         placeholder="0"
-                                        className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                     />
-                                </div>
-                                <div className="flex flex-col gap-2 relative">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Ha del cultivo</label>
+                                </Field>
+                                <Field className="relative">
+                                    <FieldLabel variant="compact">Ha del cultivo</FieldLabel>
                                     <div className="relative">
                                         <Input
                                             placeholder="0"
-                                            className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand pr-8"
+                                            className="pr-8"
                                         />
                                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink">ha</span>
                                     </div>
-                                </div>
+                                </Field>
                             </div>
                         </div>
 
@@ -92,27 +90,26 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         <div className="flex flex-col gap-5">
                             <div className="flex items-center gap-2 text-brand pb-2 border-b border-border">
                                 <Leaf size={18} strokeWidth={2.5} />
-                                <h3 className="text-[13px] font-bold uppercase tracking-wider">Fertilización</h3>
+                                <h3 className="text-[13px] font-bold uppercase tracking-wider text-brand">Fertilización</h3>
                             </div>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Nombre de aplicación</label>
+                                <Field>
+                                    <FieldLabel variant="compact">Nombre de aplicación</FieldLabel>
                                     <Input
                                         placeholder="Fertilizante X"
-                                        className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
                                     />
-                                </div>
-                                <div className="flex flex-col gap-2 relative">
-                                    <label className="text-[12px] font-bold text-muted-foreground uppercase">Aplicaciones al año</label>
+                                </Field>
+                                <Field className="relative">
+                                    <FieldLabel variant="compact">Aplicaciones al año</FieldLabel>
                                     <div className="relative">
                                         <Input
                                             placeholder="3"
-                                            className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand pr-10"
+                                            className="pr-10"
                                         />
                                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink">/año</span>
                                     </div>
-                                </div>
+                                </Field>
                             </div>
                         </div>
                     </div>
@@ -121,22 +118,22 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                     <div className="flex flex-col gap-5">
                         <div className="flex items-center gap-2 text-brand pb-2 border-b border-border">
                             <MapPin size={18} strokeWidth={2.5} />
-                            <h3 className="text-[13px] font-bold uppercase tracking-wider">Ubicación</h3>
+                            <h3 className="text-[13px] font-bold uppercase tracking-wider text-brand">Ubicación</h3>
                         </div>
 
                         <div className="grid grid-cols-3 gap-3">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] font-bold text-muted-foreground uppercase">Departamento</label>
-                                <Input placeholder="Piura" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand text-[13px]" />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] font-bold text-muted-foreground uppercase">Provincia</label>
-                                <Input placeholder="Sullana" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand text-[13px]" />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] font-bold text-muted-foreground uppercase">Distrito</label>
-                                <Input placeholder="Marcavelica" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand text-[13px]" />
-                            </div>
+                            <Field>
+                                <FieldLabel variant="compact" className="text-[10px]">Departamento</FieldLabel>
+                                <Input placeholder="Piura" className="text-[13px]" />
+                            </Field>
+                            <Field>
+                                <FieldLabel variant="compact" className="text-[10px]">Provincia</FieldLabel>
+                                <Input placeholder="Sullana" className="text-[13px]" />
+                            </Field>
+                            <Field>
+                                <FieldLabel variant="compact" className="text-[10px]">Distrito</FieldLabel>
+                                <Input placeholder="Marcavelica" className="text-[13px]" />
+                            </Field>
                         </div>
 
                         {/* Fake Map */}
@@ -150,14 +147,14 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-2">
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[12px] font-bold text-muted-foreground uppercase">Latitud</label>
-                                <Input placeholder="4" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[12px] font-bold text-muted-foreground uppercase">Longitud</label>
-                                <Input placeholder="5" className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand" />
-                            </div>
+                            <Field>
+                                <FieldLabel variant="compact">Latitud</FieldLabel>
+                                <Input placeholder="4" />
+                            </Field>
+                            <Field>
+                                <FieldLabel variant="compact">Longitud</FieldLabel>
+                                <Input placeholder="5" />
+                            </Field>
                         </div>
                     </div>
                 </div>

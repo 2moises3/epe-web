@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, UserSquare } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/shared/components/ui/dialog";
+import AppModal from "@/shared/components/AppModal";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -73,14 +68,29 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[550px] md:max-w-xl p-8 rounded-2xl bg-white border-none shadow-2xl gap-0">
-                <DialogHeader className="mb-6">
-                    <DialogTitle className="text-xl font-bold text-ink">
-                        Registrar Clientes
-                    </DialogTitle>
-                </DialogHeader>
-
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title="Registrar Clientes"
+            className="sm:max-w-xl"
+            footer={
+                <>
+                    <Button
+                        variant="outline"
+                        size="xl"
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <X size={20} strokeWidth={2.5} /> Cancelar
+                    </Button>
+                    <Button
+                        size="xl"
+                        onClick={() => onSave ? onSave() : onOpenChange(false)}
+                    >
+                        Guardar
+                    </Button>
+                </>
+            }
+        >
                 <div className="flex flex-col gap-5">
                     {/* Cliente + Cantidad */}
                     <div className="flex gap-4 items-start">
@@ -172,23 +182,6 @@ export default function CampaignLinkClientModal({ open, campaniaId, onOpenChange
                     </div>
                 </div>
 
-                {/* Botones Footer */}
-                <div className="flex justify-end gap-3 mt-8">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-10 px-6 border-border text-ink-body font-bold hover:bg-muted transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={() => onSave ? onSave() : onOpenChange(false)}
-                        className="rounded-lg h-10 px-8 bg-brand hover:bg-brand-dark text-white font-bold shadow-sm transition-colors active:scale-95"
-                    >
-                        Guardar
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+        </AppModal>
     );
 }
