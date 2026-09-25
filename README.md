@@ -28,18 +28,18 @@ La experiencia combina tablas y tarjetas, filtros, formularios en modales y una 
 
 > **Estado del proyecto · Frontend en desarrollo**
 >
-> Las vistas utilizan datos de demostración y estado local. El acceso actual simula una sesión, persistida en IndexedDB; no valida credenciales ni códigos contra un servidor. El cliente HTTP compartido está preparado, pero los dominios todavía no están conectados a una API de negocio.
+> La integración con el backend está en curso: campañas, relaciones de campaña y listados de proveedores/clientes consumen algunas APIs; el CRUD de transporte también quedó conectado. Otras vistas siguen parciales o usan datos de demostración. El acceso aún simula una sesión en IndexedDB y no valida credenciales contra el backend. Consulta el [mapa de integración frontend/backend](docs/backend-api-integration.md) para ver el estado por vista y lo pendiente.
 
 <a id="modulos"></a>
 ## 🧭 Un sistema organizado por áreas
 
 | Área | Qué encontrarás | Estado actual |
 | :--- | :--- | :--- |
-| 🌾 **Gestión de campañas** | Listado por estados, formularios, detalle de campaña, indicadores de cosecha, proveedores y clientes vinculados, certificaciones y pagos a transportistas. | Vistas navegables con datos de muestra |
-| 🤝 **Gestión de proveedores** | Directorio, filtros, registro y edición, detalle y entrevista del proveedor. | Vistas navegables con datos de muestra |
-| 🏢 **Planificación comercial** | Directorio de clientes, datos de contacto, formularios y adjuntos de contratos. | Vistas navegables con datos de muestra |
-| 🚚 **Gestión de transporte** | Acceso visual en el selector de módulos. Los pagos a transportistas se consultan desde campañas. | Módulo independiente pendiente |
-| 🛡️ **Gestión de calidad** | Acceso visual en el selector de módulos. Las certificaciones se presentan en el detalle de campaña. | Módulo independiente pendiente |
+| 🌾 **Gestión de campañas** | Campañas, fruta/derivadas, relaciones con proveedores/clientes y certificados. | Integración parcial; pagos a transportistas sin API backend |
+| 🤝 **Gestión de proveedores** | Directorio, filtros, detalle y entrevista. | Listado conectado; CRUD, certificados, exámenes y frutas pendientes |
+| 🏢 **Planificación comercial** | Directorio y gestión de clientes/contratos. | Listado API parcial; edición y vistas comerciales pendientes |
+| 🚚 **Gestión de transporte** | Empresas, vehículos, choferes y pagos. | CRUD de empresas/vehículos/choferes conectado; trazabilidad pendiente; pagos sin API backend |
+| 🛡️ **Gestión de calidad** | Certificaciones de campañas y proveedores. | Certificados de campaña parcialmente conectados; certificados/exámenes de proveedor pendientes |
 
 ### Una campaña, varias perspectivas
 

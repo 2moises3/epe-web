@@ -25,7 +25,7 @@ const EMPTY_VEHICLE: VehicleFormValues = {
 interface CarrierVehicleModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSuccess?: () => void;
+    onSuccess?: (values: VehicleFormValues) => void | Promise<void>;
     carrier: Carrier | null;
     /** "create" arranca vacío; "edit" arranca con `initialValues` y cambia los textos */
     mode?: "create" | "edit";
@@ -94,7 +94,7 @@ export default function CarrierVehicleModal({ open, onOpenChange, onSuccess, car
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" disabled={!values.placa.trim()} onClick={() => (onSuccess ? onSuccess() : onOpenChange(false))}>
+                    <Button size="xl" disabled={!values.placa.trim()} onClick={() => (onSuccess ? void Promise.resolve(onSuccess(values)).catch(() => undefined) : onOpenChange(false))}>
                         <Save size={20} strokeWidth={2.5} /> Guardar vehículo
                     </Button>
                 </>

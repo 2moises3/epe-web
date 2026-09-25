@@ -19,7 +19,7 @@ const EMPTY_CARRIER: CarrierFormValues = {
 interface CarrierFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSuccess?: () => void;
+    onSuccess?: (values: CarrierFormValues) => void | Promise<void>;
     /** "create" arranca vacío; "edit" arranca con `initialValues` y cambia los textos */
     mode?: "create" | "edit";
     initialValues?: Partial<CarrierFormValues>;
@@ -52,7 +52,7 @@ export default function CarrierFormModal({
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" onClick={onSuccess}>
+                    <Button size="xl" onClick={() => { void (async () => { try { await onSuccess?.(values); } catch { /* Error mostrado por la página contenedora. */ } })(); }}>
                         {isEdit
                             ? <><Save size={20} strokeWidth={2.5} /> Guardar</>
                             : <><Truck size={20} strokeWidth={2.5} /> Crear Empresa</>}

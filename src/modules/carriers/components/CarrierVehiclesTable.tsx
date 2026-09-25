@@ -10,7 +10,7 @@ import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ConfirmModal from "@/shared/components/ConfirmModal";
 import SortableHead from "@/shared/components/SortableHead";
 import { nextSort, type SortState } from "@/shared/utils/tableSort";
-import { vehicleVolume, type Driver, type Vehicle } from "@/modules/carriers/carriers.data";
+import { vehicleVolume, type Vehicle } from "@/modules/carriers/carriers.data";
 
 const PAGE_SIZE = 8;
 
@@ -20,7 +20,6 @@ const formatMeters = (value: number) => value.toFixed(2);
 
 interface CarrierVehiclesTableProps {
     data: Vehicle[];
-    drivers: Driver[];
     hasActiveFilters: boolean;
     onClearFilters: () => void;
     onEdit: (vehicle: Vehicle) => void;
@@ -28,13 +27,11 @@ interface CarrierVehiclesTableProps {
     onDelete: (id: number) => void;
 }
 
-export default function CarrierVehiclesTable({ data, drivers, hasActiveFilters, onClearFilters, onEdit, onAdd, onDelete }: CarrierVehiclesTableProps) {
+export default function CarrierVehiclesTable({ data, hasActiveFilters, onClearFilters, onEdit, onAdd, onDelete }: CarrierVehiclesTableProps) {
     const [page, setPage] = useState(1);
     const [sort, setSort] = useState<SortState<SortKey> | null>(null);
     // Se guarda el vehículo completo: al confirmar sale de `data` y el texto no debe vaciarse mientras el modal se cierra
     const [deleting, setDeleting] = useState<{ open: boolean; vehicle: Vehicle | null }>({ open: false, vehicle: null });
-
-    const driverOf = (vehicle: Vehicle) => drivers.find((driver) => driver.vehiculoId === vehicle.id)?.nombre;
 
     const sortedData = useMemo(() => {
         if (!sort) return data;
@@ -109,7 +106,6 @@ export default function CarrierVehiclesTable({ data, drivers, hasActiveFilters, 
                     >
                         <TableGridCardFields>
                             <TableGridCardField label="Volumen" value={`${vehicleVolume(row).toFixed(1)} m³`} />
-                            <TableGridCardField label="Chofer" value={driverOf(row) ?? "Sin asignar"} />
                             <TableGridCardField label="Peso neto" value={`${row.pesoNeto} t`} />
                             <TableGridCardField label="Peso bruto" value={`${row.pesoBruto} t`} />
                         </TableGridCardFields>
@@ -124,13 +120,11 @@ export default function CarrierVehiclesTable({ data, drivers, hasActiveFilters, 
                             <TableHead className="text-ink font-semibold h-14 px-6">Placa</TableHead>
                             <TableHead className="text-ink font-semibold h-14">Dimensiones</TableHead>
                             <SortableHead label="Volumen / Pesos" sortKey="volumen" sort={sort} onToggle={toggleSort} />
-                            <TableHead className="text-ink font-semibold h-14">Chofer asignado</TableHead>
                             <TableHead className="text-ink font-semibold h-14 text-right px-6 w-36">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {visibleData.map((row) => {
-                            const driver = driverOf(row);
                             return (
                                 <TableRow key={row.id} className="border-b border-border hover:bg-surface-page/60 transition-colors">
                                     <TableCell className="h-20 px-6">
@@ -148,9 +142,6 @@ export default function CarrierVehiclesTable({ data, drivers, hasActiveFilters, 
                                             <span className="text-[12px] font-medium text-ink-muted">Neto {row.pesoNeto} t · Bruto {row.pesoBruto} t</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className={driver ? "text-ink font-semibold" : "text-ink-muted font-medium"}>
-                                        {driver ?? "Sin asignar"}
-                                    </TableCell>
                                     <TableCell className="px-6">
                                         <RowActions {...getRowActions(row)} className="justify-end" />
                                     </TableCell>
@@ -167,7 +158,7 @@ export default function CarrierVehiclesTable({ data, drivers, hasActiveFilters, 
             onOpenChange={(open) => setDeleting((current) => ({ ...current, open }))}
             icon={<Trash2 size={28} strokeWidth={2.25} />}
             title="¿Eliminar vehículo?"
-            description={<>Se eliminará el vehículo <strong className="font-bold text-ink">{deleting.vehicle?.placa}</strong>. Su chofer quedará sin vehículo asignado.</>}
+            description={<>Se intentará eliminar el vehículo <strong className="font-bold text-ink">{deleting.vehicle?.placa}</strong>. El backend rechazará la operación si existen asignaciones.</>}
             confirmLabel="Sí, eliminar"
             onConfirm={() => {
                 if (!deleting.vehicle) return;

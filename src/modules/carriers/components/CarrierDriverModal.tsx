@@ -18,7 +18,7 @@ const EMPTY_DRIVER: DriverFormValues = { nombre: "", telefono: "", correo: "" };
 interface CarrierDriverModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSuccess?: () => void;
+    onSuccess?: (values: DriverFormValues) => void | Promise<void>;
     carrier: Carrier | null;
     /** "create" arranca vacío; "edit" arranca con `initialValues` y cambia los textos */
     mode?: "create" | "edit";
@@ -71,7 +71,7 @@ export default function CarrierDriverModal({ open, onOpenChange, onSuccess, carr
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" disabled={!values.nombre.trim()} onClick={() => (onSuccess ? onSuccess() : onOpenChange(false))}>
+                    <Button size="xl" disabled={!values.nombre.trim()} onClick={() => (onSuccess ? void Promise.resolve(onSuccess(values)).catch(() => undefined) : onOpenChange(false))}>
                         <Save size={20} strokeWidth={2.5} /> Guardar chofer
                     </Button>
                 </>

@@ -22,6 +22,10 @@ import CarrierFormModal from "./CarrierFormModal";
 import CarrierVehicleModal from "./CarrierVehicleModal";
 import CarrierDriverModal from "./CarrierDriverModal";
 import type { Carrier } from "@/modules/carriers/carriers.data";
+import type { CarrierInput, DriverInput, VehicleInput } from "@/modules/carriers/api/carrier.api";
+import type { CarrierFormValues } from "./CarrierFormModal";
+import type { DriverFormValues } from "./CarrierDriverModal";
+import type { VehicleFormValues } from "./CarrierVehicleModal";
 
 const PAGE_SIZE = 8;
 
@@ -33,9 +37,12 @@ interface CarriersTableProps {
     onToggleRow: (id: number) => void;
     onToggleAll: (ids: number[]) => void;
     onDelete: (id: number) => void;
+    onUpdateCarrier: (id: number, values: CarrierInput) => Promise<void>;
+    onCreateVehicle: (carrierId: number, values: VehicleInput) => Promise<void>;
+    onCreateDriver: (carrierId: number, values: DriverInput) => Promise<void>;
 }
 
-export default function CarriersTable({ data, hasActiveFilters, onClearFilters, selectedIds, onToggleRow, onToggleAll, onDelete }: CarriersTableProps) {
+export default function CarriersTable({ data, hasActiveFilters, onClearFilters, selectedIds, onToggleRow, onToggleAll, onDelete, onUpdateCarrier, onCreateVehicle, onCreateDriver }: CarriersTableProps) {
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [editingCarrierId, setEditingCarrierId] = useState<number | null>(null);
@@ -182,7 +189,9 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                 onOpenChange={(open) => !open && setEditingCarrierId(null)}
                 mode="edit"
                 initialValues={editingCarrier ?? undefined}
-                onSuccess={() => {
+                onSuccess={async (values: CarrierFormValues) => {
+                    if (!editingCarrier) return;
+                    await onUpdateCarrier(editingCarrier.id, values);
                     setEditingCarrierId(null);
                     showSuccess("carrier-updated");
                 }}
@@ -191,7 +200,13 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                 open={vehicleCarrierId !== null}
                 onOpenChange={(open) => !open && setVehicleCarrierId(null)}
                 carrier={vehicleCarrier}
-                onSuccess={() => {
+                onSuccess={async (values: VehicleFormValues) => {
+                    if (!vehicleCarrier) return;
+                    await onCreateVehicle(vehicleCarrier.id, {
+                        placa: values.placa,
+                        ancho: Number(values.ancho), altura: Number(values.altura), profundidad: Number(values.profundidad),
+                        pesoNeto: Number(values.pesoNeto), pesoBruto: Number(values.pesoBruto),
+                    });
                     setVehicleCarrierId(null);
                     showSuccess("vehicle-created");
                 }}
@@ -200,7 +215,9 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                 open={driverCarrierId !== null}
                 onOpenChange={(open) => !open && setDriverCarrierId(null)}
                 carrier={driverCarrier}
-                onSuccess={() => {
+                onSuccess={async (values: DriverFormValues) => {
+                    if (!driverCarrier) return;
+                    await onCreateDriver(driverCarrier.id, values);
                     setDriverCarrierId(null);
                     showSuccess("driver-created");
                 }}
@@ -210,7 +227,7 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                 onOpenChange={(open) => setDeleting((current) => ({ ...current, open }))}
                 icon={<Trash2 size={28} strokeWidth={2.25} />}
                 title="¿Eliminar empresa?"
-                description={<>Se eliminará <strong className="font-bold text-ink">{deleting.carrier?.nombre}</strong> junto con sus vehículos y choferes. Esta acción no se puede deshacer.</>}
+                description={<>Se intentará eliminar <strong className="font-bold text-ink">{deleting.carrier?.nombre}</strong>. El backend rechazará la operación si aún tiene vehículos o choferes asociados.</>}
                 confirmLabel="Sí, eliminar"
                 onConfirm={() => {
                     if (!deleting.carrier) return;

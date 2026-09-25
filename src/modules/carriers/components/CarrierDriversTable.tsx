@@ -8,13 +8,12 @@ import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared
 import { TableToolbar, TableCountPill } from "@/shared/components/TableToolbar";
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ConfirmModal from "@/shared/components/ConfirmModal";
-import type { Driver, Vehicle } from "@/modules/carriers/carriers.data";
+import type { Driver } from "@/modules/carriers/carriers.data";
 
 const PAGE_SIZE = 8;
 
 interface CarrierDriversTableProps {
     data: Driver[];
-    vehicles: Vehicle[];
     hasActiveFilters: boolean;
     onClearFilters: () => void;
     onEdit: (driver: Driver) => void;
@@ -22,12 +21,10 @@ interface CarrierDriversTableProps {
     onDelete: (id: number) => void;
 }
 
-export default function CarrierDriversTable({ data, vehicles, hasActiveFilters, onClearFilters, onEdit, onAdd, onDelete }: CarrierDriversTableProps) {
+export default function CarrierDriversTable({ data, hasActiveFilters, onClearFilters, onEdit, onAdd, onDelete }: CarrierDriversTableProps) {
     const [page, setPage] = useState(1);
     // Se guarda el chofer completo: al confirmar sale de `data` y el texto no debe vaciarse mientras el modal se cierra
     const [deleting, setDeleting] = useState<{ open: boolean; driver: Driver | null }>({ open: false, driver: null });
-
-    const plateOf = (driver: Driver) => vehicles.find((vehicle) => vehicle.id === driver.vehiculoId)?.placa;
 
     const pageCount = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
@@ -45,7 +42,7 @@ export default function CarrierDriversTable({ data, vehicles, hasActiveFilters, 
         <TableCard
             icon={<UserRound size={24} strokeWidth={2.5} />}
             title="Choferes registrados"
-            description="Conductores vinculados directamente a un vehículo."
+            description="Los choferes y vehículos se asignan por rango de fechas dentro de cada trazabilidad de transporte."
             headerRight={
                 <TableToolbar>
                     <TableCountPill icon={<UserRound size={16} strokeWidth={2.5} className="text-brand" />} count={data.length} label="choferes" />
@@ -89,7 +86,6 @@ export default function CarrierDriversTable({ data, vehicles, hasActiveFilters, 
                     >
                         <TableGridCardFields>
                             <TableGridCardField label="Correo" value={row.correo} />
-                            <TableGridCardField label="Vehículo" value={plateOf(row) ?? "Sin asignar"} />
                         </TableGridCardFields>
                     </TableGridCard>
                 ))}
@@ -102,13 +98,12 @@ export default function CarrierDriversTable({ data, vehicles, hasActiveFilters, 
                             <TableHead className="text-ink font-semibold h-14 px-6">Chofer</TableHead>
                             <TableHead className="text-ink font-semibold h-14">Teléfono</TableHead>
                             <TableHead className="text-ink font-semibold h-14">Correo</TableHead>
-                            <TableHead className="text-ink font-semibold h-14">Vehículo</TableHead>
+                            <TableHead className="text-ink font-semibold h-14">Asignación</TableHead>
                             <TableHead className="text-ink font-semibold h-14 text-right px-6 w-36">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {visibleData.map((row) => {
-                            const plate = plateOf(row);
                             return (
                                 <TableRow key={row.id} className="border-b border-border hover:bg-surface-page/60 transition-colors">
                                     <TableCell className="h-20 px-6">
@@ -118,8 +113,8 @@ export default function CarrierDriversTable({ data, vehicles, hasActiveFilters, 
                                     <TableCell>
                                         <a href={`mailto:${row.correo}`} className="text-brand font-medium hover:underline">{row.correo}</a>
                                     </TableCell>
-                                    <TableCell className={plate ? "text-ink font-semibold" : "text-ink-muted font-medium"}>
-                                        {plate ?? "Sin asignar"}
+                                    <TableCell className="text-ink-muted font-medium">
+                                        Por trazabilidad
                                     </TableCell>
                                     <TableCell className="px-6">
                                         <RowActions {...getRowActions(row)} className="justify-end" />

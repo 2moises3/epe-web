@@ -1,23 +1,37 @@
-import { useState, useMemo } from "react";
-import { Truck, Send, Building2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Truck, Building2 } from "lucide-react";
 import CarriersFilters from "@/modules/carriers/components/CarriersFilters";
 import CarriersTable from "@/modules/carriers/components/CarriersTable";
 import CarrierFormModal from "@/modules/carriers/components/CarrierFormModal";
-import CarrierSendRequirementModal from "@/modules/carriers/components/CarrierSendRequirementModal";
 import CarrierSuccessModal, { type CarrierSuccessMode } from "@/modules/carriers/components/CarrierSuccessModal";
 import PageHeader from "@/shared/layout/PageHeader";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
-import { carriers as initialCarriers } from "@/modules/carriers/carriers.data";
+import { createCarrier, deleteCarrier, getCarriers, updateCarrier, createVehicle, createDriver } from "@/modules/carriers/api/carrier.api";
+import type { Carrier } from "@/modules/carriers/carriers.data";
 
 export default function CarriersPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isRequirementModalOpen, setIsRequirementModalOpen] = useState(false);
-
-    const [carriers, setCarriers] = useState(initialCarriers);
+    const [carriers, setCarriers] = useState<Carrier[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<{ open: boolean; mode: CarrierSuccessMode }>({ open: false, mode: "carrier-created" });
     const [search, setSearch] = useState("");
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+    const loadCarriers = useCallback(async () => {
+        try {
+            setError(null);
+            setCarriers(await getCarriers());
+        } catch {
+            setError("No se pudieron cargar las empresas desde la API del backend.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    // Carga inicial desde la API: el estado se actualiza al resolverse la petición.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => { void loadCarriers(); }, [loadCarriers]);
 
     const hasActiveFilters = search !== "";
 
@@ -26,17 +40,37 @@ export default function CarriersPage() {
         return carriers.filter((item) => item.nombre.toLowerCase().includes(searchLower));
     }, [carriers, search]);
 
-    const selectedCarriers = useMemo(() => carriers.filter((item) => selectedIds.has(item.id)), [carriers, selectedIds]);
-
     const showSuccess = (mode: CarrierSuccessMode) => setSuccess({ open: true, mode });
 
-    const deleteCarrier = (id: number) => {
-        setCarriers((current) => current.filter((item) => item.id !== id));
-        setSelectedIds((current) => {
-            const next = new Set(current);
-            next.delete(id);
-            return next;
-        });
+    const handleCreateCarrier = async (values: { nombre: string; numero: string; correo: string; ruc: string }) => {
+        try {
+            await createCarrier(values);
+            await loadCarriers();
+            setIsCreateModalOpen(false);
+            showSuccess("carrier-created");
+        } catch {
+            setError("No se pudo guardar la empresa. Verifica RUC, correo y conexión con el backend.");
+        }
+    };
+
+    const handleUpdateCarrier = async (id: number, values: { nombre: string; numero: string; correo: string; ruc: string }) => {
+        try {
+            await updateCarrier(id, values);
+            await loadCarriers();
+        } catch {
+            setError("No se pudo actualizar la empresa.");
+            throw new Error("No se pudo actualizar la empresa.");
+        }
+    };
+
+    const handleDeleteCarrier = async (id: number) => {
+        try {
+            await deleteCarrier(id);
+            await loadCarriers();
+            setSelectedIds((current) => { const next = new Set(current); next.delete(id); return next; });
+        } catch {
+            setError("El backend no pudo eliminar la empresa; puede tener vehículos o choferes asociados.");
+        }
     };
 
     const toggleRow = (id: number) => {
@@ -62,20 +96,9 @@ export default function CarriersPage() {
             <PageHeader
                 icon={<Truck size={24} strokeWidth={2.5} />}
                 title="Gestión de Transporte"
-                description={`${carriers.length} empresas de transporte registradas${selectedIds.size > 0 ? ` · ${selectedIds.size} seleccionados` : ""}`}
+                description={`${carriers.length} empresas de transporte registradas`}
                 action={
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 [&>button]:w-full sm:[&>button]:w-auto">
-                        <Button
-                            variant="outline"
-                            size="xl"
-                            disabled={selectedIds.size === 0}
-                            onClick={() => setIsRequirementModalOpen(true)}
-                        >
-                            <Send size={20} strokeWidth={2.5} /> Enviar requerimiento
-                            {selectedIds.size > 0 && (
-                                <Badge variant="brand" className="ml-1">{selectedIds.size}</Badge>
-                            )}
-                        </Button>
                         <Button
                             size="xl"
                             onClick={() => setIsCreateModalOpen(true)}
@@ -86,6 +109,8 @@ export default function CarriersPage() {
                 }
             />
 
+            {error && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p>}
+            {isLoading ? <div className="rounded-2xl border border-border bg-white p-6 text-center text-ink-muted">Cargando empresas de transporte...</div> : <>
             <CarriersFilters
                 search={search}
                 onSearchChange={setSearch}
@@ -100,28 +125,17 @@ export default function CarriersPage() {
                 selectedIds={selectedIds}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAll}
-                onDelete={deleteCarrier}
+                onDelete={handleDeleteCarrier}
+                onUpdateCarrier={handleUpdateCarrier}
+                onCreateVehicle={async (carrierId, values) => { try { await createVehicle(carrierId, values); await loadCarriers(); } catch { setError("No se pudo registrar el vehículo."); throw new Error("No se pudo registrar el vehículo."); } }}
+                onCreateDriver={async (carrierId, values) => { try { await createDriver(carrierId, values); await loadCarriers(); } catch { setError("No se pudo registrar el chofer."); throw new Error("No se pudo registrar el chofer."); } }}
             />
+            </>}
 
             <CarrierFormModal
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
-                onSuccess={() => {
-                    setIsCreateModalOpen(false);
-                    showSuccess("carrier-created");
-                }}
-            />
-
-            <CarrierSendRequirementModal
-                open={isRequirementModalOpen}
-                onOpenChange={setIsRequirementModalOpen}
-                selectedCarriers={selectedCarriers}
-                onRemoveCarrier={toggleRow}
-                onSuccess={() => {
-                    setIsRequirementModalOpen(false);
-                    setSelectedIds(new Set());
-                    showSuccess("requirement-sent");
-                }}
+                onSuccess={handleCreateCarrier}
             />
 
             <CarrierSuccessModal
