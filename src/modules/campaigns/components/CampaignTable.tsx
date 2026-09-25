@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Eye, Contact, Layers, ArrowUpDown, ArrowUp, ArrowDown, Briefcase, ShieldCheck, Truck, Calendar, Package, ListFilter } from "lucide-react";
+import { Pencil, Eye, Contact, Layers, Briefcase, ShieldCheck, Truck, Calendar, Package, ListFilter } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -15,7 +15,8 @@ import { TABLE_HEAD_BG, TableRowAccent, TableRowLead } from "@/shared/components
 import TableGridCard from "@/shared/components/TableGridCard";
 import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle } from "@/shared/components/TableToolbar";
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
-import Hint from "@/shared/components/Hint";
+import SortableHead from "@/shared/components/SortableHead";
+import { nextSort, type SortState } from "@/shared/utils/tableSort";
 import { Button } from "@/shared/components/ui/button";
 import CampaignFormModal from "@/modules/campaigns/components/CampaignFormModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
@@ -50,34 +51,6 @@ const STATUS_ACCENT_BORDER: Record<string, string> = {
     Terminado: "border-l-status-neutral",
 };
 
-interface SortableHeadProps {
-    label: string;
-    sortKey: SortKey;
-    sort: { key: SortKey; direction: "asc" | "desc" } | null;
-    onToggle: (key: SortKey) => void;
-    className?: string;
-}
-
-function SortableHead({ label, sortKey, sort, onToggle, className = "" }: SortableHeadProps) {
-    const isActive = sort?.key === sortKey;
-    const Icon = !isActive ? ArrowUpDown : sort.direction === "asc" ? ArrowUp : ArrowDown;
-    const hint = !isActive ? "Ordenar ascendente" : sort.direction === "asc" ? "Ordenar descendente" : "Quitar orden";
-
-    return (
-        <TableHead className={`text-ink font-semibold h-14 ${className}`}>
-            <Hint label={hint}>
-                <button
-                    onClick={() => onToggle(sortKey)}
-                    className={`inline-flex items-center gap-1.5 transition-colors hover:text-brand ${isActive ? "text-brand" : ""}`}
-                >
-                    {label}
-                    <Icon size={14} strokeWidth={2.5} className={isActive ? "opacity-100" : "opacity-40"} />
-                </button>
-            </Hint>
-        </TableHead>
-    );
-}
-
 export default function CampaignTable({ data, onClearFilters, hasActiveFilters }: CampaignTableProps) {
     const [editingCampaignId, setEditingCampaignId] = useState<number | null>(null);
     const [managingClientsCampaignId, setManagingClientsCampaignId] = useState<number | null>(null);
@@ -85,7 +58,7 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
     // Campaña a la que se acaban de vincular clientes: el éxito ofrece ir a su detalle, que es donde se listan
     const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(null);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-    const [sort, setSort] = useState<{ key: SortKey; direction: "asc" | "desc" } | null>(null);
+    const [sort, setSort] = useState<SortState<SortKey> | null>(null);
     const [page, setPage] = useState(1);
     const navigate = useNavigate();
     const [successModalMode, setSuccessModalMode] = useState<"edit" | "provider" | "client" | "certification">("edit");
@@ -156,11 +129,7 @@ export default function CampaignTable({ data, onClearFilters, hasActiveFilters }
 
     const toggleSort = (key: SortKey) => {
         setPage(1);
-        setSort((current) => {
-            if (current?.key !== key) return { key, direction: "asc" };
-            if (current.direction === "asc") return { key, direction: "desc" };
-            return null;
-        });
+        setSort((current) => nextSort(current, key));
     };
 
     const editingCampaign = data.find((row) => row.id === editingCampaignId) ?? null;

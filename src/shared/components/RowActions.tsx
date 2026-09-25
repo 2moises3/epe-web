@@ -13,6 +13,8 @@ export interface RowAction {
     label: string;
     icon: ReactNode;
     onClick?: () => void;
+    /** "destructive" pinta la acción en rojo; "brand" (solo en el menú "secondary") la resalta en verde */
+    variant?: "default" | "brand" | "destructive";
 }
 
 interface RowActionsProps {
@@ -33,7 +35,12 @@ export default function RowActions({ primary, secondary = [], align = "end", cla
                     <button
                         onClick={action.onClick}
                         aria-label={action.label}
-                        className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-ink-muted transition-all duration-300 hover:bg-[#69b935] hover:text-white hover:shadow-[0_4px_12px_rgba(105,185,53,0.3)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[#69b935]/50"
+                        className={cn(
+                            "shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-ink-muted transition-all duration-300 hover:text-white hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm outline-none focus-visible:ring-2",
+                            action.variant === "destructive"
+                                ? "hover:bg-destructive hover:shadow-[0_4px_12px_rgba(220,38,38,0.3)] focus-visible:ring-destructive/50"
+                                : "hover:bg-[#69b935] hover:shadow-[0_4px_12px_rgba(105,185,53,0.3)] focus-visible:ring-[#69b935]/50"
+                        )}
                     >
                         {action.icon}
                     </button>
@@ -59,7 +66,15 @@ export default function RowActions({ primary, secondary = [], align = "end", cla
                                 <DropdownMenuItem
                                     key={action.label}
                                     onClick={action.onClick}
-                                    className="gap-2.5 px-3 py-2.5 text-[14px] font-medium text-ink-body rounded-lg cursor-pointer transition-all duration-200 hover:!text-[#2e7d32] hover:bg-[#69b935]/15 focus:!text-[#2e7d32] focus:bg-[#69b935]/15 [&_svg]:text-ink-muted hover:[&_svg]:!text-[#2e7d32] focus:[&_svg]:!text-[#2e7d32]"
+                                    variant={action.variant === "destructive" ? "destructive" : "default"}
+                                    className={cn(
+                                        "gap-2.5 px-3 py-2.5 text-[14px] font-medium rounded-lg cursor-pointer transition-all duration-200",
+                                        action.variant === "brand"
+                                            ? "text-brand [&_svg]:text-brand hover:!text-brand focus:!text-brand hover:bg-brand-surface focus:bg-brand-surface"
+                                            : action.variant === "destructive"
+                                                ? ""
+                                                : "text-ink-body hover:!text-[#2e7d32] hover:bg-[#69b935]/15 focus:!text-[#2e7d32] focus:bg-[#69b935]/15 [&_svg]:text-ink-muted hover:[&_svg]:!text-[#2e7d32] focus:[&_svg]:!text-[#2e7d32]"
+                                    )}
                                 >
                                     {action.icon}
                                     {action.label}

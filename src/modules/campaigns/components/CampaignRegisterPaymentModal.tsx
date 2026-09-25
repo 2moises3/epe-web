@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Save, X } from "lucide-react";
+import { Save, X, Banknote } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
@@ -45,6 +45,7 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Banknote size={22} strokeWidth={2} />}
             title="Registrar Pago"
             description="Registra un pago al transportista."
             className="sm:max-w-150"

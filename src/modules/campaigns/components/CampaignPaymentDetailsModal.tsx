@@ -1,5 +1,5 @@
 import AppModal from "@/shared/components/AppModal";
-import { X } from "lucide-react";
+import { X, Receipt } from "lucide-react";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Button } from "@/shared/components/ui/button";
 import { InfoField } from "@/shared/components/InfoField";
@@ -19,6 +19,7 @@ export default function CampaignPaymentDetailsModal({ open, onOpenChange, paymen
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Receipt size={22} strokeWidth={2} />}
             title="Detalles del Pago"
             description="Visualizando la información registrada del pago."
             className="sm:max-w-130"

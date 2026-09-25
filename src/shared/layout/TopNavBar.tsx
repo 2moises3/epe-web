@@ -7,9 +7,11 @@ import {
     DropdownMenuTrigger,
 } from "@/shared/components/ui/dropdown-menu";
 import LogoEmpresaOnly from "@/assets/image/logo_empresa_only.webp";
+import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { navigationItems } from "@/shared/layout/navigationItems";
 import Hint from "@/shared/components/Hint";
+import ConfirmModal from "@/shared/components/ConfirmModal";
 import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
 
 interface TopNavBarProps {
@@ -19,6 +21,7 @@ interface TopNavBarProps {
 export default function TopNavBar({ onLogout }: TopNavBarProps) {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
     const isRoot = location.pathname === '/modules' || location.pathname === '/';
 
     return (
@@ -125,7 +128,7 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                         <DropdownMenuItem
                             variant="destructive"
                             className="gap-3 px-3 py-2.5 text-[13px] font-medium"
-                            onClick={onLogout}
+                            onClick={() => setIsLogoutConfirmOpen(true)}
                         >
                             <LogOut size={16} />
                             Cerrar sesión
@@ -133,6 +136,16 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+            <ConfirmModal
+                open={isLogoutConfirmOpen}
+                onOpenChange={setIsLogoutConfirmOpen}
+                tone="warning"
+                icon={<LogOut size={28} strokeWidth={2.25} />}
+                title="¿Cerrar sesión?"
+                description="Tendrás que volver a ingresar tus credenciales para acceder al sistema."
+                confirmLabel="Sí, cerrar sesión"
+                onConfirm={() => onLogout?.()}
+            />
         </header>
     );
 }

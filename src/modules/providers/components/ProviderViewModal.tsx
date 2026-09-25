@@ -1,5 +1,5 @@
 import AppModal from "@/shared/components/AppModal";
-import { X } from "lucide-react";
+import { X, UserRound } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
 interface ProviderViewModalProps {
@@ -32,6 +32,7 @@ export default function ProviderViewModal({ open, onOpenChange, providerId }: Pr
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<UserRound size={22} strokeWidth={2} />}
             title={mockProvider.name}
             description={`${mockProvider.location} · ${mockProvider.size}`}
             className="sm:max-w-112.5"

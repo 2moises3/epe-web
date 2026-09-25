@@ -20,6 +20,8 @@ function isImage(file: File) {
 
 interface FileDropzoneProps {
     label: string;
+    /** Oculta la etiqueta visible (sigue disponible para lectores de pantalla) cuando el bloque ya tiene su propio título */
+    hideLabel?: boolean;
     hint?: string;
     accept?: string;
     file: File | null;
@@ -30,7 +32,7 @@ interface FileDropzoneProps {
  * Botón de adjuntar que, al elegir un archivo, se convierte en una tarjeta con nombre + peso
  * y dos acciones: ver una vista previa (PDF o imagen) y quitarlo para adjuntar otro.
  */
-export default function FileDropzone({ label, hint = "PDF · Máx. 10 MB", accept = "application/pdf,image/*", file, onChange }: FileDropzoneProps) {
+export default function FileDropzone({ label, hideLabel, hint = "PDF · Máx. 10 MB", accept = "application/pdf,image/*", file, onChange }: FileDropzoneProps) {
     const [previewOpen, setPreviewOpen] = useState(false);
     const inputId = `file-dropzone-${label.replace(/\s+/g, "-").toLowerCase()}`;
 
@@ -46,7 +48,7 @@ export default function FileDropzone({ label, hint = "PDF · Máx. 10 MB", accep
 
     return (
         <div className="flex flex-col gap-2.5">
-            <label htmlFor={inputId} className="text-[13px] font-semibold text-ink">
+            <label htmlFor={inputId} className={cn("text-[13px] font-semibold text-ink", hideLabel && "sr-only")}>
                 {label}:
             </label>
 
@@ -106,6 +108,7 @@ export default function FileDropzone({ label, hint = "PDF · Máx. 10 MB", accep
                 <AppModal
                     open={previewOpen}
                     onOpenChange={setPreviewOpen}
+                    icon={<Eye size={22} strokeWidth={2} />}
                     title="Vista Previa"
                     description={`${file.name} (${formatFileSize(file.size)})`}
                     className="sm:max-w-190"

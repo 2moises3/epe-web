@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Save, X } from "lucide-react";
+import { Save, X, FileSignature } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import FileDropzone from "@/shared/components/FileDropzone";
@@ -29,6 +29,7 @@ export default function ClientAddContractModal({ open, onOpenChange, onSuccess }
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<FileSignature size={22} strokeWidth={2} />}
             title="Añadir Contrato"
             description="Datos del cliente y documentos adjuntos"
             className="sm:max-w-187.5"

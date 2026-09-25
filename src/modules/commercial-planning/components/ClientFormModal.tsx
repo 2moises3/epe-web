@@ -45,6 +45,7 @@ export default function ClientFormModal({
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<UserPlus size={22} strokeWidth={2} />}
             title={isEdit ? "Editar Cliente" : "Registrar Cliente"}
             description={isEdit
                 ? "Modifica la información del cliente existente."

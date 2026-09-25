@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, Users } from "lucide-react";
 import FileDropzone from "@/shared/components/FileDropzone";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
@@ -35,6 +35,7 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave }: 
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Users size={22} strokeWidth={2} />}
             title="Registrar Clientes"
             footer={
                 <>

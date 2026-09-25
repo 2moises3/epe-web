@@ -3,7 +3,7 @@ import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import { InfoField, InfoSection, StatTile, LocationTrail } from "@/shared/components/InfoField";
-import { MapPin, Sprout, Leaf, FlaskConical, UserCheck, Ruler, Droplets, LandPlot } from "lucide-react";
+import { MapPin, Sprout, Leaf, FlaskConical, UserCheck, Ruler, Droplets, LandPlot, Tractor } from "lucide-react";
 import SegmentedTabs, { type SegmentedTabItem } from "@/shared/components/SegmentedTabs";
 import { TABLE_HEAD_BG } from "@/shared/components/DataTableRow";
 
@@ -35,6 +35,7 @@ export default function CampaignProviderDetailsModal({
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Tractor size={22} strokeWidth={2} />}
             title={`${providerType} - ${providerName}`}
             description="Cantidad: 1000 t"
             className="sm:max-w-225"

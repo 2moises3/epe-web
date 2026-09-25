@@ -1,5 +1,5 @@
 import AppModal from "@/shared/components/AppModal";
-import { X, CalendarPlus } from "lucide-react";
+import { X, CalendarPlus, ClipboardList } from "lucide-react";
 import { Separator } from "@/shared/components/ui/separator";
 import { Button } from "@/shared/components/ui/button";
 
@@ -14,6 +14,7 @@ export default function ProviderInterviewModal({ open, onOpenChange, onSuccess }
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<ClipboardList size={22} strokeWidth={2} />}
             title="Fundo Los Olivos"
             description="Piura · 45 ha"
             className="sm:max-w-95"

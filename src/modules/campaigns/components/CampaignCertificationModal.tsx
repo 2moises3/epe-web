@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Save, X } from "lucide-react";
+import { Save, X, ShieldCheck } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
@@ -42,6 +42,7 @@ export default function CampaignCertificationModal({ open, onOpenChange, onSave 
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<ShieldCheck size={22} strokeWidth={2} />}
             title="Registrar Certificación"
             description="Registra las certificaciones y documentos del proveedor."
             className="sm:max-w-150"

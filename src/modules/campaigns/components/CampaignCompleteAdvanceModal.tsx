@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, X, Wallet } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
@@ -37,6 +37,7 @@ export default function CampaignCompleteAdvanceModal({ open, onOpenChange, payme
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Wallet size={22} strokeWidth={2} />}
             title="Completar Pago"
             description={payment ? `Cierra el saldo pendiente de ${payment.transportista}.` : "Cierra el saldo pendiente."}
             className="sm:max-w-150"

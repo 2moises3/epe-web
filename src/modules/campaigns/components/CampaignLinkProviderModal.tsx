@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, Link2 } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
@@ -37,6 +37,7 @@ export default function CampaignLinkProviderModal({ open, onOpenChange, onSave }
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Link2 size={22} strokeWidth={2} />}
             title="Vincular Proveedores"
             description="Asocia productores y acopiadores a esta campaña."
             className="sm:max-w-175"

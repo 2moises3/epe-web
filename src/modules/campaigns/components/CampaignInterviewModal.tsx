@@ -1,4 +1,4 @@
-import { MapPin, Sprout, Leaf, X, Save } from "lucide-react";
+import { MapPin, Sprout, Leaf, X, Save, ClipboardList } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
@@ -15,6 +15,7 @@ export default function CampaignInterviewModal({ open, onOpenChange, onSave }: C
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<ClipboardList size={22} strokeWidth={2} />}
             title="Informe de Entrevista"
             description="Fundo Los Olivos"
             className="sm:max-w-275"

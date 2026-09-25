@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, FlaskConical } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import FileDropzone from "@/shared/components/FileDropzone";
@@ -37,6 +37,7 @@ export default function CampaignExamModal({ open, onOpenChange, onSave }: Campai
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<FlaskConical size={22} strokeWidth={2} />}
             title="Registrar Examen"
             description="Registra los análisis de laboratorio asociados al productor."
             className="sm:max-w-275 md:max-w-250"

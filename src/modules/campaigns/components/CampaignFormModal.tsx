@@ -74,6 +74,7 @@ export default function CampaignFormModal({
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Sprout size={22} strokeWidth={2} />}
             title={isEdit ? "Editar Campaña" : "Nueva Campaña"}
             description={isEdit
                 ? "Modifica la información de la campaña existente."

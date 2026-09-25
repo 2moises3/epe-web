@@ -82,6 +82,7 @@ export default function ProviderFormModal({
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<UserPlus size={22} strokeWidth={2} />}
             title={isEdit ? "Editar Proveedor" : "Registrar Proveedor"}
             description={isEdit
                 ? "Modifica la información del proveedor existente."

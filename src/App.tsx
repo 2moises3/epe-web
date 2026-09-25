@@ -9,6 +9,8 @@ import CampaignProvidersPage from './modules/campaigns/pages/CampaignProvidersPa
 import CampaignCarrierPaymentsPage from './modules/campaigns/pages/CampaignCarrierPaymentsPage'
 import ProvidersPage from './modules/providers/pages/ProvidersPage'
 import CommercialPlanningPage from './modules/commercial-planning/pages/CommercialPlanningPage'
+import CarriersPage from './modules/carriers/pages/CarriersPage'
+import CarrierDetailsPage from './modules/carriers/pages/CarrierDetailsPage'
 import DashboardLayout from '@/shared/layout/DashboardLayout'
 import OfflinePage from '@/shared/components/OfflinePage'
 import { clearSession, getSession, saveSession } from '@/shared/offline/session'
@@ -77,6 +79,8 @@ function App() {
           <Route path="/campaigns/:id/carrier-payments" element={<CampaignCarrierPaymentsPage />} />
           <Route path="/proveedores" element={<ProvidersPage />} />
           <Route path="/planificacion-comercial" element={<CommercialPlanningPage />} />
+          <Route path="/transportistas" element={<CarriersPage />} />
+          <Route path="/transportistas/:id" element={<CarrierDetailsPage />} />
         </Route>
         
         <Route path="/" element={<Navigate to="/modules" />} />

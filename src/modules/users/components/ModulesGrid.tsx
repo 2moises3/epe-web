@@ -38,7 +38,7 @@ export default function ModulesGrid() {
         description="Coordina la logística y flota de transporte de forma eficiente."
         icon={<Truck size={28} strokeWidth={1.5} />}
         image={TransportManagementImg}
-        onClick={() => {}}
+        onClick={() => navigate("/transportistas")}
       />
       <ModuleCard
         title="Gestión de Calidad"

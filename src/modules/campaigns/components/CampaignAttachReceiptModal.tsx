@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, X } from "lucide-react";
+import { Check, X, Paperclip } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
@@ -37,6 +37,7 @@ export default function CampaignAttachReceiptModal({ open, onOpenChange, payment
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Paperclip size={22} strokeWidth={2} />}
             title="Adjuntar Boleta"
             description={payment ? `Confirma el pago pendiente de ${payment.transportista}.` : "Confirma el pago pendiente."}
             className="sm:max-w-120"

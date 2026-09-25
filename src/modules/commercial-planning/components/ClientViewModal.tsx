@@ -1,5 +1,5 @@
 import AppModal from "@/shared/components/AppModal";
-import { X } from "lucide-react";
+import { X, Contact } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { InfoField } from "@/shared/components/InfoField";
 
@@ -16,6 +16,7 @@ export default function ClientViewModal({ open, onOpenChange, clientId }: Client
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={<Contact size={22} strokeWidth={2} />}
             title="Detalles del Cliente"
             description="Visualizando la información registrada del cliente."
             className="sm:max-w-162.5"

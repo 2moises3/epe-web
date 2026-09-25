@@ -1,4 +1,4 @@
-import { Home, Users, Contact } from "lucide-react";
+import { Home, Users, Contact, Truck } from "lucide-react";
 
 export const navigationItems = [
   {
@@ -15,5 +15,10 @@ export const navigationItems = [
     title: "Planificación Comercial",
     url: "/planificacion-comercial",
     icon: Contact,
+  },
+  {
+    title: "Transporte",
+    url: "/transportistas",
+    icon: Truck,
   },
 ];
