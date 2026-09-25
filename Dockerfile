@@ -11,6 +11,7 @@ COPY . .
 # Vite embeds VITE_* variables into the static bundle during the build.
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+RUN npm test
 RUN npm run build
 
 # Runtime stage
