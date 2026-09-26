@@ -1,6 +1,6 @@
 # Integración frontend ↔ backend
 
-**Última revisión:** 2026-09-25  
+**Última revisión:** 2026-09-26
 **Alcance:** contraste estático entre las pantallas y servicios de `epe-web/src` y los controladores/DTO de `epe-backend/src`. No representa una prueba contra la base de datos ni contra el servicio desplegado.
 
 ## Criterios
@@ -16,7 +16,7 @@
 |---|---|---|---|
 | Campañas | **Parcial** | `GET/POST/PATCH/DELETE /campanas`; formularios/listado conectados. | Verificar todos los campos visibles frente a DTO; las métricas de cosecha no son un recurso independiente del backend. |
 | Frutas y derivadas | **Parcial** | `GET /frutas` y `GET /frutas/:frutaId/derivadas` para opciones de campaña. | El CRUD de frutas/derivadas del backend no está expuesto como gestión completa en UI. |
-| Proveedores de campaña | **Parcial** | `GET/POST/PATCH/DELETE /campanias-proveedores` (incluye consulta por campaña). | Probar validaciones y contrato completo en formularios; backend exige campos de finca según tipo de proveedor. |
+| Proveedores de campaña | **Parcial** | `GET/POST /campanias-proveedores`, `GET /campanias-proveedores/campania/:campaniaId`, `PATCH/DELETE /campanias-proveedores/:cxpId`. El formulario de vinculación envía cantidad y MTD capturados por usuario; para `productor`, también los campos de finca requeridos por `CreateCampaniaProveedorDto`, y para `acopio` omite esos campos. Los errores de creación se reconcilian con la consulta por campaña: se confirma el éxito solo cuando todos los vínculos quedan verificados y se bloquean reintentos si la consulta no resuelve el resultado. Al recargar las opciones de proveedores, un fallo limpia las opciones anteriores para impedir que se usen datos obsoletos. | La integración está contrastada estáticamente con el DTO, pero no se verificó contra una API desplegada. |
 | Clientes de campaña | **Parcial** | `GET/POST/DELETE /campanas/:campaniaId/clientes-negocio`. | Falta `PATCH` para aprovechar la edición que ofrece backend y confirmar todos los contratos visibles. |
 | Certificados de campaña | **Parcial** | `GET/DELETE /campanas/:campaniaId/certificados`. | Falta integrar alta y edición (`POST/PATCH`). |
 | Clientes de negocio | **Parcial** | Solo `GET /clientes-negocio` en `clients/api`. | El backend expone `POST/PATCH/DELETE`; falta CRUD. Revisar la vista de planificación comercial, que tiene estructuras de UI/datos separadas, y consolidarla sin duplicar registros. |
@@ -28,10 +28,12 @@
 | Vehículos externos | **Completo para CRUD** | `GET/POST/PATCH/DELETE /vehiculos-externos`; alta/edición/baja desde el detalle de empresa. | La API rechaza borrado si el vehículo tiene asignaciones; el frontend informa ese caso. |
 | Choferes externos | **Completo para CRUD** | `GET/POST/PATCH/DELETE /choferes-transporte-externo`; alta/edición/baja desde el detalle de empresa. | No existe una relación fija chofer↔vehículo en el modelo; se asignan por trazabilidad y rango de fechas. |
 | Trazabilidad y asignación de transporte | **Pendiente** | Backend dispone de `trazabilidades-transporte`, `asignaciones-transporte` y `detalles-trazabilidad`. | Falta una vista y servicios frontend para contratos/cargas, asignaciones con fechas y detalles/costos. No inferir una asignación fija. |
-| Pagos a transportistas | **Sin API backend** | La vista usa `carrierPayments.data.ts` y estado local. | El backend revisado no expone entidades ni endpoints de pagos. No son pagos persistidos ni deben presentarse como datos reales; hace falta definir API/modelo antes de integrar. |
+| Pagos a transportistas (fuera de alcance) | **Sin API backend** | Solo datos de muestra y estado local; no se persisten mediante el backend. | El backend revisado no expone entidades ni endpoints de pagos. Se excluye su implementación; hace falta definir API/modelo antes de integrar pagos reales. |
 | Contratos de cliente | **Pendiente** | Backend: `GET /clientes-negocio/:clienteNegocioId/contratos`. | No se encontró consumo frontend para esta ruta. |
 
 ## Conectividad y verificación
+
+- FE01 — formulario de vinculación de proveedores de campaña: pruebas Vitest focalizadas (11/11) aprobadas, incluidas validación/serialización, resultados de envío/reconciliación, duplicados y fallo al recargar opciones; suite completa aprobada (9 archivos, 31 tests); `npm.cmd run build` aprobado con advertencia de tamaño del bundle; ESLint focalizado del componente y módulos de contrato aprobados. La página contenedora conserva un error de lint preexistente en una línea fuera de este cambio. No se invocó una API desplegada.
 
 - Se reportó que la API desplegada responde CORS con `Access-Control-Allow-Origin: http://54.196.9.41`, que no coincide con `http://localhost:5173`. Mientras no se corrija el `CORS_ORIGIN` del backend desplegado, los contratos no pueden probarse desde el navegador local.
 - La configuración backend revisada admite un solo origen en `CORS_ORIGIN`; coordinar los orígenes de desarrollo y producción antes de la prueba end-to-end.
