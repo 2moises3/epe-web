@@ -21,12 +21,12 @@ The user asked to disable WebSockets and cache storage for now, with feature dec
 ## Checklist
 - [x] T1: Disable Vite HMR websocket; prevent service-worker registration, clean up only this application's existing worker/cache, and add focused tests.
   - Acceptance: Vite HMR websocket is disabled; app code does not register the worker; cleanup targets only `/sw.js` and `epe-shell-v1`; service-worker source remains intact.
-  - Checks: RED observed (missing cleanup module); GREEN observed (2 focused tests passed); `npm.cmd test` passed (7 files, 23 tests); `npm.cmd run build` remains blocked by the unrelated missing `src/modules/campaigns/components/CampaignLinkProviderModal` import/file state.
+  - Checks: RED observed (missing cleanup module); GREEN observed (2 focused tests passed); `npm.cmd test` passed (7 files, 23 tests); `npm.cmd run build` passed after an initial run encountered a transient shared-worktree missing-component state; final build completed with only the existing large-chunk warning.
   - Rollback boundary: revert Vite HMR configuration and startup cleanup/test changes, leaving `public/sw.js` unchanged.
   - Runtime harness: N/A — no live browser harness is configured for this focused development-server behavior.
-  - Commit evidence: `f0a5b45` (`chore(dev): disable websocket and service worker cache`).
+  - Commit evidence: `99f3db1` (`chore(dev): disable websocket and service worker cache`).
   - Review assessment: RDD status reports off (clone-local unset); native command then refused because repository `.git` ownership is not trusted, so assessment unavailable.
 
 ## Progress and Next Step
 - T1 implementation and functional tests are complete. `public/sw.js` remains unchanged; only the `/sw.js` root registration and `epe-shell-v1` cache are targeted for cleanup.
-- Next: commit only this task's files; do not stage concurrent campaign-provider changes already present in the shared worktree.
+- T1 is complete and committed. The unrelated campaign-provider changes present in the shared worktree were not staged or included.
