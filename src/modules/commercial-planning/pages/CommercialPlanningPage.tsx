@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ClientsFilters from "@/modules/commercial-planning/components/ClientsFilters";
 import ClientsTable from "@/modules/commercial-planning/components/ClientsTable";
 import ClientFormModal from "@/modules/commercial-planning/components/ClientFormModal";
@@ -6,38 +6,48 @@ import ClientSuccessModal from "@/modules/commercial-planning/components/ClientS
 import PageHeader from "@/shared/layout/PageHeader";
 import { Contact, UserPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-import { clients } from "@/modules/commercial-planning/clients.data";
+import { getClientesNegocio } from "@/modules/clients/api/cliente-negocio.api";
+import type { ClienteNegocio } from "@/modules/clients/api/cliente-negocio.mapper";
 
 export default function CommercialPlanningPage() {
+    const [clients, setClients] = useState<ClienteNegocio[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [reloadKey, setReloadKey] = useState(0);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-
-    // Filtros: cadena vacía = sin filtrar por ese campo.
-    // Tipo y estado todavía no filtran: los datos de ejemplo no traen esos campos en el cliente
     const [search, setSearch] = useState("");
     const [type, setType] = useState("");
-    const [registrationDate, setRegistrationDate] = useState("");
-    const [status, setStatus] = useState("");
 
-    const clearFilters = () => {
-        setSearch("");
-        setType("");
-        setRegistrationDate("");
-        setStatus("");
+    const reloadClients = () => {
+        setLoadError(null);
+        setIsLoading(true);
+        setReloadKey((key) => key + 1);
     };
 
-    const hasActiveFilters = search !== "" || type !== "" || registrationDate !== "" || status !== "";
+    useEffect(() => {
+        let active = true;
+        getClientesNegocio()
+            .then((items) => { if (active) setClients(items); })
+            .catch(() => { if (active) setLoadError("No se pudieron cargar los clientes. Verifica la conexión e inténtalo nuevamente."); })
+            .finally(() => { if (active) setIsLoading(false); });
+        return () => { active = false; };
+    }, [reloadKey]);
 
+    const clearFilters = () => { setSearch(""); setType(""); };
+    const hasActiveFilters = search !== "" || type !== "";
     const filteredData = useMemo(() => {
         const searchLower = search.trim().toLowerCase();
-        return clients.filter((item) =>
-            item.empresa.toLowerCase().includes(searchLower) || item.representante.toLowerCase().includes(searchLower)
+        return clients.filter((client) =>
+            (client.nombreEmpresa.toLowerCase().includes(searchLower) || client.nombreContacto.toLowerCase().includes(searchLower))
+            && (!type || client.tipoCliente === type),
         );
-    }, [search]);
+    }, [clients, search, type]);
 
-    const handleCreateSuccess = () => {
+    const handleSaved = () => {
         setIsCreateModalOpen(false);
         setIsSuccessModalOpen(true);
+        reloadClients();
     };
 
     return (
@@ -46,14 +56,7 @@ export default function CommercialPlanningPage() {
                 icon={<Contact size={24} strokeWidth={2.5} />}
                 title="Planificación Comercial"
                 description="Administra los clientes y planifica la gestión comercial."
-                action={
-                    <Button
-                        size="xl"
-                        onClick={() => setIsCreateModalOpen(true)}
-                    >
-                        <UserPlus size={20} strokeWidth={2.5} /> Nuevo Cliente
-                    </Button>
-                }
+                action={<Button size="xl" onClick={() => setIsCreateModalOpen(true)}><UserPlus size={20} strokeWidth={2.5} /> Nuevo cliente</Button>}
             />
 
             <ClientsFilters
@@ -61,30 +64,28 @@ export default function CommercialPlanningPage() {
                 onSearchChange={setSearch}
                 type={type}
                 onTypeChange={setType}
-                registrationDate={registrationDate}
-                onRegistrationDateChange={setRegistrationDate}
-                status={status}
-                onStatusChange={setStatus}
                 hasActiveFilters={hasActiveFilters}
                 onClear={clearFilters}
             />
 
-            <ClientsTable
-                data={filteredData}
-                hasActiveFilters={hasActiveFilters}
-                onClearFilters={clearFilters}
-            />
+            {isLoading ? (
+                <div role="status" aria-live="polite" className="rounded-xl border border-border bg-white p-8 text-center text-ink-muted">Cargando clientes...</div>
+            ) : loadError ? (
+                <div role="alert" className="rounded-xl border border-border bg-white p-8 text-center text-destructive">
+                    <p>{loadError}</p>
+                    <Button className="mt-4" variant="outline" onClick={reloadClients}>Reintentar</Button>
+                </div>
+            ) : (
+                <ClientsTable
+                    data={filteredData}
+                    hasActiveFilters={hasActiveFilters}
+                    onClearFilters={clearFilters}
+                    onChanged={reloadClients}
+                />
+            )}
 
-            <ClientFormModal
-                open={isCreateModalOpen}
-                onOpenChange={setIsCreateModalOpen}
-                onSuccess={handleCreateSuccess}
-            />
-
-            <ClientSuccessModal
-                open={isSuccessModalOpen}
-                onOpenChange={setIsSuccessModalOpen}
-            />
+            <ClientFormModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} onSuccess={handleSaved} />
+            <ClientSuccessModal open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen} />
         </div>
     );
 }
