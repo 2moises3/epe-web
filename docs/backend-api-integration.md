@@ -20,7 +20,7 @@
 | Clientes de campaña | **Parcial** | `GET/POST/DELETE /campanas/:campaniaId/clientes-negocio`. | Falta `PATCH` para aprovechar la edición que ofrece backend y confirmar todos los contratos visibles. |
 | Certificados de campaña | **Parcial** | `GET/DELETE /campanas/:campaniaId/certificados`. | Falta integrar alta y edición (`POST/PATCH`). |
 | Planificación comercial (`/planificacion-comercial`) | **Completo para CRUD** | La vista existente consume `GET /clientes-negocio`; alta usa `POST /clientes-negocio`, edición `PATCH /clientes-negocio/:clienteNegocioId` y baja confirmada `DELETE /clientes-negocio/:clienteNegocioId`. La edición proyecta exactamente los siete campos del DTO y los tipos `exportador`/`industria`. | Filtros limitados a empresa/contacto y tipo; el backend no ofrece estado ni fecha de registro como criterios funcionales de filtro en esta vista. No se verificó contra una API desplegada. |
-| Proveedores | **Parcial** | `GET /proveedores` llena la tabla principal. | El backend expone `POST/PATCH/DELETE`, pero la pantalla no integra esas operaciones; el modal de entrevista/detalle contiene contenido de muestra. |
+| Proveedores | **Completo para CRUD y detalle** | `GET/POST /proveedores`, `GET/PATCH/DELETE /proveedores/:proveedorId`; formulario, listado y detalle consumen respuestas de API. Alta y edición envían los nueve campos escribibles del DTO; la interfaz valida los campos requeridos, proyecta solo esos campos y muestra errores/carga/confirmación de operación. | No se presentan entrevista, frutas, exámenes, certificados ni otros datos no expuestos por el endpoint como información persistida. Las frutas, exámenes y certificados corresponden a FE04 y siguen pendientes. Sin verificación contra API desplegada. |
 | Frutas por proveedor | **Pendiente** | Backend: `GET/POST/DELETE /proveedores/:proveedorId/frutas`. | No se encontró servicio de frontend conectado para asociar o quitar frutas. |
 | Exámenes de proveedor | **Pendiente** | Backend: CRUD bajo `/proveedores/:proveedorId/examenes`. | No se encontró integración de frontend. |
 | Certificados de proveedor | **Pendiente** | Backend: CRUD bajo `/proveedores/:proveedorId/certificados`. | No se encontró integración de frontend. |
@@ -35,6 +35,8 @@
 
 - FE02 — planificación comercial: pruebas focalizadas del cliente API/validación/guardas/envío (10/10) y suite completa (13 archivos, 41 pruebas) aprobadas; `npm.cmd run build` aprobado con advertencia existente de chunk grande; ESLint focalizado aprobado. El lint global conserva 13 errores en archivos ajenos a FE02. La prueba de listado/CRUD es un mock de la frontera HTTP; no hubo verificación contra una API desplegada ni prueba de navegador automatizada.
 
+- FE03 — proveedores: pruebas focalizadas de rutas CRUD/detalle, validación/proyección del DTO, sesiones de formularios/detalle y bloqueo compartido de mutaciones (11/11); suite completa aprobada (17 archivos, 52 pruebas); `npm.cmd run build` aprobado con advertencia existente de chunk grande; ESLint focalizado y `git diff --check` aprobados. El lint global informa 12 errores en archivos ajenos al cambio. Las pruebas simulan la frontera HTTP; no hubo verificación contra una API desplegada ni prueba automatizada de navegador.
+
 - FE01 — formulario de vinculación de proveedores de campaña: pruebas Vitest focalizadas (11/11) aprobadas, incluidas validación/serialización, resultados de envío/reconciliación, duplicados y fallo al recargar opciones; suite completa aprobada (9 archivos, 31 tests); `npm.cmd run build` aprobado con advertencia de tamaño del bundle; ESLint focalizado del componente y módulos de contrato aprobados. La página contenedora conserva un error de lint preexistente en una línea fuera de este cambio. No se invocó una API desplegada.
 
 - Se reportó que la API desplegada responde CORS con `Access-Control-Allow-Origin: http://54.196.9.41`, que no coincide con `http://localhost:5173`. Mientras no se corrija el `CORS_ORIGIN` del backend desplegado, los contratos no pueden probarse desde el navegador local.
@@ -44,8 +46,8 @@
 ## Siguiente orden recomendado
 
 1. Resolver CORS y validar en navegador la integración ya hecha de transporte.
-2. Conectar CRUD de clientes y proveedores a sus formularios/vistas reales.
-3. Conectar frutas-proveedor, exámenes y certificados de proveedor.
+2. Conectar frutas-proveedor, exámenes y certificados de proveedor (FE04).
+3. Completar las vistas secundarias o subrecursos pendientes que sigan en alcance.
 4. Completar `PATCH` de clientes-campaña y `POST/PATCH` de certificados de campaña.
 5. Implementar pantallas de trazabilidad, asignaciones y detalles contra los contratos existentes.
 6. Definir con el usuario si pagos requieren crear API backend o si se retira/deshabilita esa vista; no construir integración con datos de muestra.
