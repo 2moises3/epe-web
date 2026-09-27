@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { format } from "date-fns";
-import { FileText, Trash2, Upload } from "lucide-react";
+import { FileText, Pencil, Trash2 } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -10,7 +10,22 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
-import { getCertificadosCampana, deleteCertificadoCampana } from "@/modules/campaigns/api/certificado-campana.api";
+import { Input } from "@/shared/components/ui/input";
+import {
+    createCertificadoCampana,
+    deleteCertificadoCampana,
+    getCertificadosCampana,
+    updateCertificadoCampana,
+} from "@/modules/campaigns/api/certificado-campana.api";
+import type { CampaignCertificateFieldErrors, CampaignCertificateValues } from "@/modules/campaigns/api/campaign-mutations.validation";
+import {
+    createCampaignMutationGuard,
+    hasCampaignCertificateChanges,
+    toCampaignCertificatePayload,
+    toCampaignCertificateUpdatePayload,
+    validateCampaignCertificate,
+} from "@/modules/campaigns/api/campaign-mutations.validation";
+import { formatFecha } from "@/modules/campaigns/api/fecha.util";
 import type { CertificadoCampana } from "@/modules/campaigns/api/certificado-campana.mapper";
 
 interface CampaignCertificationsModalProps {
@@ -20,170 +35,263 @@ interface CampaignCertificationsModalProps {
     onSuccess?: () => void;
 }
 
+const EMPTY_FORM: CampaignCertificateValues = {
+    nombre: "",
+    documentoUrl: "",
+    reciboUrl: "",
+    costo: "",
+    fechaVencimiento: "",
+    estado: "",
+};
+
+const STATUS_LABELS = {
+    vigente: "Vigente",
+    "por vencer": "Por vencer",
+    vencida: "Vencida",
+} as const;
+
+function toFormValues(certificate: CertificadoCampana): CampaignCertificateValues {
+    return {
+        nombre: certificate.nombre,
+        documentoUrl: certificate.documentoUrl,
+        reciboUrl: certificate.reciboUrl,
+        costo: String(certificate.costo),
+        fechaVencimiento: formatFecha(certificate.fechaVencimiento),
+        estado: certificate.estado,
+    };
+}
+
 export default function CampaignCertificationsModal({ open, campaniaId, onOpenChange, onSuccess }: CampaignCertificationsModalProps) {
-    const [selectedCert, setSelectedCert] = useState("");
-    const [expiryDate, setExpiryDate] = useState("");
-    const [fileName, setFileName] = useState<string | null>(null);
     const [certificados, setCertificados] = useState<CertificadoCampana[]>([]);
+    const [values, setValues] = useState<CampaignCertificateValues>(EMPTY_FORM);
+    const [fieldErrors, setFieldErrors] = useState<CampaignCertificateFieldErrors>({});
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [requestError, setRequestError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
+    const [info, setInfo] = useState<string | null>(null);
+    const guard = useRef(createCampaignMutationGuard());
 
     useEffect(() => {
-        if (!open || campaniaId === null) return;
-        getCertificadosCampana(campaniaId).then(setCertificados);
+        let active = true;
+        if (!open || campaniaId === null) {
+            return () => { active = false; };
+        }
+
+        getCertificadosCampana(campaniaId)
+            .then((items) => { if (active) setCertificados(items); })
+            .catch(() => { if (active) setLoadError("No se pudieron cargar las certificaciones de esta campaña."); })
+            .finally(() => { if (active) setIsLoading(false); });
+        return () => { active = false; };
     }, [open, campaniaId]);
 
-    const handleDeleteCertificado = (certificadoId: number) => {
-        if (campaniaId === null) return;
-        deleteCertificadoCampana(campaniaId, certificadoId).then(() => {
-            setCertificados((prev) => prev.filter((c) => c.certificadoId !== certificadoId));
-        });
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen && isSaving) return;
+        onOpenChange(nextOpen);
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setFileName(e.target.files[0].name);
+    const updateField = (field: keyof CampaignCertificateValues, value: string) => {
+        setValues((current) => ({ ...current, [field]: value }));
+        setFieldErrors((current) => ({ ...current, [field]: undefined }));
+        setRequestError(null);
+        setSuccess(null);
+        setInfo(null);
+    };
+
+    const startCreate = () => {
+        setValues(EMPTY_FORM);
+        setEditingId(null);
+        setFieldErrors({});
+        setRequestError(null);
+        setSuccess(null);
+        setInfo(null);
+    };
+
+    const startEdit = (certificate: CertificadoCampana) => {
+        setValues(toFormValues(certificate));
+        setEditingId(certificate.certificadoId);
+        setFieldErrors({});
+        setRequestError(null);
+        setSuccess(null);
+        setInfo(null);
+    };
+
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (campaniaId === null || isLoading || !guard.current.acquire()) return;
+        const originalCertificate = editingId === null
+            ? undefined
+            : certificados.find((certificate) => certificate.certificadoId === editingId);
+        if (editingId !== null && !originalCertificate) {
+            guard.current.release();
+            setRequestError("No se encontró la certificación. Recarga la lista e intenta nuevamente.");
+            return;
+        }
+        const original = originalCertificate ? toFormValues(originalCertificate) : undefined;
+        const errors = validateCampaignCertificate(values, editingId !== null, original);
+        setFieldErrors(errors);
+        setRequestError(null);
+        setSuccess(null);
+        setInfo(null);
+        if (Object.keys(errors).length > 0) {
+            guard.current.release();
+            return;
+        }
+        if (editingId !== null && original && !hasCampaignCertificateChanges(values, original)) {
+            setInfo("No hay cambios para guardar.");
+            guard.current.release();
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            if (editingId === null) {
+                const created = await createCertificadoCampana(campaniaId, toCampaignCertificatePayload(values));
+                setCertificados((current) => [...current, created]);
+                setSuccess("La certificación se registró correctamente.");
+            } else {
+                const updated = await updateCertificadoCampana(campaniaId, editingId, toCampaignCertificateUpdatePayload(values));
+                setCertificados((current) => current.map((certificate) => certificate.certificadoId === updated.certificadoId ? updated : certificate));
+                setSuccess("La certificación se actualizó correctamente.");
+            }
+            setValues(EMPTY_FORM);
+            setEditingId(null);
+            setFieldErrors({});
+            onSuccess?.();
+        } catch {
+            setRequestError("No se pudo guardar la certificación. Revisa los datos e intenta nuevamente.");
+        } finally {
+            guard.current.release();
+            setIsSaving(false);
         }
     };
 
+    const handleDelete = async (certificadoId: number) => {
+        if (campaniaId === null || !guard.current.acquire()) return;
+        setIsSaving(true);
+        setRequestError(null);
+        setSuccess(null);
+        setInfo(null);
+        try {
+            await deleteCertificadoCampana(campaniaId, certificadoId);
+            setCertificados((current) => current.filter((certificate) => certificate.certificadoId !== certificadoId));
+            if (editingId === certificadoId) startCreate();
+            setSuccess("La certificación se eliminó correctamente.");
+        } catch {
+            setRequestError("No se pudo eliminar la certificación. Intenta nuevamente.");
+        } finally {
+            guard.current.release();
+            setIsSaving(false);
+        }
+    };
+
+    const required = editingId === null;
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[500px] sm:max-w-[600px] p-8 rounded-2xl bg-white border-none shadow-2xl gap-0">
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogContent className="max-w-[500px] sm:max-w-2xl p-8 rounded-2xl bg-white border-none shadow-2xl gap-0" aria-busy={isSaving || isLoading}>
                 <DialogHeader className="mb-6">
                     <div className="flex items-start gap-5">
                         <div className="w-[52px] h-[52px] rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0 border border-brand-border">
-                            <FileText size={24} strokeWidth={2} />
+                            <FileText size={24} strokeWidth={2} aria-hidden="true" />
                         </div>
                         <div className="flex-1 pt-1">
-                            <DialogTitle className="text-xl font-bold text-ink">
-                                Registrar Certificaciones
-                            </DialogTitle>
+                            <DialogTitle className="text-xl font-bold text-ink">Gestionar certificaciones de campaña</DialogTitle>
                             <DialogDescription className="text-[13.5px] text-ink-muted mt-1">
-                                Añade los documentos de certificación necesarios para esta campaña.
+                                Registra los datos y enlaces de los documentos; este formulario no carga archivos.
                             </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-6">
-                    {/* Certificados registrados */}
-                    <div className="flex flex-col gap-2.5">
-                        <label className="text-[13px] font-semibold text-[#1a2f22]">Certificados Registrados:</label>
-                        {certificados.length === 0 ? (
-                            <p className="text-[13px] text-gray-500">Esta campaña aún no tiene certificados registrados.</p>
-                        ) : (
-                            <ul className="flex flex-col gap-2">
-                                {certificados.map((certificado) => (
-                                    <li
-                                        key={certificado.certificadoId}
-                                        className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-2.5"
-                                    >
-                                        <div className="flex flex-col overflow-hidden">
-                                            <span className="text-[13.5px] font-bold text-[#1a2f22] truncate">{certificado.nombre}</span>
-                                            <span className="text-[11.5px] text-gray-500">
-                                                Vence: {format(certificado.fechaVencimiento, "dd/MM/yyyy")} · {certificado.estado}
-                                            </span>
-                                            <a
-                                                href={certificado.documentoUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-[11.5px] text-[#5D9634] underline truncate"
-                                            >
-                                                Ver documento
-                                            </a>
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeleteCertificado(certificado.certificadoId)}
-                                            className="hover:bg-red-50 hover:text-red-500 rounded-full p-1.5 transition-colors text-gray-400 shrink-0"
-                                        >
-                                            <Trash2 size={16} strokeWidth={2} />
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
+                {isLoading && <p role="status" className="mb-4 text-sm text-ink-muted">Cargando certificaciones...</p>}
+                {loadError && <p role="alert" className="mb-4 text-sm text-destructive">{loadError}</p>}
+                {!isLoading && !loadError && certificados.length === 0 && (
+                    <p className="mb-4 text-[13px] text-gray-500">Esta campaña aún no tiene certificados registrados.</p>
+                )}
+                {!isLoading && !loadError && certificados.length > 0 && (
+                    <ul className="mb-6 flex max-h-52 flex-col gap-2 overflow-y-auto">
+                        {certificados.map((certificado) => (
+                            <li key={certificado.certificadoId} className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-2.5">
+                                <div className="flex min-w-0 flex-col overflow-hidden">
+                                    <span className="truncate text-[13.5px] font-bold text-[#1a2f22]">{certificado.nombre}</span>
+                                    <span className="text-[11.5px] text-gray-500">Vence: {format(certificado.fechaVencimiento, "dd/MM/yyyy")} · {STATUS_LABELS[certificado.estado]}</span>
+                                    <a href={certificado.documentoUrl} target="_blank" rel="noreferrer" className="truncate text-[11.5px] text-[#5D9634] underline">Ver documento</a>
+                                </div>
+                                <div className="flex shrink-0 gap-1">
+                                    <Button type="button" variant="outline" size="icon-sm" aria-label={`Editar ${certificado.nombre}`} disabled={isSaving || isLoading} onClick={() => startEdit(certificado)}>
+                                        <Pencil aria-hidden="true" />
+                                    </Button>
+                                    <Button type="button" variant="destructive" size="icon-sm" aria-label={`Eliminar ${certificado.nombre}`} disabled={isSaving || isLoading} onClick={() => void handleDelete(certificado.certificadoId)}>
+                                        <Trash2 aria-hidden="true" />
+                                    </Button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-bold text-ink">{editingId === null ? "Nueva certificación" : "Editar certificación"}</h3>
+                        {editingId !== null && <Button type="button" variant="outline" size="sm" disabled={isSaving} onClick={startCreate}>Cancelar edición</Button>}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Seleccionar Certificación */}
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Seleccionar Certificación:</label>
-                            <Select value={selectedCert} onValueChange={(val) => setSelectedCert(val || "")}>
-                                <SelectTrigger className="w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
-                                    <SelectValue placeholder="Seleccione una certificación" />
+                    {required && <p className="text-xs text-ink-muted">Los campos marcados con <span aria-hidden="true" className="text-destructive">*</span> son obligatorios.</p>}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <Field label="Nombre" id="certificate-name" error={fieldErrors.nombre} required={required}>
+                            <Input id="certificate-name" value={values.nombre} maxLength={255} required={required} aria-required={required} aria-invalid={Boolean(fieldErrors.nombre)} aria-describedby={fieldErrors.nombre ? "certificate-name-error" : undefined} disabled={isSaving} onChange={(event) => updateField("nombre", event.target.value)} />
+                        </Field>
+                        <Field label="Costo" id="certificate-cost" error={fieldErrors.costo} required={required}>
+                            <Input id="certificate-cost" type="number" min="0" step="0.01" value={values.costo} required={required} aria-required={required} aria-invalid={Boolean(fieldErrors.costo)} aria-describedby={fieldErrors.costo ? "certificate-cost-error" : undefined} disabled={isSaving} onChange={(event) => updateField("costo", event.target.value)} />
+                        </Field>
+                        <Field label="URL del documento" id="certificate-document-url" error={fieldErrors.documentoUrl} required={required}>
+                            <Input id="certificate-document-url" type="url" value={values.documentoUrl} required={required} aria-required={required} aria-invalid={Boolean(fieldErrors.documentoUrl)} aria-describedby={fieldErrors.documentoUrl ? "certificate-document-url-error" : undefined} disabled={isSaving} onChange={(event) => updateField("documentoUrl", event.target.value)} />
+                        </Field>
+                        <Field label="URL del recibo" id="certificate-receipt-url" error={fieldErrors.reciboUrl} required={required}>
+                            <Input id="certificate-receipt-url" type="url" value={values.reciboUrl} required={required} aria-required={required} aria-invalid={Boolean(fieldErrors.reciboUrl)} aria-describedby={fieldErrors.reciboUrl ? "certificate-receipt-url-error" : undefined} disabled={isSaving} onChange={(event) => updateField("reciboUrl", event.target.value)} />
+                        </Field>
+                        <Field label="Fecha de vencimiento" id="certificate-expiry" error={fieldErrors.fechaVencimiento} required={required}>
+                            <Input id="certificate-expiry" type="date" value={values.fechaVencimiento} required={required} aria-required={required} aria-invalid={Boolean(fieldErrors.fechaVencimiento)} aria-describedby={fieldErrors.fechaVencimiento ? "certificate-expiry-error" : undefined} disabled={isSaving} onChange={(event) => updateField("fechaVencimiento", event.target.value)} />
+                        </Field>
+                        <Field label="Estado" id="certificate-state" error={fieldErrors.estado} required={required}>
+                            <Select value={values.estado} onValueChange={(value) => updateField("estado", value ?? "")} disabled={isSaving}>
+                                <SelectTrigger id="certificate-state" aria-required={required} aria-invalid={Boolean(fieldErrors.estado)} aria-describedby={fieldErrors.estado ? "certificate-state-error" : undefined}>
+                                    <SelectValue placeholder="Selecciona un estado" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem value="Global GAP" className="rounded-lg">Global GAP</SelectItem>
-                                    <SelectItem value="Fairtrade" className="rounded-lg">Fairtrade (Comercio Justo)</SelectItem>
-                                    <SelectItem value="Organica" className="rounded-lg">Orgánica</SelectItem>
-                                    <SelectItem value="Rainforest" className="rounded-lg">Rainforest Alliance</SelectItem>
+                                <SelectContent>
+                                    <SelectItem value="vigente">Vigente</SelectItem>
+                                    <SelectItem value="por vencer">Por vencer</SelectItem>
+                                    <SelectItem value="vencida">Vencida</SelectItem>
                                 </SelectContent>
                             </Select>
-                        </div>
-
-                        {/* Fecha de vencimiento */}
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Fecha de Vencimiento:</label>
-                            <div className="relative">
-                                <input
-                                    type="date"
-                                    value={expiryDate}
-                                    onChange={(e) => setExpiryDate(e.target.value)}
-                                    className="w-full rounded-lg h-11 border border-border text-ink-body shadow-none focus:outline-none focus:ring-1 focus:ring-brand/30 focus:border-brand px-4 transition-colors"
-                                />
-                            </div>
-                        </div>
+                        </Field>
                     </div>
 
-                    {/* Drag and Drop  */}
-                    <div className="mt-2">
-                        <div className="border-2 border-dashed border-border bg-surface-page hover:bg-muted transition-colors rounded-2xl p-8 flex flex-col items-center justify-center relative group">
-                            <input
-                                type="file"
-                                accept=".pdf"
-                                onChange={handleFileChange}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            />
-
-                            <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center text-ink-muted mb-4 group-hover:text-brand group-hover:shadow transition-all">
-                                <Upload size={24} strokeWidth={2} />
-                            </div>
-
-                            <Button variant="secondary" className="bg-muted hover:bg-border text-ink-body font-semibold rounded-lg mb-3 pointer-events-none">
-                                Importar Archivo PDF
-                            </Button>
-
-                            <p className="text-[12px] text-ink-muted font-medium text-center">
-                                {fileName ? (
-                                    <span className="text-brand font-bold">Archivo seleccionado: {fileName}</span>
-                                ) : (
-                                    "Formatos soportados: .pdf (máximo 10MB)"
-                                )}
-                            </p>
-                        </div>
+                    {requestError && <p role="alert" className="text-sm text-destructive">{requestError}</p>}
+                    {info && <p role="status" aria-live="polite" className="text-sm text-ink-muted">{info}</p>}
+                    {success && <p role="status" aria-live="polite" className="text-sm text-brand">{success}</p>}
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button type="button" variant="outline" disabled={isSaving} onClick={() => handleOpenChange(false)}>Cerrar</Button>
+                        <Button type="submit" disabled={isSaving || isLoading || campaniaId === null} aria-busy={isSaving}>
+                            {isSaving ? "Guardando..." : editingId === null ? "Registrar certificación" : "Guardar cambios"}
+                        </Button>
                     </div>
-                </div>
-
-                <div className="flex justify-center gap-4 mt-8">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-11 px-8 border-border text-ink-muted font-bold hover:bg-muted hover:text-ink transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            if (onSuccess) {
-                                onSuccess();
-                            } else {
-                                onOpenChange(false);
-                            }
-                        }}
-                        disabled={!selectedCert || !expiryDate || !fileName}
-                        className="rounded-lg h-11 px-8 bg-brand hover:bg-brand-dark text-white font-semibold gap-2 shadow-sm disabled:opacity-50 transition-colors active:scale-95"
-                    >
-                        Guardar
-                    </Button>
-                </div>
+                </form>
             </DialogContent>
         </Dialog>
+    );
+}
+
+function Field({ label, id, error, required, children }: { label: string; id: string; error?: string; required: boolean; children: React.ReactNode }) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label htmlFor={id} className="text-xs font-semibold text-ink">
+                {label}{required && <> <span aria-hidden="true" className="text-destructive">*</span></>}
+            </label>
+            {children}
+            {error && <p id={`${id}-error`} className="text-xs text-destructive">{error}</p>}
+        </div>
     );
 }

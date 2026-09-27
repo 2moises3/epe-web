@@ -9,6 +9,8 @@ export interface CertificadoCampana {
   certificadoId: number;
   nombre: string;
   documentoUrl: string;
+  reciboUrl: string;
+  costo: number;
   fechaVencimiento: Date;
   campaniaId: number;
   estado: EstadoCertificadoCampana;
@@ -17,6 +19,8 @@ export interface CertificadoCampana {
 export interface CertificadoCampanaFormInput {
   nombre: string;
   documentoUrl: string;
+  reciboUrl: string;
+  costo: number;
   fechaVencimiento: Date;
   estado: EstadoCertificadoCampana;
 }
@@ -39,4 +43,10 @@ export function toCreateCertificadoCampanaDto(
     documentUrl: documentoUrl,
     fechaVencimiento: formatFecha(fechaVencimiento),
   };
+}
+
+export function toUpdateCertificadoCampanaDto(
+  input: CertificadoCampanaFormInput,
+): import("@/modules/campaigns/api/certificado-campana.dto").UpdateCertificadoCampanaDto {
+  return toCreateCertificadoCampanaDto(input);
 }
