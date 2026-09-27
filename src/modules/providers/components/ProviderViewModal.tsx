@@ -3,6 +3,7 @@ import AppModal from "@/shared/components/AppModal";
 import { Button } from "@/shared/components/ui/button";
 import { getProveedor } from "@/modules/providers/api/proveedor.api";
 import { createProviderDetailsSession } from "@/modules/providers/api/provider-lifecycle";
+import ProviderSubresources from "@/modules/providers/components/ProviderSubresources";
 
 interface ProviderViewModalProps {
     open: boolean;
@@ -12,7 +13,13 @@ interface ProviderViewModalProps {
 
 export default function ProviderViewModal({ open, onOpenChange, providerId }: ProviderViewModalProps) {
     const [session, setSession] = useState(createProviderDetailsSession);
+    const [isSubresourceMutating, setIsSubresourceMutating] = useState(false);
     const { provider, error, loading: isLoading } = session;
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen && isSubresourceMutating) return;
+        onOpenChange(nextOpen);
+    };
 
     useEffect(() => {
         let active = true;
@@ -39,11 +46,11 @@ export default function ProviderViewModal({ open, onOpenChange, providerId }: Pr
     return (
         <AppModal
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={handleOpenChange}
             title={provider ? `${provider.nombres} ${provider.apellido}` : "Detalle del proveedor"}
             description={provider ? "Información registrada en el sistema." : "Consulta del registro de proveedor."}
             className="sm:max-w-140"
-            footer={<Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>Cerrar</Button>}
+            footer={<Button variant="outline" size="xl" disabled={isSubresourceMutating} onClick={() => handleOpenChange(false)}>Cerrar</Button>}
         >
             {isLoading && <p role="status" className="py-6 text-center text-ink-muted">Cargando proveedor…</p>}
             {error && <p role="alert" className="py-6 text-center text-red-600">{error}</p>}
@@ -53,6 +60,7 @@ export default function ProviderViewModal({ open, onOpenChange, providerId }: Pr
                     <dd className="break-all text-sm font-semibold text-ink">{value || "—"}</dd>
                 </div>)}
             </dl>}
+            {provider && <ProviderSubresources providerId={provider.proveedorId} onMutatingChange={setIsSubresourceMutating} />}
         </AppModal>
     );
 }

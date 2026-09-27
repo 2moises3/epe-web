@@ -1,6 +1,6 @@
 # Integración frontend ↔ backend
 
-**Última revisión:** 2026-09-26
+**Última revisión:** 2026-09-27
 **Alcance:** contraste estático entre las pantallas y servicios de `epe-web/src` y los controladores/DTO de `epe-backend/src`. No representa una prueba contra la base de datos ni contra el servicio desplegado.
 
 ## Criterios
@@ -20,10 +20,10 @@
 | Clientes de campaña | **Parcial** | `GET/POST/DELETE /campanas/:campaniaId/clientes-negocio`. | Falta `PATCH` para aprovechar la edición que ofrece backend y confirmar todos los contratos visibles. |
 | Certificados de campaña | **Parcial** | `GET/DELETE /campanas/:campaniaId/certificados`. | Falta integrar alta y edición (`POST/PATCH`). |
 | Planificación comercial (`/planificacion-comercial`) | **Completo para CRUD** | La vista existente consume `GET /clientes-negocio`; alta usa `POST /clientes-negocio`, edición `PATCH /clientes-negocio/:clienteNegocioId` y baja confirmada `DELETE /clientes-negocio/:clienteNegocioId`. La edición proyecta exactamente los siete campos del DTO y los tipos `exportador`/`industria`. | Filtros limitados a empresa/contacto y tipo; el backend no ofrece estado ni fecha de registro como criterios funcionales de filtro en esta vista. No se verificó contra una API desplegada. |
-| Proveedores | **Completo para CRUD y detalle** | `GET/POST /proveedores`, `GET/PATCH/DELETE /proveedores/:proveedorId`; formulario, listado y detalle consumen respuestas de API. Alta y edición envían los nueve campos escribibles del DTO; la interfaz valida los campos requeridos, proyecta solo esos campos y muestra errores/carga/confirmación de operación. | No se presentan entrevista, frutas, exámenes, certificados ni otros datos no expuestos por el endpoint como información persistida. Las frutas, exámenes y certificados corresponden a FE04 y siguen pendientes. Sin verificación contra API desplegada. |
-| Frutas por proveedor | **Pendiente** | Backend: `GET/POST/DELETE /proveedores/:proveedorId/frutas`. | No se encontró servicio de frontend conectado para asociar o quitar frutas. |
-| Exámenes de proveedor | **Pendiente** | Backend: CRUD bajo `/proveedores/:proveedorId/examenes`. | No se encontró integración de frontend. |
-| Certificados de proveedor | **Pendiente** | Backend: CRUD bajo `/proveedores/:proveedorId/certificados`. | No se encontró integración de frontend. |
+| Proveedores | **Completo para CRUD, detalle y subrecursos** | CRUD usa `GET/POST /proveedores`, `GET/PATCH/DELETE /proveedores/:proveedorId`. El detalle carga frutas, exámenes y certificados asociados desde sus endpoints dedicados. | El detalle y formularios están conectados estáticamente a contratos existentes. La validación de URL usa `validator@13.15.35`, la misma versión que resuelve el backend. No se verificó contra API desplegada ni se implementó carga de archivos; los documentos se registran mediante los campos URL existentes. |
+| Frutas por proveedor | **Completo para asociación** | `GET /frutas` carga opciones; `GET /proveedores/:proveedorId/frutas` lista asociaciones; `POST /proveedores/:proveedorId/frutas/:frutaId` asocia; `DELETE /proveedores/:proveedorId/frutas/:frutaId` quita la asociación. | El backend no ofrece edición de la asociación ni campos adicionales. No se verificó contra API desplegada. |
+| Exámenes de proveedor | **Completo para CRUD** | `GET/POST /proveedores/:proveedorId/examenes`, `PATCH/DELETE /proveedores/:proveedorId/examenes/:examenProveedorId`. Campos conectados: `fecha`, `tipoExamen`, `resultado` (`positivo`/`negativo`), `origen`, `observacion`, `documentoUrl`. | Fechas son fecha-calendario; se muestran a partir de la representación serializada y se envían como `YYYY-MM-DD`. `documentoUrl` es un enlace provisto por el usuario, no carga binaria. Sin verificación contra API desplegada. |
+| Certificados de proveedor | **Completo para CRUD** | `GET/POST /proveedores/:proveedorId/certificados`, `PATCH/DELETE /proveedores/:proveedorId/certificados/:certificadoProveedorId`. Campos conectados: `fechaRevisionSenasa`, `nombre`, `documentoUrl`. | `documentoUrl` es un enlace provisto por el usuario, no carga binaria. Sin verificación contra API desplegada. |
 | Empresas de transporte | **Completo para CRUD de empresa** | `epe-web/src/modules/carriers/api/carrier.api.ts`: `GET/POST/PATCH/DELETE /empresas-transporte-externo`; listado/detalle conectados. | Probar con backend alcanzable y manejar conflictos de unicidad/eliminación en interfaz. |
 | Vehículos externos | **Completo para CRUD** | `GET/POST/PATCH/DELETE /vehiculos-externos`; alta/edición/baja desde el detalle de empresa. | La API rechaza borrado si el vehículo tiene asignaciones; el frontend informa ese caso. |
 | Choferes externos | **Completo para CRUD** | `GET/POST/PATCH/DELETE /choferes-transporte-externo`; alta/edición/baja desde el detalle de empresa. | No existe una relación fija chofer↔vehículo en el modelo; se asignan por trazabilidad y rango de fechas. |
@@ -37,6 +37,8 @@
 
 - FE03 — proveedores: pruebas focalizadas de rutas CRUD/detalle, validación/proyección del DTO, sesiones de formularios/detalle y bloqueo compartido de mutaciones (11/11); suite completa aprobada (17 archivos, 52 pruebas); `npm.cmd run build` aprobado con advertencia existente de chunk grande; ESLint focalizado y `git diff --check` aprobados. El lint global informa 12 errores en archivos ajenos al cambio. Las pruebas simulan la frontera HTTP; no hubo verificación contra una API desplegada ni prueba automatizada de navegador.
 
+- FE04 — detalle y subrecursos de proveedor: pruebas focalizadas de API/validación/operation-gate aprobadas (11/11); suite completa `npm.cmd run test` aprobada (20 archivos, 63 pruebas); `npm.cmd run build` aprobado con la advertencia existente de chunk grande; ESLint focalizado y `git diff --check` aprobados. El operation gate impide mutaciones durante recargas de subrecursos. La validación URL usa el mismo `validator@13.15.35` que el backend (`IsUrl({ require_protocol: true })`), con regresiones para URL insegura, `localhost`, espacios, etiquetas DNS largas, IPv4 y URLs con autenticación. Las pruebas simulan HTTP; no hubo verificación contra API desplegada ni automatización DOM/navegador. Las rutas/campos se contrastaron estáticamente con controladores/DTO; no se modificó backend.
+
 - FE01 — formulario de vinculación de proveedores de campaña: pruebas Vitest focalizadas (11/11) aprobadas, incluidas validación/serialización, resultados de envío/reconciliación, duplicados y fallo al recargar opciones; suite completa aprobada (9 archivos, 31 tests); `npm.cmd run build` aprobado con advertencia de tamaño del bundle; ESLint focalizado del componente y módulos de contrato aprobados. La página contenedora conserva un error de lint preexistente en una línea fuera de este cambio. No se invocó una API desplegada.
 
 - Se reportó que la API desplegada responde CORS con `Access-Control-Allow-Origin: http://54.196.9.41`, que no coincide con `http://localhost:5173`. Mientras no se corrija el `CORS_ORIGIN` del backend desplegado, los contratos no pueden probarse desde el navegador local.
@@ -46,10 +48,8 @@
 ## Siguiente orden recomendado
 
 1. Resolver CORS y validar en navegador la integración ya hecha de transporte.
-2. Conectar frutas-proveedor, exámenes y certificados de proveedor (FE04).
-3. Completar las vistas secundarias o subrecursos pendientes que sigan en alcance.
-4. Completar `PATCH` de clientes-campaña y `POST/PATCH` de certificados de campaña.
-5. Implementar pantallas de trazabilidad, asignaciones y detalles contra los contratos existentes.
-6. Definir con el usuario si pagos requieren crear API backend o si se retira/deshabilita esa vista; no construir integración con datos de muestra.
+2. Completar `PATCH` de clientes-campaña y `POST/PATCH` de certificados de campaña.
+3. Implementar pantallas de trazabilidad, asignaciones y detalles contra los contratos existentes.
+4. Definir con el usuario si pagos requieren crear API backend o si se retira/deshabilita esa vista; no construir integración con datos de muestra.
 
 > Actualiza esta matriz con fecha y endpoints cuando una vista cambie. Si no está claro qué endpoint corresponde a una pantalla, confirma el mapeo antes de conectar o transformar datos.
