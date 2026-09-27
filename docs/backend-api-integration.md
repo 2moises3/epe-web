@@ -29,7 +29,7 @@
 | Choferes externos | **Completo para CRUD** | `GET/POST/PATCH/DELETE /choferes-transporte-externo`; alta/edición/baja desde el detalle de empresa. | No existe una relación fija chofer↔vehículo en el modelo; se asignan por trazabilidad y rango de fechas. |
 | Trazabilidad y asignación de transporte | **Pendiente** | Backend dispone de `trazabilidades-transporte`, `asignaciones-transporte` y `detalles-trazabilidad`. | Falta una vista y servicios frontend para contratos/cargas, asignaciones con fechas y detalles/costos. No inferir una asignación fija. |
 | Pagos a transportistas (fuera de alcance) | **Sin API backend** | Solo datos de muestra y estado local; no se persisten mediante el backend. | El backend revisado no expone entidades ni endpoints de pagos. Se excluye su implementación; hace falta definir API/modelo antes de integrar pagos reales. |
-| Contratos de cliente | **Pendiente** | Backend: `GET /clientes-negocio/:clienteNegocioId/contratos`. | No se encontró consumo frontend para esta ruta. |
+| Contratos de cliente | **Parcial (solo lectura)** | En el detalle del cliente dentro de `/planificacion-comercial` se consulta `GET /clientes-negocio/:clienteNegocioId/contratos`. La lista muestra campaña, fecha de registro, `kilosAcordados`, URL del contrato y URL de ficha técnica. | El backend solo expone esta consulta; no se implementan alta ni edición de contratos. Los enlaces se muestran solo como enlaces web seguros o como texto si no son `http/https`. Sin verificación contra una API desplegada. |
 
 ## Conectividad y verificación
 
@@ -41,6 +41,8 @@
 
 - FE05 — edición de relación cliente-campaña y alta/edición de certificado: tras corrección de UX, las pruebas focalizadas de validación cubren rechazo al vaciar campos previamente poblados, conservación de opcionales inicialmente vacíos y detección de envíos sin cambios (10/10); suite completa `npm.cmd run test` aprobada (22 archivos, 75 pruebas); `npm.cmd run build` aprobado con advertencia existente de chunk grande; ESLint focalizado en archivos TypeScript/TSX modificados aprobado; `git diff --check` aprobado con advertencias de conversión de CRLF. Las ediciones comparan contra la instantánea original y no hacen PATCH ni muestran éxito ante un formulario sin cambios. Los tests simulan HTTP; no hubo verificación contra API desplegada ni pruebas DOM/navegador. No se modificó backend.
 
+- FE06 — contratos de clientes: prueba focalizada del endpoint GET pasó (3/3), validando la ruta exacta, conservación de campos del DTO y propagación de fallos; suite completa `npm.cmd run test` aprobada (23 archivos, 78 pruebas); compilación aprobada con advertencia existente de chunk grande; ESLint focalizado y `git diff --check` aprobados. El detalle del cliente muestra contratos por campaña con fecha, kilos acordados y documentos; carga, error/reintento y estado vacío son explícitos, y no se ofrece crear/editar pues backend solo expone GET. La respuesta es mockeada en tests; no hubo verificación contra API desplegada ni pruebas DOM/navegador.
+
 - FE01 — formulario de vinculación de proveedores de campaña: pruebas Vitest focalizadas (11/11) aprobadas, incluidas validación/serialización, resultados de envío/reconciliación, duplicados y fallo al recargar opciones; suite completa aprobada (9 archivos, 31 tests); `npm.cmd run build` aprobado con advertencia de tamaño del bundle; ESLint focalizado del componente y módulos de contrato aprobados. La página contenedora conserva un error de lint preexistente en una línea fuera de este cambio. No se invocó una API desplegada.
 
 - Se reportó que la API desplegada responde CORS con `Access-Control-Allow-Origin: http://54.196.9.41`, que no coincide con `http://localhost:5173`. Mientras no se corrija el `CORS_ORIGIN` del backend desplegado, los contratos no pueden probarse desde el navegador local.
@@ -50,7 +52,7 @@
 ## Siguiente orden recomendado
 
 1. Resolver CORS y validar en navegador la integración ya hecha de transporte.
-2. Alinear el formulario de alta de vínculo cliente-campaña con el DTO `POST` requerido; la edición `PATCH` y el CRUD de certificados ya están conectados estáticamente.
+2. Alinear el formulario de alta de vínculo cliente-campaña con el DTO `POST` requerido; la edición `PATCH`, CRUD de certificados y consulta de contratos de cliente ya están conectados estáticamente.
 3. Implementar pantallas de trazabilidad, asignaciones y detalles contra los contratos existentes.
 4. Definir con el usuario si pagos requieren crear API backend o si se retira/deshabilita esa vista; no construir integración con datos de muestra.
 
