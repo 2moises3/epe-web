@@ -98,24 +98,70 @@ Abre la dirección que indique Vite en la terminal, normalmente `http://localhos
 
 ### Configuración de API
 
-Copia [`.env.example`](.env.example) como `.env` cuando configures un backend y completa:
+Copia [`.env.example`](.env.example) como `.env` para apuntar el cliente HTTP al backend local:
 
 ```dotenv
-VITE_API_BASE_URL=
+VITE_API_BASE_URL=http://localhost:3000/
 ```
 
-La variable alimenta al [cliente Axios compartido](src/shared/api/client.ts). Puede permanecer vacía para recorrer las pantallas de muestra. Las variables `VITE_*` se incluyen en el frontend: no deben contener secretos.
+La variable alimenta al [cliente Axios compartido](src/shared/api/client.ts). Si abres la web desde otro dispositivo, reemplaza `localhost` por la IP de red del equipo que ejecuta la API, por ejemplo `http://192.168.1.25:3000/`. **Reinicia Vite después de cambiar `.env`** para que cargue el nuevo valor. Las variables `VITE_*` se incluyen en el frontend: no deben contener secretos.
 
 ### Comandos del proyecto
 
 | Comando | Función |
 | :--- | :--- |
 | `pnpm dev` | Inicia Vite con recarga durante el desarrollo |
+| `pnpm dev:network` | Inicia Vite accesible por LAN e imprime la URL de red |
+| `npm run dev:network` | La misma tarea usando npm para iniciar el servidor Vite |
 | `pnpm build` | Comprueba TypeScript y genera el bundle en `dist/` |
 | `pnpm preview` | Sirve el resultado de una compilación local |
 | `pnpm lint` | Ejecuta ESLint sobre el proyecto |
 
 ### 🐳 Ejecutar con Docker
+
+Docker Compose levanta **solo el backend y PostgreSQL**. La web se ejecuta con Vite en modo desarrollo para que los cambios se vean al instante. Necesitas Docker Desktop con Compose y Node.js 22.12+ con pnpm. Desde `epe-web/`, instala dependencias una sola vez:
+
+```bash
+pnpm install --frozen-lockfile
+```
+
+Luego, en una terminal inicia backend y base de datos; en otra, inicia la web:
+
+```bash
+docker compose up -d --build
+```
+
+```bash
+pnpm dev:network
+```
+
+Vite mostrará las direcciones disponibles. En la misma computadora abre:
+
+- Web: <http://localhost:5173>
+- API: <http://localhost:3000>
+- PostgreSQL: `localhost:5432` (usuario `postgres`, base `backend_epe`)
+
+`--host 0.0.0.0` hace que Vite imprima además la URL de red (por ejemplo `http://192.168.1.25:5173`) para abrir la web desde otro dispositivo. Usa exactamente el origen de la URL que abras en el navegador al configurar CORS. `VITE_API_BASE_URL` es la dirección de la API a la que el navegador hará solicitudes; `CORS_ORIGIN` es el origen de la web que el backend permite. Para uso en la misma computadora los valores predeterminados son `http://localhost:3000/` y `http://localhost:5173`. El Compose reutiliza el Dockerfile existente de `../epe-backend`; no inicies por separado los otros Compose del proyecto. Para detener Vite pulsa `Ctrl+C`; para detener API y base: `docker compose down`. Para borrar también los datos locales: `docker compose down -v`.
+
+Para cargar los registros de ejemplo del backend, con los servicios levantados ejecuta:
+
+```bash
+docker compose exec api node scripts/seed-examples.mjs
+```
+
+El comando se puede repetir: el script evita duplicar registros que ya existen. Al borrar el volumen con `docker compose down -v`, se elimina la base y tendrás que ejecutar el seed otra vez. Estos datos están en la API; las pantallas web aún usan datos de demostración/locales y no están conectadas a los dominios de negocio del backend.
+
+Para cambiar el origen permitido por CORS (por ejemplo, si usas la URL de red en vez de localhost), agrega `CORS_ORIGIN=http://192.168.1.25:5173` en `epe-web/.env` usando el origen exacto que Vite imprimió y recrea solo la API:
+
+```bash
+docker compose up -d --force-recreate api
+```
+
+No necesitas reconstruir la imagen del backend para este cambio: `CORS_ORIGIN` se lee al iniciar el contenedor. El backend actualmente permite un solo origen por vez. Para trabajar desde la misma computadora normalmente basta el valor predeterminado `http://localhost:5173`.
+
+Los puertos predeterminados son `3000` (API) y `5432` (base). Si alguno ya está ocupado, crea `epe-web/.env` y sobrescribe `API_PORT` o `DB_PORT_HOST`. También puedes establecer `DB_PASSWORD` y `DB_DATABASE` ahí. La contraseña predeterminada solo es para desarrollo local; cámbiala si expones servicios fuera de tu máquina. Si cambias el puerto de la API, configura `VITE_API_BASE_URL` para la web y vuelve a iniciar Vite.
+
+#### Solo el contenedor web
 
 La imagen usa dos etapas: Node compila la aplicación y Nginx sirve los archivos estáticos. La configuración de Nginx incluye fallback para las rutas de React Router.
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Eye, Contact, FileSignature, ListFilter } from "lucide-react";
+import { Pencil, Eye, Contact, FileSignature, ListFilter, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,6 +20,7 @@ import ClientViewModal from "./ClientViewModal";
 import ClientAddContractModal from "./ClientAddContractModal";
 import ClientSuccessModal from "./ClientSuccessModal";
 import type { Client } from "@/modules/commercial-planning/clients.data";
+import { deleteClienteNegocio } from "@/modules/clients/api/cliente-negocio.api";
 
 const PAGE_SIZE = 8;
 
@@ -27,16 +28,16 @@ interface ClientsTableProps {
     data: Client[];
     hasActiveFilters: boolean;
     onClearFilters: () => void;
+    onRefresh: () => void;
 }
 
-export default function ClientsTable({ data, hasActiveFilters, onClearFilters }: ClientsTableProps) {
+export default function ClientsTable({ data, hasActiveFilters, onClearFilters, onRefresh }: ClientsTableProps) {
     const [editingClientId, setEditingClientId] = useState<number | null>(null);
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<TableViewMode>("table");
     const [viewingClientId, setViewingClientId] = useState<number | null>(null);
     const [addingContractClientId, setAddingContractClientId] = useState<number | null>(null);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-    const [successMode, setSuccessMode] = useState<"edit" | "contract">("edit");
 
     /** Exporta los clientes visibles a CSV y lo descarga */
     const handleExportCSV = () =>
@@ -50,6 +51,10 @@ export default function ClientsTable({ data, hasActiveFilters, onClearFilters }:
         ];
         const secondary: RowAction[] = [
             { label: "Añadir contrato", icon: <FileSignature size={16} strokeWidth={2.5} />, onClick: () => setAddingContractClientId(row.id) },
+            { label: "Eliminar cliente", icon: <Trash2 size={16} strokeWidth={2.5} />, onClick: () => {
+                if (!window.confirm(`¿Eliminar al cliente ${row.empresa}?`)) return;
+                void deleteClienteNegocio(row.id).then(onRefresh).catch(() => window.alert("No se pudo eliminar el cliente."));
+            } },
         ];
         return { primary, secondary };
     };
@@ -161,16 +166,19 @@ export default function ClientsTable({ data, hasActiveFilters, onClearFilters }:
                 open={editingClientId !== null}
                 onOpenChange={(open) => !open && setEditingClientId(null)}
                 mode="edit"
+                clientId={editingClient?.id}
                 initialValues={editingClient ? {
                     name: editingClient.representante,
                     empresa: editingClient.empresa,
                     telefono: editingClient.numero,
                     ruc: editingClient.ruc,
                     email: editingClient.correo,
+                    ubicacion: editingClient.ubicacion,
+                    tipo: editingClient.tipoCliente,
                 } : undefined}
                 onSuccess={() => {
+                    onRefresh();
                     setEditingClientId(null);
-                    setSuccessMode("edit");
                     setIsSuccessModalOpen(true);
                 }}
             />
@@ -184,17 +192,12 @@ export default function ClientsTable({ data, hasActiveFilters, onClearFilters }:
             <ClientAddContractModal
                 open={addingContractClientId !== null}
                 onOpenChange={(open) => !open && setAddingContractClientId(null)}
-                onSuccess={() => {
-                    setAddingContractClientId(null);
-                    setSuccessMode("contract");
-                    setIsSuccessModalOpen(true);
-                }}
             />
 
             <ClientSuccessModal
                 open={isSuccessModalOpen}
                 onOpenChange={setIsSuccessModalOpen}
-                mode={successMode}
+                mode="edit"
             />
         </>
     );

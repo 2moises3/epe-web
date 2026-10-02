@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Calendar, Tag, Sprout, TrendingUp, ShieldCheck, Users, Briefcase, ArrowLeft } from "lucide-react";
+import { Calendar, Sprout, TrendingUp, ShieldCheck, Users, Briefcase, ArrowLeft } from "lucide-react";
 import { format, differenceInCalendarDays } from "date-fns";
 import StatusBadge from "@/shared/components/StatusBadge";
 import { Button } from "@/shared/components/ui/button";
-import { Progress } from "@/shared/components/ui/progress";
 import CampaignManagementProvidersModal from "@/modules/campaigns/components/CampaignManagementProvidersModal";
 import CampaignManagementClientsModal from "@/modules/campaigns/components/CampaignManagementClientsModal";
 import PageHeader from "@/shared/layout/PageHeader";
-import { getCampana } from "@/modules/campaigns/api/campaign.api";
+import { getCampana, getFrutaDerivadas } from "@/modules/campaigns/api/campaign.api";
 import { getCertificadosCampana } from "@/modules/campaigns/api/certificado-campana.api";
 import type { Campana } from "@/modules/campaigns/api/campaign.mapper";
 import type { CertificadoCampana } from "@/modules/campaigns/api/certificado-campana.mapper";
 import type { EstadoCertificadoCampana } from "@/modules/campaigns/api/certificado-campana.dto";
+import type { FrutaDerivadaDto } from "@/modules/campaigns/api/campaign.dto";
 
 const CERT_ESTADO_STYLES: Record<EstadoCertificadoCampana, { icon: string; badge: string; dot: string; label: string }> = {
     vigente: {
@@ -42,27 +42,31 @@ export default function CampaignDetailsPage() {
 
     const [campana, setCampana] = useState<Campana | null>(null);
     const [certificados, setCertificados] = useState<CertificadoCampana[]>([]);
+    const [frutaDerivadas, setFrutaDerivadas] = useState<FrutaDerivadaDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isProvidersModalOpen, setIsProvidersModalOpen] = useState(false);
     const [isClientsModalOpen, setIsClientsModalOpen] = useState(false);
 
     useEffect(() => {
-        if (campaniaId === null) {
-            setError("Campaña inválida.");
-            setIsLoading(false);
-            return;
-        }
+        if (campaniaId === null) return;
         setIsLoading(true);
         setError(null);
         Promise.all([getCampana(campaniaId), getCertificadosCampana(campaniaId)])
             .then(([campanaData, certificadosData]) => {
                 setCampana(campanaData);
                 setCertificados(certificadosData);
+                void getFrutaDerivadas(campanaData.frutaId)
+                    .then(setFrutaDerivadas)
+                    .catch(() => setFrutaDerivadas([]));
             })
             .catch(() => setError("No se pudo cargar la campaña."))
             .finally(() => setIsLoading(false));
     }, [campaniaId]);
+
+    if (campaniaId === null) {
+        return <div className="px-14 py-5 text-center text-red-600">Campaña inválida.</div>;
+    }
 
     if (isLoading) {
         return <div className="px-14 py-5 text-center text-[#545454]">Cargando campaña...</div>;
@@ -137,36 +141,21 @@ export default function CampaignDetailsPage() {
                         <div>
                             <p className="text-[11px] font-bold text-ink-muted tracking-wider uppercase mb-3">Derivados de Fruta</p>
                             <div className="flex flex-wrap gap-2">
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-surface border border-brand-border text-brand">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-brand"></div>
-                                    <span className="text-[13px] font-bold">Mango Kent</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-surface border border-brand-border text-brand">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-brand"></div>
-                                    <span className="text-[13px] font-bold">Mango Eduard</span>
-                                </div>
+                                {frutaDerivadas.length === 0 ? (
+                                    <span className="text-[13px] text-ink-muted">Esta fruta no tiene derivados registrados.</span>
+                                ) : frutaDerivadas.map((derivada) => (
+                                    <div key={derivada.frutaDerivadaId} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-surface border border-brand-border text-brand">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-brand"></div>
+                                        <span className="text-[13px] font-bold">{derivada.name}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Avance de Cosecha Card */}
-                    {/* TODO: pendiente de backend, no existe campo de avance de cosecha */}
-                    <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_rgb(0,0,0,0.03)] border border-border flex flex-col gap-5">
-                        <div className="flex justify-between items-end">
-                            <div>
-                                <h3 className="text-[17px] font-bold text-ink">Avance de cosecha</h3>
-                                <p className="text-[13px] text-ink-muted font-medium mt-0.5">Kilos cosechados vs. estimados</p>
-                            </div>
-                            <span className="text-2xl font-black text-status-neutral">0%</span>
-                        </div>
-
-                        <div>
-                            <Progress value={0} className="h-3 bg-status-neutral-surface" />
-                            <div className="flex justify-between items-center mt-3 text-[12.5px] font-bold">
-                                <span className="text-ink-muted">0 Kg cosechados</span>
-                                <span className="text-ink-muted">0 Kg estimados</span>
-                            </div>
-                        </div>
+                    <div role="status" className="rounded-2xl border border-border bg-white p-6 text-sm text-ink-muted">
+                        <h3 className="text-[17px] font-bold text-ink">Avance de cosecha</h3>
+                        <p className="mt-1">No disponible: el backend aún no ofrece una API de cosecha. No se muestran cantidades de ejemplo.</p>
                     </div>
 
                     {/* Action Buttons */}
@@ -192,33 +181,8 @@ export default function CampaignDetailsPage() {
                 <div className="flex flex-col gap-4">
                     {/* Stat Cards - Grid with 2 columns as requested */}
                     <div className="grid grid-cols-2 gap-3">
-                        {/* Kilos Estimados */}
-                        {/* TODO: pendiente de backend, no existe campo de avance de cosecha */}
-                        <div className="bg-white p-5 rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] flex flex-col gap-4">
-                            <div className="flex justify-between items-start">
-                                <p className="text-[10px] font-bold text-ink-muted tracking-wider uppercase leading-tight w-20">Kilos Estimados</p>
-                                <div className="w-8 h-8 rounded-full bg-status-warning/10 flex items-center justify-center text-status-warning shrink-0">
-                                    <Tag size={14} strokeWidth={2.5} />
-                                </div>
-                            </div>
-                            <div className="flex items-baseline gap-1 mt-auto">
-                                <span className="text-xl font-black text-status-neutral">----</span>
-                                <span className="text-[12px] font-bold text-status-neutral">Kg</span>
-                            </div>
-                        </div>
-
-                        {/* Kilos Cosechados */}
-                        <div className="bg-white p-5 rounded-2xl border border-border shadow-[0_2px_12px_rgb(0,0,0,0.03)] flex flex-col gap-4">
-                            <div className="flex justify-between items-start">
-                                <p className="text-[10px] font-bold text-ink-muted tracking-wider uppercase leading-tight w-20">Kilos Cosechados</p>
-                                <div className="w-8 h-8 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0">
-                                    <TrendingUp size={14} strokeWidth={2.5} />
-                                </div>
-                            </div>
-                            <div className="flex items-baseline gap-1 mt-auto">
-                                <span className="text-xl font-black text-status-neutral">----</span>
-                                <span className="text-[12px] font-bold text-status-neutral">Kg</span>
-                            </div>
+                        <div className="col-span-2 rounded-2xl border border-border bg-white p-5 text-sm text-ink-muted">
+                            Kilos estimados y cosechados: no disponibles mientras no exista la API de cosecha.
                         </div>
                     </div>
 
