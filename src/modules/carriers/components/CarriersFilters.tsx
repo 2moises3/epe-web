@@ -10,7 +10,7 @@ interface CarriersFiltersProps {
 export default function CarriersFilters({ search, onSearchChange, hasActiveFilters, onClear }: CarriersFiltersProps) {
     return (
         <FilterBar onClear={onClear} canClear={hasActiveFilters} className="mb-8">
-            <FilterSearch value={search} onChange={onSearchChange} placeholder="Buscar responsable..." />
+            <FilterSearch value={search} onChange={onSearchChange} placeholder="Buscar empresa de transporte..." />
         </FilterBar>
     );
 }

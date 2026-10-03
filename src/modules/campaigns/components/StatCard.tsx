@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Card, CardContent } from "@/shared/components/ui/card";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 
 interface StatCardProps {
     title: string;
@@ -13,6 +13,13 @@ interface StatCardProps {
     sparklineVariant?: "green" | "grey" | "yellow";
     onClick?: () => void;
     active?: boolean;
+}
+
+/** Flecha de la comparativa: sube, baja o línea cuando no hubo cambio */
+function TrendIcon({ direction, size }: { direction: "up" | "down" | "neutral"; size: number }) {
+    if (direction === "up") return <ArrowUpRight size={size} strokeWidth={2.5} />;
+    if (direction === "down") return <ArrowDownRight size={size} strokeWidth={2.5} />;
+    return <Minus size={size} strokeWidth={2.5} />;
 }
 
 /** Mini sparkline SVG decorativa para el fondo de la card */
@@ -98,11 +105,7 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
                     </div>
                     {trend && (
                         <div className={`flex items-center gap-0.5 shrink-0 ${trendColor}`}>
-                            {trend.direction === "up" ? (
-                                <ArrowUpRight size={14} strokeWidth={2.5} />
-                            ) : (
-                                <ArrowDownRight size={14} strokeWidth={2.5} />
-                            )}
+                            <TrendIcon direction={trend.direction} size={14} />
                             <span className="text-[12px] font-bold leading-none">{trend.value}</span>
                         </div>
                     )}
@@ -138,15 +141,11 @@ export default function StatCard({ title, value, icon, trend, sparklineVariant =
                     {trend && (
                         <>
                             <div className={`flex items-center gap-1 ${trendColor}`}>
-                                {trend.direction === "up" ? (
-                                    <ArrowUpRight size={18} strokeWidth={2.5} />
-                                ) : (
-                                    <ArrowDownRight size={18} strokeWidth={2.5} />
-                                )}
+                                <TrendIcon direction={trend.direction} size={18} />
                                 <span className="text-[15px] font-bold">{trend.value}</span>
                             </div>
                             <span className="text-[12px] text-ink-muted font-medium">
-                                vs. campaña anterior
+                                vs. mes anterior
                             </span>
                         </>
                     )}

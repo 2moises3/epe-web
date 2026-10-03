@@ -1,3 +1,4 @@
+import { format, parseISO } from "date-fns";
 import AppModal from "@/shared/components/AppModal";
 import { X, Receipt } from "lucide-react";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
@@ -31,6 +32,9 @@ export default function CampaignPaymentDetailsModal({ open, onOpenChange, paymen
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                 <InfoField label="Transportista" value={payment.transportista} className="sm:col-span-2" />
+
+                <InfoField label="Código" value={payment.codigo} />
+                <InfoField label="Fecha" value={payment.fecha ? format(parseISO(payment.fecha), "dd/MM/yyyy") : "—"} />
 
                 <InfoField
                     label={payment.estado === "Adelanto" ? "Adelantado" : "Cantidad"}

@@ -3,7 +3,8 @@ import { cn } from './utils'
 
 describe('cn', () => {
   it('combines conditional class names', () => {
-    expect(cn('text-sm', false && 'hidden', 'font-medium')).toBe(
+    const isHidden: boolean = false
+    expect(cn('text-sm', isHidden && 'hidden', 'font-medium')).toBe(
       'text-sm font-medium',
     )
   })

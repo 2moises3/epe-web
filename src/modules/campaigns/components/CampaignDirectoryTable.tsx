@@ -21,7 +21,7 @@ export default function CampaignDirectoryTable({ rows, columns, label }: { rows:
     const selectClass = "h-9 min-w-0 rounded-lg border border-border bg-white px-2 text-[11px] text-ink focus-visible:outline-2 focus-visible:outline-brand";
     return (
         <>
-            <div className="mb-4 grid grid-cols-2 gap-2 sm:gridcols-[-1fr_165px_140px]">
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_165px_140px]">
                 <div className="relative col-span-2 sm:col-span-1"><Search size={14} className="absolute left-3 top-2.5" aria-hidden="true" /><Input aria-label={`Buscar ${label}`} placeholder={`Buscar ${label}…`} value={query} onChange={event => setQuery(event.target.value)} className="h-9 pl-9 text-xs" /></div>
                 <select aria-label="Filtrar por categoría" value={category} onChange={event => setCategory(event.target.value)} className={selectClass}><option value="">Todas las categorías</option>{[...new Set(rows.map(row => row.category))].map(value => <option key={value}>{value}</option>)}</select>
                 <select aria-label="Ordenar listado" value={order} onChange={event => setOrder(event.target.value)} className={selectClass}><option value="">Orden original</option><option value="asc">Nombre: A–Z</option><option value="desc">Nombre: Z–A</option></select>

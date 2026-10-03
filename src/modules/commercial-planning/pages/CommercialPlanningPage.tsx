@@ -1,38 +1,51 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Contact, UserPlus, AlertCircle } from "lucide-react";
 import ClientsFilters from "@/modules/commercial-planning/components/ClientsFilters";
 import ClientsTable from "@/modules/commercial-planning/components/ClientsTable";
 import ClientFormModal from "@/modules/commercial-planning/components/ClientFormModal";
 import ClientSuccessModal from "@/modules/commercial-planning/components/ClientSuccessModal";
 import PageHeader from "@/shared/layout/PageHeader";
-import { Contact, UserPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
-import { getClientesNegocio } from "@/modules/clients/api/cliente-negocio.api";
+import { Alert, AlertDescription } from "@/shared/components/ui/alert";
+import { deleteClienteNegocio, getClientesNegocio } from "@/modules/clients/api/cliente-negocio.api";
 import type { ClienteNegocio } from "@/modules/clients/api/cliente-negocio.mapper";
+import { createInFlightGuard } from "@/modules/clients/api/in-flight-guard";
 
 export default function CommercialPlanningPage() {
     const [clients, setClients] = useState<ClienteNegocio[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
-    const [reloadKey, setReloadKey] = useState(0);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [type, setType] = useState("");
+    const deleteGuard = useRef(createInFlightGuard());
+    const loadSequence = useRef(0);
 
-    const reloadClients = () => {
-        setLoadError(null);
+    /** Solo la última carga pedida actualiza la lista; recargar no desmonta la tabla */
+    const loadClients = useCallback(async () => {
+        const request = ++loadSequence.current;
+        try {
+            const items = await getClientesNegocio();
+            if (request !== loadSequence.current) return;
+            setClients(items);
+            setLoadError(null);
+        } catch {
+            if (request === loadSequence.current) setLoadError("No se pudieron cargar los clientes. Verifica la conexión e inténtalo nuevamente.");
+        } finally {
+            if (request === loadSequence.current) setIsLoading(false);
+        }
+    }, []);
+
+    // Carga inicial desde la API: el estado se actualiza al resolverse la petición.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => { void loadClients(); }, [loadClients]);
+
+    const retry = () => {
         setIsLoading(true);
-        setReloadKey((key) => key + 1);
+        void loadClients();
     };
-
-    useEffect(() => {
-        let active = true;
-        getClientesNegocio()
-            .then((items) => { if (active) setClients(items); })
-            .catch(() => { if (active) setLoadError("No se pudieron cargar los clientes. Verifica la conexión e inténtalo nuevamente."); })
-            .finally(() => { if (active) setIsLoading(false); });
-        return () => { active = false; };
-    }, [reloadKey]);
 
     const clearFilters = () => { setSearch(""); setType(""); };
     const hasActiveFilters = search !== "" || type !== "";
@@ -44,10 +57,23 @@ export default function CommercialPlanningPage() {
         );
     }, [clients, search, type]);
 
-    const handleSaved = () => {
+    const handleCreated = () => {
         setIsCreateModalOpen(false);
         setIsSuccessModalOpen(true);
-        reloadClients();
+        void loadClients();
+    };
+
+    const handleDelete = async (client: ClienteNegocio) => {
+        if (!deleteGuard.current.acquire()) return;
+        setDeleteError(null);
+        try {
+            await deleteClienteNegocio(client.clienteNegocioId);
+            setClients((current) => current.filter((item) => item.clienteNegocioId !== client.clienteNegocioId));
+        } catch {
+            setDeleteError(`No se pudo eliminar ${client.nombreEmpresa}. Puede tener contratos vinculados o haber ocurrido un error de conexión.`);
+        } finally {
+            deleteGuard.current.release();
+        }
     };
 
     return (
@@ -56,7 +82,11 @@ export default function CommercialPlanningPage() {
                 icon={<Contact size={24} strokeWidth={2.5} />}
                 title="Planificación Comercial"
                 description="Administra los clientes y planifica la gestión comercial."
-                action={<Button size="xl" onClick={() => setIsCreateModalOpen(true)}><UserPlus size={20} strokeWidth={2.5} /> Nuevo cliente</Button>}
+                action={
+                    <Button size="xl" onClick={() => setIsCreateModalOpen(true)}>
+                        <UserPlus size={20} strokeWidth={2.5} /> Nuevo Cliente
+                    </Button>
+                }
             />
 
             <ClientsFilters
@@ -68,23 +98,25 @@ export default function CommercialPlanningPage() {
                 onClear={clearFilters}
             />
 
-            {isLoading ? (
-                <div role="status" aria-live="polite" className="rounded-xl border border-border bg-white p-8 text-center text-ink-muted">Cargando clientes...</div>
-            ) : loadError ? (
-                <div role="alert" className="rounded-xl border border-border bg-white p-8 text-center text-destructive">
-                    <p>{loadError}</p>
-                    <Button className="mt-4" variant="outline" onClick={reloadClients}>Reintentar</Button>
-                </div>
-            ) : (
-                <ClientsTable
-                    data={filteredData}
-                    hasActiveFilters={hasActiveFilters}
-                    onClearFilters={clearFilters}
-                    onChanged={reloadClients}
-                />
+            {deleteError && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertCircle />
+                    <AlertDescription>{deleteError}</AlertDescription>
+                </Alert>
             )}
 
-            <ClientFormModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} onSuccess={handleSaved} />
+            <ClientsTable
+                data={filteredData}
+                isLoading={isLoading}
+                loadError={loadError}
+                onRetry={retry}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearFilters}
+                onChanged={() => void loadClients()}
+                onDelete={handleDelete}
+            />
+
+            <ClientFormModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} onSuccess={handleCreated} />
             <ClientSuccessModal open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen} />
         </div>
     );

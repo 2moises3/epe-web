@@ -1,12 +1,13 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useRef, useState } from "react";
-import { X, Save, UserRound } from "lucide-react";
+import { X, Link2, UserRound, MapPin, Sprout, AlertCircle } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
-import { Field, FieldLabel } from "@/shared/components/ui/field";
+import FormSection from "@/shared/components/FormSection";
+import SegmentedControl from "@/shared/components/SegmentedControl";
+import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
-import SegmentedControl from "@/shared/components/SegmentedControl";
+import { Separator } from "@/shared/components/ui/separator";
 import { getProveedores } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import { createCampaniaProveedor, getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
@@ -24,17 +25,18 @@ interface CampaignLinkProviderModalProps {
     open: boolean;
     campaniaId?: number | null;
     onOpenChange: (open: boolean) => void;
+    /** Se llama solo cuando el backend confirmó el vínculo */
     onSave?: () => void;
+    /** Se llama cuando el resultado quedó incierto y conviene recargar la lista de la página */
     onRefresh?: () => void;
 }
 
-interface PendingProvider extends CampaniaProveedorDraft {
-    nombre: string;
-}
+type DraftField = Exclude<keyof CampaniaProveedorDraft, "proveedorId" | "tipoProveedor">;
+type DraftValues = Record<DraftField, string>;
 
-type FincaDraft = Omit<CampaniaProveedorDraft, "proveedorId" | "tipoProveedor" | "cantidadProveedor" | "mtdCeratitis">;
-
-const emptyFincaDraft: FincaDraft = {
+const EMPTY_DRAFT: DraftValues = {
+    cantidadProveedor: "",
+    mtdCeratitis: "",
     departamento: "",
     provincia: "",
     distrito: "",
@@ -49,351 +51,272 @@ const emptyFincaDraft: FincaDraft = {
     aplicacionesAlAno: "",
 };
 
-export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChange, onSave, onRefresh }: CampaignLinkProviderModalProps) {
-    const [providerType, setProviderType] = useState<string>("productor");
-    const isAcopiador = providerType === "acopio";
-    
-    const [selectedProvider, setSelectedProvider] = useState<string>("");
-    const [cantidad, setCantidad] = useState<string>("");
-    const [mtdCeratitis, setMtdCeratitis] = useState<string>("");
-    const [finca, setFinca] = useState<FincaDraft>(emptyFincaDraft);
+const PROVIDER_TYPES = [
+    { label: "Productor", value: "productor" },
+    { label: "Acopiador", value: "acopio" },
+];
 
+/** Campos de la finca que el backend exige solo para productores, en el orden en que se muestran */
+const FINCA_LOCATION: Array<{ field: DraftField; label: string; type?: "number"; step?: string }> = [
+    { field: "departamento", label: "Departamento" },
+    { field: "provincia", label: "Provincia" },
+    { field: "distrito", label: "Distrito" },
+    { field: "latitud", label: "Latitud", type: "number", step: "0.0000001" },
+    { field: "longitud", label: "Longitud", type: "number", step: "0.0000001" },
+];
+
+const FINCA_CROP: Array<{ field: DraftField; label: string; type?: "number"; step?: string }> = [
+    { field: "haTotalFinca", label: "Hectáreas totales", type: "number", step: "1" },
+    { field: "haCultivo", label: "Hectáreas de cultivo", type: "number", step: "1" },
+    { field: "densidadPlantacion", label: "Densidad de plantación", type: "number", step: "0.001" },
+    { field: "distanciamiento", label: "Distanciamiento", type: "number", step: "0.001" },
+    { field: "frecuenciaRiego", label: "Frecuencia de riego", type: "number", step: "1" },
+    { field: "nombreAplicacion", label: "Nombre de aplicación" },
+    { field: "aplicacionesAlAno", label: "Aplicaciones al año", type: "number", step: "1" },
+];
+
+/** Vincula un proveedor por vez: se valida, se guarda y el backend confirma antes de mostrar éxito. */
+export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChange, onSave, onRefresh }: CampaignLinkProviderModalProps) {
+    const [providerType, setProviderType] = useState<TipoProveedorCampania>("productor");
+    const [selectedProvider, setSelectedProvider] = useState("");
+    const [draft, setDraft] = useState<DraftValues>(EMPTY_DRAFT);
+    const [errors, setErrors] = useState<CampaniaProveedorDraftErrors & { proveedorId?: string }>({});
+    const [formError, setFormError] = useState<string | null>(null);
     const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-    const [addedProviders, setAddedProviders] = useState<PendingProvider[]>([]);
+    const [linkedIds, setLinkedIds] = useState<Set<number>>(new Set());
     const [isLoadingProviders, setIsLoadingProviders] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const isSavingRef = useRef(false);
-    const [hasUnresolvedOutcome, setHasUnresolvedOutcome] = useState(false);
-    const [errors, setErrors] = useState<CampaniaProveedorDraftErrors>({});
-    const [error, setError] = useState<string | null>(null);
-    const pendingProvidersRef = useRef<PendingProvider[]>([]);
-    const hasUnresolvedOutcomeRef = useRef(false);
-    const onOpenChangeRef = useRef(onOpenChange);
+    // Proveedor cuyo guardado no se pudo confirmar: el formulario queda bloqueado hasta reconciliar con el backend
+    const [unresolvedProviderId, setUnresolvedProviderId] = useState<number | null>(null);
+    const unresolvedRef = useRef<number | null>(null);
     const onSaveRef = useRef(onSave);
     const onRefreshRef = useRef(onRefresh);
-    const submissionControllerRef = useRef<ReturnType<typeof createCampaniaProveedorSubmissionController<PendingProvider>> | null>(null);
-    
+
     useEffect(() => {
-        onOpenChangeRef.current = onOpenChange;
         onSaveRef.current = onSave;
         onRefreshRef.current = onRefresh;
-    }, [onOpenChange, onSave, onRefresh]);
-    
-    if (submissionControllerRef.current === null) {
-        submissionControllerRef.current = createCampaniaProveedorSubmissionController<PendingProvider>({
-            create: (campaignId, provider) => createCampaniaProveedor(toCreateCampaniaProveedorInput(campaignId, provider)),
-            list: getCampaniaProveedoresByCampania,
-        });
-    }
+    }, [onSave, onRefresh]);
 
-    const updatePendingProviders = (providers: PendingProvider[]) => {
-        pendingProvidersRef.current = providers;
-        setAddedProviders(providers);
+    const [controller] = useState(() => createCampaniaProveedorSubmissionController<CampaniaProveedorDraft>({
+        create: (campaignId, provider) => createCampaniaProveedor(toCreateCampaniaProveedorInput(campaignId, provider)),
+        list: getCampaniaProveedoresByCampania,
+    }));
+
+    const markUnresolved = (providerId: number | null) => {
+        unresolvedRef.current = providerId;
+        setUnresolvedProviderId(providerId);
     };
 
-    const updateUnresolvedOutcome = (unresolved: boolean) => {
-        hasUnresolvedOutcomeRef.current = unresolved;
-        setHasUnresolvedOutcome(unresolved);
-    };
-
-    const handleOpenChange = (nextOpen: boolean) => {
-        if (!nextOpen && (isSavingRef.current || (hasUnresolvedOutcomeRef.current && isLoadingProviders))) return;
-        onOpenChange(nextOpen);
-    };
-
+    // Cada apertura es una sesión nueva; si quedó un guardado sin confirmar, primero se consulta al backend
     useEffect(() => {
         if (!open) return;
-        let isCurrent = true;
-        setIsLoadingProviders(true);
-        setProveedores([]);
-        setError(null);
+        let active = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setProviderType("productor");
+        setSelectedProvider("");
+        setDraft(EMPTY_DRAFT);
         setErrors({});
-        const requests = [
+        setFormError(null);
+        setIsLoadingProviders(true);
+
+        const requests: Promise<unknown>[] = [
             fetchCampaignProviderOptions(getProveedores).then(({ providers, failed }) => {
-                if (!isCurrent) return;
+                if (!active) return;
                 setProveedores(providers);
-                if (failed) setError("No se pudieron cargar los proveedores. Vuelva a abrir el formulario para intentarlo nuevamente.");
+                if (failed) setFormError("No se pudieron cargar los proveedores. Cierra y vuelve a abrir el formulario.");
             }),
         ];
 
-        if (hasUnresolvedOutcomeRef.current && campaniaId !== null && campaniaId !== undefined && submissionControllerRef.current) {
+        if (campaniaId) {
             requests.push(
-                submissionControllerRef.current.reconcile(
-                    campaniaId,
-                    pendingProvidersRef.current.map((provider) => provider.proveedorId),
-                ).then((result) => {
-                    if (!isCurrent) return;
+                getCampaniaProveedoresByCampania(campaniaId)
+                    .then((relations) => { if (active) setLinkedIds(new Set(relations.map((relation) => relation.proveedorId))); })
+                    .catch(() => { if (active) setLinkedIds(new Set()); }),
+            );
+        }
+
+        const pendingId = unresolvedRef.current;
+        if (campaniaId && pendingId !== null) {
+            requests.push(
+                controller.reconcile(campaniaId, [pendingId]).then((result) => {
+                    if (!active) return;
                     if (result.status === "unresolved") {
-                        setError("No se pudo confirmar el resultado anterior. El formulario permanece bloqueado para evitar duplicados; vuelva a abrirlo para actualizar el estado.");
+                        setFormError("Aún no se puede confirmar el vínculo anterior. Para evitar duplicados, vuelve a abrir el formulario más tarde.");
                         return;
                     }
-                    const persisted = new Set(result.persistedProviderIds);
-                    updatePendingProviders(pendingProvidersRef.current.filter((provider) => !persisted.has(provider.proveedorId)));
-                    updateUnresolvedOutcome(false);
+                    markUnresolved(null);
                     if (result.status === "complete") {
-                        setError(null);
-                        if (onSaveRef.current) onSaveRef.current();
-                        else onOpenChangeRef.current(false);
+                        // El vínculo anterior sí se guardó: se informa como éxito sin volver a enviarlo
+                        onSaveRef.current?.();
                     } else {
-                        setError("Se consultó el estado de los vínculos anteriores. La lista pendiente se actualizó; revise los elementos restantes antes de volver a guardar.");
                         onRefreshRef.current?.();
                     }
                 }),
             );
         }
 
-        void Promise.all(requests).finally(() => {
-            if (isCurrent) setIsLoadingProviders(false);
-        });
-        return () => { isCurrent = false; };
-    }, [open, campaniaId]);
+        void Promise.all(requests).finally(() => { if (active) setIsLoadingProviders(false); });
+        return () => { active = false; };
+    }, [open, campaniaId, controller]);
 
-    const handleRemove = (proveedorId: number) => {
-        updatePendingProviders(pendingProvidersRef.current.filter((provider) => provider.proveedorId !== proveedorId));
+    const isProducer = providerType === "productor";
+    const isLocked = isSaving || unresolvedProviderId !== null;
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen && isSaving) return;
+        onOpenChange(nextOpen);
     };
 
-    const makeCurrentDraft = (proveedorId: number, tipoProveedor: TipoProveedorCampania): CampaniaProveedorDraft => ({
-        proveedorId,
-        tipoProveedor,
-        cantidadProveedor: cantidad,
-        mtdCeratitis,
-        ...finca,
-    });
+    const updateDraft = (field: DraftField, value: string) => {
+        setDraft((current) => ({ ...current, [field]: value }));
+        setErrors((current) => ({ ...current, [field]: undefined }));
+        setFormError(null);
+    };
 
-    const handleAdd = () => {
-        if (!selectedProvider) return;
+    const handleSubmit = async () => {
+        if (isLocked || !campaniaId) return;
         const proveedor = proveedores.find((provider) => String(provider.proveedorId) === selectedProvider);
-        if (!proveedor) return;
-        if (pendingProvidersRef.current.some((provider) => provider.proveedorId === proveedor.proveedorId)) {
-            setError("Este proveedor ya está en la lista.");
-            return;
-        }
-
-        const draft = makeCurrentDraft(proveedor.proveedorId, isAcopiador ? "acopio" : "productor");
-        const draftErrors = getCampaniaProveedorDraftErrors(draft);
-        if (Object.keys(draftErrors).length > 0) {
+        const candidate: CampaniaProveedorDraft = { proveedorId: proveedor?.proveedorId ?? 0, tipoProveedor: providerType, ...draft };
+        const draftErrors: typeof errors = getCampaniaProveedorDraftErrors(candidate);
+        if (!proveedor) draftErrors.proveedorId = "Selecciona un proveedor.";
+        if (Object.keys(draftErrors).length > 0 || !proveedor) {
             setErrors(draftErrors);
-            setError("Revise los campos obligatorios y corrija los valores indicados.");
-            return;
-        }
-
-        setErrors({});
-        setError(null);
-        updatePendingProviders([
-            ...pendingProvidersRef.current,
-            { ...draft, nombre: `${proveedor.nombres} ${proveedor.apellido}` },
-        ]);
-        setSelectedProvider("");
-        setCantidad("");
-        setMtdCeratitis("");
-        setFinca(emptyFincaDraft);
-    };
-
-    const handleGuardar = async () => {
-        if (isSavingRef.current || hasUnresolvedOutcomeRef.current) return;
-        if (campaniaId === null || campaniaId === undefined || addedProviders.length === 0) {
-            setError("Seleccione una campaña y agregue al menos un proveedor antes de guardar.");
+            setFormError("Revisa los campos marcados antes de vincular.");
             return;
         }
 
         setIsSaving(true);
-        isSavingRef.current = true;
-        setError(null);
+        setErrors({});
+        setFormError(null);
         try {
-            const result = await submissionControllerRef.current!.submit(campaniaId, pendingProvidersRef.current);
-            const persisted = new Set(result.persistedProviderIds);
-            updatePendingProviders(pendingProvidersRef.current.filter((provider) => !persisted.has(provider.proveedorId)));
+            const result = await controller.submit(campaniaId, [candidate]);
             if (result.status === "complete") {
-                updateUnresolvedOutcome(false);
-                if (onSave) onSave();
-                else onOpenChange(false);
+                onSave?.();
                 return;
             }
-
-            if (result.status === "partial") {
-                onRefresh?.();
-                setError("No se confirmaron todos los vínculos. Los guardados confirmados se actualizaron; solo quedan en la lista los pendientes verificados por la consulta.");
-            } else if (result.status === "unresolved") {
-                updateUnresolvedOutcome(true);
-                setError("No se pudo confirmar el resultado del guardado. Para evitar duplicados, no vuelva a enviarlo; cierre y vuelva a abrir el formulario para reconciliar el estado.");
-            } else {
-                setError("La lista contiene proveedores duplicados. Quite los duplicados antes de guardar.");
+            if (result.status === "unresolved") {
+                markUnresolved(candidate.proveedorId);
+                setFormError("No se pudo confirmar si el vínculo se guardó. Para evitar duplicados, cierra y vuelve a abrir el formulario para verificarlo.");
+                return;
             }
+            onRefresh?.();
+            setFormError("No se pudo vincular el proveedor. Revisa los datos e inténtalo nuevamente.");
         } finally {
-            isSavingRef.current = false;
             setIsSaving(false);
         }
     };
 
-    const renderInput = (
-        field: keyof FincaDraft | "cantidadProveedor" | "mtdCeratitis",
-        label: string,
-        value: string,
-        onChange: (value: string) => void,
-        type: "text" | "number" = "text",
-        step?: string,
-    ) => {
-        const fieldError = errors[field as keyof CampaniaProveedorDraft];
-        const min = field === "latitud" ? "-90" : field === "longitud" ? "-180" : type === "number" ? "0" : undefined;
-        const max = field === "latitud" ? "90" : field === "longitud" ? "180" : undefined;
+    const providerOptions = proveedores
+        .filter((provider) => !linkedIds.has(provider.proveedorId))
+        .map((provider) => ({ value: String(provider.proveedorId), label: `${provider.nombres} ${provider.apellido}` }));
+
+    const renderField = ({ field, label, type, step }: { field: DraftField; label: string; type?: "number"; step?: string }) => {
+        const message = errors[field];
+        const isCoordinate = field === "latitud" || field === "longitud";
         return (
-            <Field>
-                <FieldLabel>{label} <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+            <Field key={field} data-invalid={message ? true : undefined}>
+                <FieldLabel htmlFor={`link-provider-${field}`}>
+                    {label} <span aria-hidden="true" className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
-                    type={type}
-                    min={min}
-                    max={max}
+                    id={`link-provider-${field}`}
+                    type={type ?? "text"}
+                    inputMode={type === "number" ? "decimal" : undefined}
                     step={step}
-                    value={value}
-                    onChange={(event) => onChange(event.target.value)}
+                    min={type === "number" && !isCoordinate ? 0 : undefined}
+                    value={draft[field]}
+                    onChange={(event) => updateDraft(field, event.target.value)}
+                    disabled={isLocked}
                     aria-required="true"
-                    aria-invalid={Boolean(fieldError)}
-                    aria-describedby={fieldError ? `provider-${field}-error` : undefined}
-                    disabled={isSaving || hasUnresolvedOutcome}
+                    aria-invalid={message ? true : undefined}
+                    aria-describedby={message ? `link-provider-${field}-error` : undefined}
                 />
-                {fieldError && <p id={`provider-${field}-error`} className="text-xs text-destructive" role="alert">{fieldError}</p>}
+                {message && <FieldError id={`link-provider-${field}-error`}>{message}</FieldError>}
             </Field>
         );
     };
-
-    const updateFinca = (field: keyof FincaDraft, value: string) => {
-        setFinca((current) => ({ ...current, [field]: value }));
-        setErrors((current) => ({ ...current, [field]: undefined }));
-    };
-
-    const updateGlobalField = (field: "cantidadProveedor" | "mtdCeratitis", value: string) => {
-        if (field === "cantidadProveedor") setCantidad(value);
-        else setMtdCeratitis(value);
-        setErrors((current) => ({ ...current, [field]: undefined }));
-    };
-
-    const ALL_PROVIDERS = proveedores.map(p => ({
-        value: String(p.proveedorId),
-        label: `${p.nombres} ${p.apellido}`
-    }));
 
     return (
         <AppModal
             open={open}
             onOpenChange={handleOpenChange}
-            title="Vincular Proveedores"
-            description="Asocia productores y acopiadores a esta campaña. Campos marcados con * son obligatorios."
-            className="sm:max-w-[700px]"
+            icon={<Link2 size={22} strokeWidth={2} />}
+            title="Vincular Proveedor"
+            description="Asocia un productor o acopiador a esta campaña. Los campos con * son obligatorios."
+            className="sm:max-w-175"
             footer={
                 <>
-                    <Button
-                        variant="outline"
-                        size="xl"
-                        onClick={() => handleOpenChange(false)}
-                        disabled={isSaving || (hasUnresolvedOutcome && isLoadingProviders)}
-                    >
+                    <Button variant="outline" size="xl" onClick={() => handleOpenChange(false)} disabled={isSaving}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button
-                        size="xl"
-                        onClick={handleGuardar}
-                        disabled={isSaving || hasUnresolvedOutcome || addedProviders.length === 0}
-                    >
-                        <Save size={20} strokeWidth={2.5} /> {isSaving ? "Guardando..." : "Guardar"}
+                    <Button size="xl" onClick={handleSubmit} disabled={isLocked || isLoadingProviders || !campaniaId} aria-busy={isSaving}>
+                        <Link2 size={20} strokeWidth={2.5} /> {isSaving ? "Vinculando..." : "Vincular proveedor"}
                     </Button>
                 </>
             }
         >
-            <div className="flex flex-col gap-5">
-                <Field>
-                    <FieldLabel>Seleccionar Proveedor: <span className="text-destructive">*</span></FieldLabel>
-                    <Combobox
-                        options={ALL_PROVIDERS}
-                        value={selectedProvider}
-                        onChange={setSelectedProvider}
-                        placeholder={isLoadingProviders ? "Cargando proveedores..." : "Seleccione un proveedor..."}
-                        emptyMessage="No hay proveedores disponibles"
-                        disabled={isLoadingProviders || isSaving || hasUnresolvedOutcome}
-                    />
-                </Field>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                    <Field>
-                        <FieldLabel>Tipo de Proveedor:</FieldLabel>
-                        <SegmentedControl
-                            options={[
-                                { label: "Productor", value: "productor" },
-                                { label: "Acopiador", value: "acopio" }
-                            ]}
-                            value={providerType}
-                            onChange={(val) => {
-                                setProviderType(val);
-                                setErrors({});
-                                setError(null);
-                            }}
+            <div className="flex flex-col gap-6">
+                <FormSection icon={<UserRound size={16} strokeWidth={2.5} />} title="Proveedor">
+                    <Field data-invalid={errors.proveedorId ? true : undefined}>
+                        <FieldLabel>Seleccionar Proveedor: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                        <Combobox
+                            options={providerOptions}
+                            value={selectedProvider}
+                            onChange={(value) => { setSelectedProvider(value); setErrors((current) => ({ ...current, proveedorId: undefined })); }}
+                            placeholder={isLoadingProviders ? "Cargando proveedores..." : "Seleccione un proveedor..."}
+                            emptyMessage="No hay proveedores disponibles para vincular"
+                            disabled={isLoadingProviders || isLocked}
                         />
+                        {errors.proveedorId && <FieldError>{errors.proveedorId}</FieldError>}
                     </Field>
-                    {renderInput("cantidadProveedor", "Cantidad estimada", cantidad, (value) => updateGlobalField("cantidadProveedor", value), "number", "0.001")}
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                    {renderInput("mtdCeratitis", "MTD de Ceratitis", mtdCeratitis, (value) => updateGlobalField("mtdCeratitis", value), "number", "0.001")}
-                </div>
-
-                {!isAcopiador && (
-                    <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-5">
-                        <legend className="mb-3 text-sm font-bold text-ink">Datos de la finca del productor</legend>
-                        {renderInput("departamento", "Departamento", finca.departamento, (value) => updateFinca("departamento", value))}
-                        {renderInput("provincia", "Provincia", finca.provincia, (value) => updateFinca("provincia", value))}
-                        {renderInput("distrito", "Distrito", finca.distrito, (value) => updateFinca("distrito", value))}
-                        {renderInput("latitud", "Latitud", finca.latitud, (value) => updateFinca("latitud", value), "number", "0.0000001")}
-                        {renderInput("longitud", "Longitud", finca.longitud, (value) => updateFinca("longitud", value), "number", "0.0000001")}
-                        {renderInput("densidadPlantacion", "Densidad de plantación", finca.densidadPlantacion, (value) => updateFinca("densidadPlantacion", value), "number", "0.001")}
-                        {renderInput("distanciamiento", "Distanciamiento", finca.distanciamiento, (value) => updateFinca("distanciamiento", value), "number", "0.001")}
-                        {renderInput("frecuenciaRiego", "Frecuencia de riego", finca.frecuenciaRiego, (value) => updateFinca("frecuenciaRiego", value), "number", "1")}
-                        {renderInput("haTotalFinca", "Hectáreas totales", finca.haTotalFinca, (value) => updateFinca("haTotalFinca", value), "number", "1")}
-                        {renderInput("haCultivo", "Hectáreas de cultivo", finca.haCultivo, (value) => updateFinca("haCultivo", value), "number", "1")}
-                        {renderInput("nombreAplicacion", "Nombre de aplicación", finca.nombreAplicacion, (value) => updateFinca("nombreAplicacion", value))}
-                        {renderInput("aplicacionesAlAno", "Aplicaciones/año", finca.aplicacionesAlAno, (value) => updateFinca("aplicacionesAlAno", value), "number", "1")}
-                    </fieldset>
-                )}
-
-                <div className="flex justify-end mt-2">
-                    <Button
-                        onClick={handleAdd}
-                        disabled={!selectedProvider || isLoadingProviders || isSaving || hasUnresolvedOutcome}
-                        className="h-10 rounded-lg bg-brand hover:bg-brand-dark text-white font-bold px-8 shadow-sm disabled:opacity-50 transition-colors active:scale-95"
-                    >
-                        Agregar a lista
-                    </Button>
-                </div>
-                
-                {error && <p className="text-xs text-destructive">{error}</p>}
-
-                {addedProviders.length > 0 && (
-                    <div className="flex flex-col gap-3 mt-4 border-t border-border pt-4">
-                        <label className="text-[13px] font-semibold text-ink">Proveedores pendientes ({addedProviders.length}):</label>
-                        <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto">
-                            {addedProviders.map((provider) => (
-                                <div key={provider.proveedorId} className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-white min-w-[200px] w-full sm:w-[calc(50%-6px)]">
-                                    <div className="w-10 h-10 rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0">
-                                        <UserRound size={18} className="text-brand" />
-                                    </div>
-                                    <div className="flex flex-col flex-1">
-                                        <span className="text-[13px] font-bold text-ink leading-tight mb-0.5 truncate max-w-[150px]">
-                                            {provider.nombre}
-                                        </span>
-                                        <span className="text-[11px] font-medium text-ink-muted">
-                                            {provider.tipoProveedor === "acopio" ? "Acopiador" : "Productor"} · {provider.cantidadProveedor} kg
-                                        </span>
-                                    </div>
-                                    <button
-                                        onClick={() => handleRemove(provider.proveedorId)}
-                                        disabled={isSaving || hasUnresolvedOutcome}
-                                        className="text-ink-muted hover:text-destructive transition-colors shrink-0 disabled:opacity-50"
-                                    >
-                                        <X size={16} strokeWidth={2.5} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                        <Field>
+                            <FieldLabel>Tipo de Proveedor:</FieldLabel>
+                            <SegmentedControl
+                                options={PROVIDER_TYPES}
+                                value={providerType}
+                                onChange={(value) => {
+                                    setProviderType(value as TipoProveedorCampania);
+                                    setErrors({});
+                                    setFormError(null);
+                                }}
+                            />
+                        </Field>
+                        {renderField({ field: "cantidadProveedor", label: "Cantidad Estimada (kg)", type: "number", step: "0.001" })}
                     </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                        {renderField({ field: "mtdCeratitis", label: "MTD de Ceratitis", type: "number", step: "0.001" })}
+                    </div>
+                </FormSection>
+
+                {isProducer && (
+                    <>
+                        <Separator />
+                        <FormSection icon={<MapPin size={16} strokeWidth={2.5} />} title="Ubicación de la finca">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                                {FINCA_LOCATION.slice(0, 3).map(renderField)}
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                                {FINCA_LOCATION.slice(3).map(renderField)}
+                            </div>
+                        </FormSection>
+
+                        <Separator />
+                        <FormSection icon={<Sprout size={16} strokeWidth={2.5} />} title="Cultivo y fertilización">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                                {FINCA_CROP.map(renderField)}
+                            </div>
+                        </FormSection>
+                    </>
                 )}
+
+                <div className={`transition-all duration-300 overflow-hidden ${formError ? "opacity-100 max-h-20" : "opacity-0 max-h-0"}`}>
+                    <FieldError className="flex items-center gap-2 text-[13px] font-medium">
+                        <AlertCircle size={14} className="shrink-0" /> {formError}
+                    </FieldError>
+                </div>
             </div>
         </AppModal>
     );

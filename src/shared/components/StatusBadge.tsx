@@ -15,6 +15,9 @@ const STATUS_TONES: Record<string, StatusTone> = {
     "en proceso": "warning",
     adelanto: "warning",
     realizados: "brand",
+    // Resultado de examen de laboratorio: negativo es el resultado esperado (sin residuos)
+    negativo: "brand",
+    positivo: "danger",
     vencida: "danger",
     rechazado: "danger",
     terminado: "neutral",

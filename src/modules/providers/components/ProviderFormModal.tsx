@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { Save, UserPlus, X } from "lucide-react";
+import { Save, UserPlus, X, IdCard, Phone, AlertCircle } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
-import { useModalForm } from "@/shared/hooks/useModalForm";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import FormSection from "@/shared/components/FormSection";
+import { useModalForm, useResetOnToggle } from "@/shared/hooks/useModalForm";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
+import { Separator } from "@/shared/components/ui/separator";
+import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import type { ProveedorInput } from "@/modules/providers/api/proveedor.dto";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import type { ProveedorField, ProveedorFieldErrors } from "@/modules/providers/api/proveedor.validation";
@@ -13,22 +16,37 @@ import { validateProveedorInput } from "@/modules/providers/api/proveedor.valida
 import { createProviderFormSession } from "@/modules/providers/api/provider-lifecycle";
 import { createInFlightGuard, submitValidatedProveedor } from "@/modules/providers/api/proveedor-submission";
 
+const DOCUMENT_TYPES = [
+    { value: "DNI", label: "DNI" },
+    { value: "Pasaporte", label: "Pasaporte" },
+    { value: "Carnet de extranjeria", label: "Carnet de extranjería" },
+];
+
 interface ProviderFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** "create" arranca vacío; "edit" arranca con los datos de `provider` y cambia los textos */
     mode?: "create" | "edit";
     provider?: Proveedor | null;
+    /** Bloqueo compartido con la tabla: evita guardar y eliminar al mismo tiempo */
     mutationGuard: ReturnType<typeof createInFlightGuard>;
+    /** Guarda en el backend; el modal solo se cierra si la promesa se resuelve */
     onSave: (providerId: number | null, input: ProveedorInput) => Promise<Proveedor>;
 }
 
+/** Alta y edición de un proveedor: mismos campos, solo cambian los textos y los valores iniciales. */
 export default function ProviderFormModal({ open, onOpenChange, mode = "create", provider, mutationGuard, onSave }: ProviderFormModalProps) {
     const isEdit = mode === "edit";
-    const initialSession = createProviderFormSession(provider);
-    const [values, , set] = useModalForm(open, initialSession.values);
+    // Al abrir y al cerrar vuelve a los valores de origen: en alta queda vacío, en edición carga el proveedor
+    const [values, , set] = useModalForm(open, createProviderFormSession(provider).values);
+    const [errors, setErrors] = useState<ProveedorFieldErrors>({});
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [errors, setErrors] = useState<ProveedorFieldErrors>(initialSession.errors);
-    const [saveError, setSaveError] = useState<string | null>(initialSession.saveError);
+
+    useResetOnToggle(open, () => {
+        setErrors({});
+        setSaveError(null);
+    });
 
     const updateField = (field: ProveedorField, value: string) => {
         set(field)(value as never);
@@ -48,12 +66,8 @@ export default function ProviderFormModal({ open, onOpenChange, mode = "create",
                 setErrors({});
                 setSaveError(null);
             });
-            if (result.status === "invalid") {
-                setErrors(result.errors);
-                return;
-            }
-            if (result.status === "busy") return;
-            onOpenChange(false);
+            if (result.status === "invalid") setErrors(result.errors);
+            if (result.status === "saved") onOpenChange(false);
         } catch {
             setSaveError("No se pudieron guardar los cambios. Revisa la información e intenta nuevamente.");
         } finally {
@@ -61,81 +75,125 @@ export default function ProviderFormModal({ open, onOpenChange, mode = "create",
         }
     };
 
-    const fieldError = (field: ProveedorField) => errors[field] ? <FieldError id={`${field}-error`}>{errors[field]}</FieldError> : null;
     const fieldProps = (field: ProveedorField) => ({
-        "aria-invalid": Boolean(errors[field]),
-        "aria-describedby": errors[field] ? `${field}-error` : undefined,
+        id: `provider-${field}`,
+        value: values[field],
+        disabled: isSaving,
+        onChange: (event: React.ChangeEvent<HTMLInputElement>) => updateField(field, event.target.value),
+        "aria-invalid": errors[field] ? true : undefined,
+        "aria-describedby": errors[field] ? `provider-${field}-error` : undefined,
         "aria-required": true,
         required: true,
     });
+
+    const label = (field: ProveedorField, text: string) => (
+        <FieldLabel htmlFor={`provider-${field}`}>{text}: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+    );
+
+    const error = (field: ProveedorField) => (errors[field] ? <FieldError id={`provider-${field}-error`}>{errors[field]}</FieldError> : null);
 
     return (
         <AppModal
             open={open}
             onOpenChange={handleOpenChange}
             icon={<UserPlus size={22} strokeWidth={2} />}
-            title={isEdit ? "Editar proveedor" : "Registrar proveedor"}
-            description="Completa los campos obligatorios según el registro de proveedores."
-            className="sm:max-w-225"
+            title={isEdit ? "Editar Proveedor" : "Registrar Proveedor"}
+            description={isEdit
+                ? "Modifica la información del proveedor existente. Los campos con * son obligatorios."
+                : "Completa la información para registrar un nuevo proveedor. Los campos con * son obligatorios."}
+            className="sm:max-w-200"
             footer={
                 <>
                     <Button variant="outline" size="xl" disabled={isSaving} onClick={() => handleOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" disabled={isSaving} onClick={handleSubmit} aria-busy={isSaving}>
-                        {isSaving ? "Guardando…" : isEdit ? <><Save size={20} strokeWidth={2.5} /> Guardar</> : <><UserPlus size={20} strokeWidth={2.5} /> Crear proveedor</>}
+                        {isEdit
+                            ? <><Save size={20} strokeWidth={2.5} /> {isSaving ? "Guardando..." : "Guardar"}</>
+                            : <><UserPlus size={20} strokeWidth={2.5} /> {isSaving ? "Creando..." : "Crear Proveedor"}</>}
                     </Button>
                 </>
             }
         >
-            <p className="mb-4 text-sm text-ink-muted"><span aria-hidden="true">*</span> Campos obligatorios.</p>
-            {saveError && <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{saveError}</div>}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Field data-invalid={Boolean(errors.nombres)}>
-                    <FieldLabel htmlFor="provider-nombres">Nombres <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-nombres" value={values.nombres} onChange={(event) => updateField("nombres", event.target.value)} maxLength={150} {...fieldProps("nombres")} />{fieldError("nombres")}
-                </Field>
-                <Field data-invalid={Boolean(errors.apellido)}>
-                    <FieldLabel htmlFor="provider-apellido">Apellidos <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-apellido" value={values.apellido} onChange={(event) => updateField("apellido", event.target.value)} maxLength={150} {...fieldProps("apellido")} />{fieldError("apellido")}
-                </Field>
-                <Field data-invalid={Boolean(errors.tipoDocumento)}>
-                    <FieldLabel htmlFor="provider-tipo-documento">Tipo de documento <span aria-hidden="true">*</span></FieldLabel>
-                    <Select value={values.tipoDocumento} onValueChange={(value) => updateField("tipoDocumento", value ?? "")}>
-                        <SelectTrigger id="provider-tipo-documento" aria-required="true" aria-invalid={Boolean(errors.tipoDocumento)} aria-describedby={errors.tipoDocumento ? "tipoDocumento-error" : undefined}>
-                            <SelectValue placeholder="Seleccionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="DNI">DNI</SelectItem>
-                            <SelectItem value="Pasaporte">Pasaporte</SelectItem>
-                            <SelectItem value="Carnet de extranjeria">Carnet de extranjería</SelectItem>
-                        </SelectContent>
-                    </Select>{fieldError("tipoDocumento")}
-                </Field>
-                <Field data-invalid={Boolean(errors.nmrDocumento)}>
-                    <FieldLabel htmlFor="provider-documento">Número de documento <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-documento" type="number" min={1} step={1} value={values.nmrDocumento} onChange={(event) => updateField("nmrDocumento", event.target.value)} {...fieldProps("nmrDocumento")} />{fieldError("nmrDocumento")}
-                </Field>
-                <Field data-invalid={Boolean(errors.identidadDocUrl)}>
-                    <FieldLabel htmlFor="provider-identidad-url">URL del documento de identidad <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-identidad-url" type="url" value={values.identidadDocUrl} onChange={(event) => updateField("identidadDocUrl", event.target.value)} {...fieldProps("identidadDocUrl")} />{fieldError("identidadDocUrl")}
-                </Field>
-                <Field data-invalid={Boolean(errors.zona)}>
-                    <FieldLabel htmlFor="provider-zona">Zona <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-zona" value={values.zona} onChange={(event) => updateField("zona", event.target.value)} {...fieldProps("zona")} />{fieldError("zona")}
-                </Field>
-                <Field data-invalid={Boolean(errors.telefono)}>
-                    <FieldLabel htmlFor="provider-telefono">Teléfono <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-telefono" type="number" min={1} step={1} value={values.telefono} onChange={(event) => updateField("telefono", event.target.value)} {...fieldProps("telefono")} />{fieldError("telefono")}
-                </Field>
-                <Field data-invalid={Boolean(errors.email)}>
-                    <FieldLabel htmlFor="provider-email">Correo electrónico <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-email" type="email" maxLength={320} value={values.email} onChange={(event) => updateField("email", event.target.value)} {...fieldProps("email")} />{fieldError("email")}
-                </Field>
-                <Field data-invalid={Boolean(errors.codigoLugarProduccion)}>
-                    <FieldLabel htmlFor="provider-codigo">Código de lugar de producción <span aria-hidden="true">*</span></FieldLabel>
-                    <Input id="provider-codigo" type="number" min={1} step={1} value={values.codigoLugarProduccion} onChange={(event) => updateField("codigoLugarProduccion", event.target.value)} {...fieldProps("codigoLugarProduccion")} />{fieldError("codigoLugarProduccion")}
-                </Field>
+            <div className="flex flex-col gap-6">
+                {saveError && (
+                    <Alert variant="destructive">
+                        <AlertCircle />
+                        <AlertDescription>{saveError}</AlertDescription>
+                    </Alert>
+                )}
+
+                <FormSection icon={<IdCard size={16} strokeWidth={2.5} />} title="Identificación">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                        <Field data-invalid={errors.nombres ? true : undefined}>
+                            {label("nombres", "Nombres")}
+                            <Input maxLength={150} {...fieldProps("nombres")} />
+                            {error("nombres")}
+                        </Field>
+                        <Field data-invalid={errors.apellido ? true : undefined}>
+                            {label("apellido", "Apellidos")}
+                            <Input maxLength={150} {...fieldProps("apellido")} />
+                            {error("apellido")}
+                        </Field>
+                        <Field data-invalid={errors.tipoDocumento ? true : undefined}>
+                            {label("tipoDocumento", "Tipo de Documento")}
+                            <Select items={DOCUMENT_TYPES} value={values.tipoDocumento || null} onValueChange={(value) => updateField("tipoDocumento", (value as string | null) ?? "")} disabled={isSaving}>
+                                <SelectTrigger
+                                    id="provider-tipoDocumento"
+                                    className="w-full"
+                                    aria-required="true"
+                                    aria-invalid={errors.tipoDocumento ? true : undefined}
+                                    aria-describedby={errors.tipoDocumento ? "provider-tipoDocumento-error" : undefined}
+                                >
+                                    <SelectValue placeholder="Seleccionar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {DOCUMENT_TYPES.map((type) => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            {error("tipoDocumento")}
+                        </Field>
+                        <Field data-invalid={errors.nmrDocumento ? true : undefined}>
+                            {label("nmrDocumento", "Número de Documento")}
+                            <Input type="number" inputMode="numeric" min={1} step={1} {...fieldProps("nmrDocumento")} />
+                            {error("nmrDocumento")}
+                        </Field>
+                        <Field data-invalid={errors.identidadDocUrl ? true : undefined} className="sm:col-span-2">
+                            {label("identidadDocUrl", "Documento de identidad (URL)")}
+                            <Input type="url" placeholder="https://..." {...fieldProps("identidadDocUrl")} />
+                            {error("identidadDocUrl")}
+                            <FieldDescription className="text-[12px]">Pega el enlace del archivo compartido (Drive, OneDrive, etc.).</FieldDescription>
+                        </Field>
+                    </div>
+                </FormSection>
+
+                <Separator />
+
+                <FormSection icon={<Phone size={16} strokeWidth={2.5} />} title="Contacto y producción">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+                        <Field data-invalid={errors.telefono ? true : undefined}>
+                            {label("telefono", "Teléfono")}
+                            <Input type="tel" inputMode="numeric" {...fieldProps("telefono")} />
+                            {error("telefono")}
+                        </Field>
+                        <Field data-invalid={errors.email ? true : undefined}>
+                            {label("email", "Email")}
+                            <Input type="email" maxLength={320} {...fieldProps("email")} />
+                            {error("email")}
+                        </Field>
+                        <Field data-invalid={errors.zona ? true : undefined}>
+                            {label("zona", "Zona")}
+                            <Input {...fieldProps("zona")} />
+                            {error("zona")}
+                        </Field>
+                        <Field data-invalid={errors.codigoLugarProduccion ? true : undefined}>
+                            {label("codigoLugarProduccion", "Código Lugar de Producción")}
+                            <Input type="number" inputMode="numeric" min={1} step={1} {...fieldProps("codigoLugarProduccion")} />
+                            {error("codigoLugarProduccion")}
+                        </Field>
+                    </div>
+                    <p className="text-[12.5px] text-ink-muted">Las frutas, exámenes y certificados se gestionan desde el detalle del proveedor.</p>
+                </FormSection>
             </div>
         </AppModal>
     );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Truck, Send, Building2 } from "lucide-react";
+import { Truck, Send, Building2, AlertCircle } from "lucide-react";
 import CarriersFilters from "@/modules/carriers/components/CarriersFilters";
 import CarriersTable from "@/modules/carriers/components/CarriersTable";
 import CarrierFormModal from "@/modules/carriers/components/CarrierFormModal";
@@ -8,6 +8,8 @@ import CarrierSuccessModal, { type CarrierSuccessMode } from "@/modules/carriers
 import PageHeader from "@/shared/layout/PageHeader";
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import { createCarrier, deleteCarrier, getCarriers, updateCarrier, createVehicle, createDriver } from "@/modules/carriers/api/carrier.api";
 import type { Carrier } from "@/modules/carriers/carriers.data";
 
@@ -125,8 +127,18 @@ export default function CarriersPage() {
                 }
             />
 
-            {error && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p>}
-            {isLoading ? <div className="rounded-2xl border border-border bg-white p-6 text-center text-ink-muted">Cargando empresas de transporte...</div> : <>
+            {error && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertCircle />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+            {isLoading ? (
+                <div role="status" className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-white p-10 text-ink-muted">
+                    <Spinner className="size-7 text-brand" />
+                    <p className="text-[14px] font-medium">Cargando empresas de transporte...</p>
+                </div>
+            ) : <>
             <CarriersFilters
                 search={search}
                 onSearchChange={setSearch}

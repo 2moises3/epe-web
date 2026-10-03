@@ -26,7 +26,7 @@ export default function CampaignDirectoryModal({ open, onOpenChange, title, camp
     return (
         <AppModal open={open} onOpenChange={onOpenChange} title={title} description={description} icon={<Icon size={22} strokeWidth={2} />} className="sm:max-w-3xl">
             <div className="relative mb-4 flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl bg-brand-surface/70 p-4 sm:gap-6 sm:pr-40">
-                <img src={visual.image} alt="" className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-40 roundedtl-[-80px] object-cover sm:block" />
+                <img src={visual.image} alt="" className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-40 rounded-tl-[80px] object-cover sm:block" />
                 <div className="relative flex items-center gap-3">
                     <span className="flex size-11 items-center justify-center rounded-2xl bg-brand/10 text-brand"><Icon size={23} aria-hidden="true" /></span>
                     <div><p className="text-[10px]">Campaña</p><p className="mt-1 text-base font-bold text-brand-dark">{campaign.nombre}</p></div>

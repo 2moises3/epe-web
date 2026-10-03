@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { X, UserPlus, Save } from "lucide-react";
+import { X, UserPlus, Save, AlertCircle } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm } from "@/shared/hooks/useModalForm";
-import { Field, FieldLabel } from "@/shared/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
@@ -12,6 +13,11 @@ import type { ClienteNegocio } from "@/modules/clients/api/cliente-negocio.mappe
 import { toClienteNegocioInput, validateClienteNegocioInput } from "@/modules/clients/api/cliente-negocio.validation";
 import { createInFlightGuard } from "@/modules/clients/api/in-flight-guard";
 import { submitValidatedClienteNegocio } from "@/modules/clients/api/client-submission";
+
+const CLIENT_TYPES = [
+    { value: "exportador", label: "Exportador" },
+    { value: "industria", label: "Industria" },
+];
 
 const EMPTY_CLIENT: ClienteNegocioInput = {
     nombreEmpresa: "", nombreContacto: "", telefono: "", ruc: "",
@@ -86,8 +92,10 @@ export default function ClientFormModal({
             open={open}
             onOpenChange={handleOpenChange}
             icon={<UserPlus size={22} strokeWidth={2} />}
-            title={isEdit ? "Editar cliente" : "Registrar cliente"}
-            description={isEdit ? "Actualiza la información del cliente." : "Completa los datos para registrar un cliente."}
+            title={isEdit ? "Editar Cliente" : "Registrar Cliente"}
+            description={isEdit
+                ? "Modifica la información del cliente existente. Los campos con * son obligatorios."
+                : "Completa la información para registrar un nuevo cliente. Los campos con * son obligatorios."}
             className="sm:max-w-162.5"
             footer={
                 <>
@@ -96,48 +104,52 @@ export default function ClientFormModal({
                     </Button>
                     <Button size="xl" onClick={handleSubmit} disabled={isSaving} aria-busy={isSaving}>
                         {isSaving ? "Guardando..." : isEdit
-                            ? <><Save size={20} strokeWidth={2.5} /> Guardar cambios</>
-                            : <><UserPlus size={20} strokeWidth={2.5} /> Crear cliente</>}
+                            ? <><Save size={20} strokeWidth={2.5} /> Guardar</>
+                            : <><UserPlus size={20} strokeWidth={2.5} /> Crear Cliente</>}
                     </Button>
                 </>
             }
         >
-            <p className="mb-4 text-sm text-ink-muted">Los campos con <span aria-hidden="true" className="font-bold text-destructive">*</span> son obligatorios.</p>
-            {requestError && <p role="alert" className="mb-4 text-sm text-destructive">{requestError}</p>}
+            {requestError && (
+                <Alert variant="destructive" className="mb-5">
+                    <AlertCircle />
+                    <AlertDescription>{requestError}</AlertDescription>
+                </Alert>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6" aria-busy={isSaving}>
                 <Field className="sm:col-span-2" data-invalid={Boolean(fieldError("nombreEmpresa"))}>
-                    <FieldLabel htmlFor="client-company">Empresa <span aria-hidden="true">*</span></FieldLabel>
+                    <FieldLabel htmlFor="client-company">Empresa: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
                     <Input id="client-company" value={values.nombreEmpresa} onChange={(e) => set("nombreEmpresa")(e.target.value)} required aria-invalid={Boolean(fieldError("nombreEmpresa"))} aria-describedby={fieldError("nombreEmpresa") ? "client-company-error" : undefined} />
-                    {fieldError("nombreEmpresa") && <p id="client-company-error" className="text-sm text-destructive">{fieldError("nombreEmpresa")}</p>}
+                    {fieldError("nombreEmpresa") && <FieldError id="client-company-error">{fieldError("nombreEmpresa")}</FieldError>}
                 </Field>
                 <Field data-invalid={Boolean(fieldError("nombreContacto"))}>
-                    <FieldLabel htmlFor="client-contact">Nombre de contacto <span aria-hidden="true">*</span></FieldLabel>
+                    <FieldLabel htmlFor="client-contact">Nombre de contacto: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
                     <Input id="client-contact" value={values.nombreContacto} onChange={(e) => set("nombreContacto")(e.target.value)} required aria-invalid={Boolean(fieldError("nombreContacto"))} aria-describedby={fieldError("nombreContacto") ? "client-contact-error" : undefined} />
-                    {fieldError("nombreContacto") && <p id="client-contact-error" className="text-sm text-destructive">{fieldError("nombreContacto")}</p>}
+                    {fieldError("nombreContacto") && <FieldError id="client-contact-error">{fieldError("nombreContacto")}</FieldError>}
                 </Field>
                 <Field data-invalid={Boolean(fieldError("telefono"))}>
-                    <FieldLabel htmlFor="client-phone">Teléfono <span aria-hidden="true">*</span></FieldLabel>
+                    <FieldLabel htmlFor="client-phone">Teléfono: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
                     <Input id="client-phone" value={values.telefono} onChange={(e) => set("telefono")(e.target.value)} required aria-invalid={Boolean(fieldError("telefono"))} aria-describedby={fieldError("telefono") ? "client-phone-error" : undefined} />
-                    {fieldError("telefono") && <p id="client-phone-error" className="text-sm text-destructive">{fieldError("telefono")}</p>}
+                    {fieldError("telefono") && <FieldError id="client-phone-error">{fieldError("telefono")}</FieldError>}
                 </Field>
                 <Field data-invalid={Boolean(fieldError("ruc"))}>
-                    <FieldLabel htmlFor="client-ruc">RUC <span aria-hidden="true">*</span></FieldLabel>
+                    <FieldLabel htmlFor="client-ruc">RUC: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
                     <Input id="client-ruc" value={values.ruc} onChange={(e) => set("ruc")(e.target.value)} required aria-invalid={Boolean(fieldError("ruc"))} aria-describedby={fieldError("ruc") ? "client-ruc-error" : undefined} />
-                    {fieldError("ruc") && <p id="client-ruc-error" className="text-sm text-destructive">{fieldError("ruc")}</p>}
+                    {fieldError("ruc") && <FieldError id="client-ruc-error">{fieldError("ruc")}</FieldError>}
                 </Field>
                 <Field data-invalid={Boolean(fieldError("correoCorporativo"))}>
-                    <FieldLabel htmlFor="client-email">Correo corporativo <span aria-hidden="true">*</span></FieldLabel>
+                    <FieldLabel htmlFor="client-email">Correo corporativo: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
                     <Input id="client-email" type="email" value={values.correoCorporativo} onChange={(e) => set("correoCorporativo")(e.target.value)} required aria-invalid={Boolean(fieldError("correoCorporativo"))} aria-describedby={fieldError("correoCorporativo") ? "client-email-error" : undefined} />
-                    {fieldError("correoCorporativo") && <p id="client-email-error" className="text-sm text-destructive">{fieldError("correoCorporativo")}</p>}
+                    {fieldError("correoCorporativo") && <FieldError id="client-email-error">{fieldError("correoCorporativo")}</FieldError>}
                 </Field>
                 <Field data-invalid={Boolean(fieldError("ubicacion"))}>
-                    <FieldLabel htmlFor="client-location">Ubicación <span aria-hidden="true">*</span></FieldLabel>
+                    <FieldLabel htmlFor="client-location">Ubicación: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
                     <Input id="client-location" value={values.ubicacion} onChange={(e) => set("ubicacion")(e.target.value)} required aria-invalid={Boolean(fieldError("ubicacion"))} aria-describedby={fieldError("ubicacion") ? "client-location-error" : undefined} />
-                    {fieldError("ubicacion") && <p id="client-location-error" className="text-sm text-destructive">{fieldError("ubicacion")}</p>}
+                    {fieldError("ubicacion") && <FieldError id="client-location-error">{fieldError("ubicacion")}</FieldError>}
                 </Field>
                 <Field data-invalid={Boolean(fieldError("tipoCliente"))}>
-                    <FieldLabel htmlFor="client-type">Tipo de cliente <span aria-hidden="true">*</span></FieldLabel>
-                    <Select value={values.tipoCliente} onValueChange={(value) => set("tipoCliente")((value ?? "") as ClienteNegocioInput["tipoCliente"])}>
+                    <FieldLabel htmlFor="client-type">Tipo de cliente: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                    <Select items={CLIENT_TYPES} value={values.tipoCliente || null} onValueChange={(value) => set("tipoCliente")((value ?? "") as ClienteNegocioInput["tipoCliente"])}>
                         <SelectTrigger id="client-type" className="w-full" aria-required="true" aria-invalid={Boolean(fieldError("tipoCliente"))} aria-describedby={fieldError("tipoCliente") ? "client-type-error" : undefined}>
                             <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
@@ -146,7 +158,7 @@ export default function ClientFormModal({
                             <SelectItem value="industria">Industria</SelectItem>
                         </SelectContent>
                     </Select>
-                    {fieldError("tipoCliente") && <p id="client-type-error" className="text-sm text-destructive">{fieldError("tipoCliente")}</p>}
+                    {fieldError("tipoCliente") && <FieldError id="client-type-error">{fieldError("tipoCliente")}</FieldError>}
                 </Field>
             </div>
         </AppModal>

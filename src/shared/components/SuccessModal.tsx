@@ -70,7 +70,7 @@ export default function SuccessModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
-                className="group maxw-[-calc(100%-2rem)] sm:max-w-115 p-0 rounded-2xl bg-white border-0 shadow-2xl gap-0 overflow-hidden maxh-[-90vh] flex flex-col"
+                className="group max-w-[calc(100%-2rem)] sm:max-w-115 p-0 rounded-2xl bg-white border-0 shadow-2xl gap-0 overflow-hidden max-h-[90vh] flex flex-col"
             >
                 {/* Banner de marca con el check animado */}
                 <div

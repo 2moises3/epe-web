@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Truck, UserRound, Building2 } from "lucide-react";
+import { ArrowLeft, Truck, UserRound, Building2, AlertCircle } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { Spinner } from "@/shared/components/ui/spinner";
+import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import PageHeader from "@/shared/layout/PageHeader";
 import FilterBar, { FilterSearch } from "@/shared/components/FilterBar";
 import SegmentedTabs, { type SegmentedTabItem } from "@/shared/components/SegmentedTabs";
@@ -34,7 +36,7 @@ export default function CarrierDetailsPage() {
             setError(null);
             setCarrier(await getCarrier(carrierId));
         } catch {
-            setCarrier(null);
+            // Si falla una recarga se conservan los datos ya mostrados; solo sin datos previos se muestra el error de página
             setError("No se pudo cargar la empresa de transporte desde el backend.");
         } finally {
             setIsLoading(false);
@@ -45,7 +47,14 @@ export default function CarrierDetailsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { void loadCarrier(); }, [loadCarrier]);
 
-    if (isLoading) return <div className="p-8 text-center text-ink-muted">Cargando empresa de transporte...</div>;
+    if (isLoading) {
+        return (
+            <div role="status" className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-ink-muted">
+                <Spinner className="size-8 text-brand" />
+                <p className="text-[14px] font-medium">Cargando empresa de transporte...</p>
+            </div>
+        );
+    }
     if (!carrier) {
         return (
             <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
@@ -140,7 +149,12 @@ function CarrierDetailsView({ carrier, onRefresh }: { carrier: Carrier; onRefres
                     <Button size="xl" onClick={() => setDriverModal({ open: true, editing: null })}><UserRound size={20} strokeWidth={2.5} /> Registrar chofer</Button>
                 )}
             />
-            {error && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</p>}
+            {error && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertCircle />
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
             <div className="mb-8 flex flex-col gap-6">
                 <CarrierInfoCard carrier={carrier} vehicleCount={carrierVehicles.length} driverCount={carrierDrivers.length} />
                 <SegmentedTabs tabs={tabs} value={activeTab} onChange={changeTab} />

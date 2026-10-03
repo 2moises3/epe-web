@@ -1,79 +1,175 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, AlertCircle, Save, Sprout } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import RemovableChip from "@/shared/components/RemovableChip";
-import { useModalForm, useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
+import { createCampana, getCampana, getFrutaDerivadas, getFrutas, updateCampana } from "@/modules/campaigns/api/campaign.api";
+import type { CampanaEstado, FrutaDerivadaDto, FrutaDto } from "@/modules/campaigns/api/campaign.dto";
+import { campaignFormSchema } from "@/modules/campaigns/api/campaign-form.schema";
+import { formatFecha, parseFecha } from "@/modules/campaigns/api/fecha.util";
+import { getBadRequestFieldErrors, getZodFieldErrors, type FormFieldErrors } from "@/shared/validation/api-form-errors";
 
-export interface CampaignFormValues {
+interface CampaignFormValues {
     nombre: string;
-    inicio: string;
-    fin: string;
-    kilos: string;
-    fruta: string;
-    variedades: string[];
+    frutaId: number | null;
+    fechaInicio: string;
+    fechaFin: string;
+    requerimientoComercial: string;
+    estado: CampanaEstado;
 }
 
 const EMPTY_CAMPAIGN: CampaignFormValues = {
-    nombre: "", inicio: "", fin: "", kilos: "", fruta: "", variedades: [],
+    nombre: "", frutaId: null, fechaInicio: "", fechaFin: "", requerimientoComercial: "", estado: "planificacion",
 };
 
-/** Variedades que se sugieren solas al elegir la fruta principal. */
-const DERIVED_BY_FRUIT: Record<string, string[]> = {
-    Mango: ["Mango Kent", "Mango Edward", "Mango Haden"],
+/** Propiedades del backend → campo del formulario, para ubicar los errores 400 debajo de cada campo */
+const BACKEND_FIELDS = {
+    nombre: "nombre",
+    frutaId: "frutaId",
+    fechaInicio: "fechaInicio",
+    fechaFin: "fechaFin",
+    requerimientoComercial: "requerimientoComercial",
 };
-
-/** Opción deliberadamente mal escrita: sirve para mostrar la validación del campo. */
-const MALFORMED_FRUIT = "Mngo ";
 
 interface CampaignFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
-    /** "create" arranca vacío; "edit" arranca con `initialValues` y cambia los textos */
+    /** "create" arranca vacío; "edit" carga la campaña `campaniaId` desde la API y cambia los textos */
     mode?: "create" | "edit";
-    initialValues?: Partial<CampaignFormValues>;
+    campaniaId?: number | null;
 }
 
-/** Alta y edición de una campaña: mismos campos, solo cambian los textos y los valores iniciales. */
+/** Error animado bajo el campo: el contenedor queda montado para poder animar su aparición. */
+function AnimatedFieldError({ message }: { message?: string }) {
+    return (
+        <div className={`transition-all duration-300 overflow-hidden ${message ? "opacity-100 max-h-16" : "opacity-0 max-h-0"}`}>
+            <FieldError className="flex items-center gap-2 text-[13px] font-medium">
+                <AlertCircle size={14} className="shrink-0" /> {message}
+            </FieldError>
+        </div>
+    );
+}
+
+/** Alta y edición de una campaña: mismos campos, solo cambian los textos y el origen de los valores. */
 export default function CampaignFormModal({
     open,
     onOpenChange,
     onSuccess,
     mode = "create",
-    initialValues,
+    campaniaId = null,
 }: CampaignFormModalProps) {
     const isEdit = mode === "edit";
-    // Al abrir y al cerrar vuelve a los valores de origen: en alta queda vacío, en edición carga la campaña
-    const [values, setValues, set] = useModalForm<CampaignFormValues>(open, { ...EMPTY_CAMPAIGN, ...initialValues });
-    const [fruitError, setFruitError] = useState<string | null>(null);
-    useResetOnToggle(open, () => setFruitError(null));
+    const [values, setValues] = useState<CampaignFormValues>(EMPTY_CAMPAIGN);
+    const [frutas, setFrutas] = useState<FrutaDto[]>([]);
+    const [derivadas, setDerivadas] = useState<FrutaDerivadaDto[]>([]);
+    const [derivadasLoading, setDerivadasLoading] = useState(false);
+    const [errors, setErrors] = useState<FormFieldErrors>({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
 
-    /** Al elegir fruta se suman sus variedades conocidas, sin repetir las que ya estaban. */
-    const handleFruitChange = (fruit: string | null) => {
-        if (fruit === MALFORMED_FRUIT) {
-            setFruitError("La fruta seleccionada no es válida o está mal escrita.");
-            setValues((current) => ({ ...current, fruta: "" }));
+    // Cada apertura es una sesión nueva: vacía en alta, o con la campaña recién leída en edición
+    useEffect(() => {
+        if (!open) return;
+        let active = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setValues(EMPTY_CAMPAIGN);
+        setErrors({});
+        setIsLoading(isEdit);
+
+        getFrutas()
+            .then((items) => { if (active) setFrutas(items); })
+            .catch(() => { if (active) setErrors((current) => ({ ...current, _form: "No se pudieron cargar las frutas." })); });
+
+        if (isEdit && campaniaId !== null) {
+            getCampana(campaniaId)
+                .then((campana) => {
+                    if (!active) return;
+                    setValues({
+                        nombre: campana.nombre,
+                        frutaId: campana.frutaId,
+                        fechaInicio: formatFecha(campana.fechaInicio),
+                        fechaFin: formatFecha(campana.fechaFin),
+                        requerimientoComercial: String(campana.requerimientoComercial),
+                        estado: campana.estado,
+                    });
+                })
+                .catch(() => { if (active) setErrors({ _form: "No se pudo cargar la campaña." }); })
+                .finally(() => { if (active) setIsLoading(false); });
+        }
+        return () => { active = false; };
+    }, [open, isEdit, campaniaId]);
+
+    // Las frutas derivadas salen del catálogo de la fruta elegida; son informativas
+    useEffect(() => {
+        if (!open || values.frutaId === null) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setDerivadas([]);
             return;
         }
-        setFruitError(null);
-        setValues((current) => {
-            const derived = DERIVED_BY_FRUIT[fruit ?? ""] ?? [];
-            return {
-                ...current,
-                fruta: fruit ?? "",
-                variedades: [...current.variedades, ...derived.filter((d) => !current.variedades.includes(d))],
-            };
-        });
+        let active = true;
+        setDerivadasLoading(true);
+        getFrutaDerivadas(values.frutaId)
+            .then((items) => { if (active) setDerivadas(items); })
+            .catch(() => { if (active) setDerivadas([]); })
+            .finally(() => { if (active) setDerivadasLoading(false); });
+        return () => { active = false; };
+    }, [open, values.frutaId]);
+
+    const set = <K extends keyof CampaignFormValues>(key: K, value: CampaignFormValues[K]) => {
+        setValues((current) => ({ ...current, [key]: value }));
+        setErrors((current) => ({ ...current, [key]: undefined, _form: undefined }));
     };
+
+    const fruitName = (frutaId: number | null) => frutas.find((fruta) => fruta.frutaId === frutaId)?.name;
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen && saving) return;
+        onOpenChange(nextOpen);
+    };
+
+    const handleSubmit = async () => {
+        if (saving || isLoading) return;
+        // Sin fruta se valida como 0 para que salga el mensaje propio ("Selecciona una fruta.") y no el genérico de tipo
+        const validation = campaignFormSchema.safeParse({ ...values, frutaId: values.frutaId ?? 0 });
+        if (!validation.success) {
+            setErrors(getZodFieldErrors(validation.error));
+            return;
+        }
+        setSaving(true);
+        setErrors({});
+        try {
+            const input = {
+                ...validation.data,
+                fechaInicio: parseFecha(validation.data.fechaInicio),
+                fechaFin: parseFecha(validation.data.fechaFin),
+            };
+            if (isEdit && campaniaId !== null) await updateCampana(campaniaId, input);
+            else await createCampana(input);
+            onSuccess?.();
+        } catch (requestError) {
+            const apiErrors = getBadRequestFieldErrors(requestError, BACKEND_FIELDS);
+            // El backend nombra la fruta por su id ("La fruta 3 ya..."); se muestra con su nombre
+            const name = fruitName(values.frutaId);
+            if (apiErrors._form && values.frutaId !== null && name) {
+                apiErrors._form = apiErrors._form.replace(`La fruta ${values.frutaId} ya`, `La fruta ${name} ya`);
+            }
+            setErrors(apiErrors);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const fruitItems = frutas.map((fruta) => ({ value: String(fruta.frutaId), label: fruta.name }));
+    const invalid = (field: keyof CampaignFormValues) => (errors[field] ? true : undefined);
 
     return (
         <AppModal
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={handleOpenChange}
             icon={<Sprout size={22} strokeWidth={2} />}
             title={isEdit ? "Editar Campaña" : "Nueva Campaña"}
             description={isEdit
@@ -82,97 +178,99 @@ export default function CampaignFormModal({
             className="sm:max-w-175"
             footer={
                 <>
-                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                    <Button variant="outline" size="xl" onClick={() => handleOpenChange(false)} disabled={saving}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" onClick={onSuccess}>
+                    <Button size="xl" onClick={handleSubmit} disabled={saving || isLoading} aria-busy={saving}>
                         {isEdit
-                            ? <><Save size={20} strokeWidth={2.5} /> Guardar</>
-                            : <><Sprout size={20} strokeWidth={2.5} /> Crear Campaña</>}
+                            ? <><Save size={20} strokeWidth={2.5} /> {saving ? "Guardando..." : "Guardar"}</>
+                            : <><Sprout size={20} strokeWidth={2.5} /> {saving ? "Creando..." : "Crear Campaña"}</>}
                     </Button>
                 </>
             }
         >
             <div className="flex flex-col gap-6">
-                <Field>
+                <Field data-invalid={invalid("nombre")}>
                     <FieldLabel>Nombre de Campaña:</FieldLabel>
                     <Input
                         placeholder="Ej: Campaña Mango 2026"
                         value={values.nombre}
-                        onChange={(e) => set("nombre")(e.target.value)}
+                        aria-invalid={invalid("nombre")}
+                        onChange={(e) => set("nombre", e.target.value)}
                     />
+                    <AnimatedFieldError message={errors.nombre} />
                 </Field>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field>
+                    <Field data-invalid={invalid("fechaInicio")}>
                         <FieldLabel>Fecha Inicio:</FieldLabel>
-                        <Input type="date" value={values.inicio} onChange={(e) => set("inicio")(e.target.value)} />
+                        <Input type="date" value={values.fechaInicio} aria-invalid={invalid("fechaInicio")} onChange={(e) => set("fechaInicio", e.target.value)} />
+                        <AnimatedFieldError message={errors.fechaInicio} />
                     </Field>
-                    <Field>
+                    <Field data-invalid={invalid("fechaFin")}>
                         <FieldLabel>Fecha Fin:</FieldLabel>
-                        <Input type="date" value={values.fin} onChange={(e) => set("fin")(e.target.value)} />
+                        <Input type="date" value={values.fechaFin} aria-invalid={invalid("fechaFin")} onChange={(e) => set("fechaFin", e.target.value)} />
+                        <AnimatedFieldError message={errors.fechaFin} />
                     </Field>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field data-invalid={fruitError ? true : undefined}>
+                    <Field data-invalid={invalid("frutaId")}>
                         <FieldLabel>Seleccionar Fruta:</FieldLabel>
-                        <Select value={values.fruta} onValueChange={handleFruitChange}>
-                            <SelectTrigger
-                                className={`w-full ${fruitError ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30" : ""}`}
-                            >
+                        {/* `items` hace que el recuadro muestre el nombre de la fruta y no su id */}
+                        <Select
+                            items={fruitItems}
+                            value={values.frutaId !== null ? String(values.frutaId) : null}
+                            onValueChange={(val) => set("frutaId", val ? Number(val) : null)}
+                        >
+                            <SelectTrigger className="w-full" aria-invalid={invalid("frutaId")}>
                                 <SelectValue placeholder="Seleccionar Fruta" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Mango">Mango</SelectItem>
-                                {/* Solo en edición, que es donde se demuestra la validación del catálogo */}
-                                {isEdit && (
-                                    <SelectItem value={MALFORMED_FRUIT} className="text-destructive font-medium">
-                                        Mngo marron (Mal escrito)
-                                    </SelectItem>
+                                {fruitItems.length === 0 ? (
+                                    <SelectItem value="__sin-frutas__" disabled>No hay frutas registradas</SelectItem>
+                                ) : (
+                                    fruitItems.map((item) => (
+                                        <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                                    ))
                                 )}
                             </SelectContent>
                         </Select>
-
-                        {/* El contenedor queda montado siempre para poder animar la aparición del error */}
-                        <div className={`transition-all duration-300 overflow-hidden ${fruitError ? "opacity-100 max-h-10" : "opacity-0 max-h-0"}`}>
-                            <FieldError className="flex items-center gap-2 text-[13px] font-medium">
-                                <AlertCircle size={14} /> {fruitError}
-                            </FieldError>
-                        </div>
+                        <AnimatedFieldError message={errors.frutaId} />
                     </Field>
 
-                    <Field>
+                    <Field data-invalid={invalid("requerimientoComercial")}>
                         <FieldLabel>Requerimientos Comerciales:</FieldLabel>
                         <div className="relative">
                             <Input
                                 placeholder="Ej: 3000"
-                                value={values.kilos}
-                                onChange={(e) => set("kilos")(e.target.value)}
+                                inputMode="decimal"
+                                value={values.requerimientoComercial}
+                                aria-invalid={invalid("requerimientoComercial")}
+                                onChange={(e) => set("requerimientoComercial", e.target.value)}
                                 className="pr-12"
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-brand-surface text-brand text-[11px] font-bold px-2 py-1 rounded-md">
                                 KG
                             </div>
                         </div>
+                        <AnimatedFieldError message={errors.requerimientoComercial} />
                     </Field>
                 </div>
 
-                {/* Variedades derivadas: informativo, se puede quitar cualquiera */}
-                <div className={`transition-all duration-300 ${values.variedades.length > 0 ? "opacity-100 h-auto" : "opacity-0 h-0 overflow-hidden"}`}>
+                {/* Frutas derivadas: vienen del catálogo de la fruta elegida, son informativas */}
+                <div className={`transition-all duration-300 ${derivadas.length > 0 || derivadasLoading ? "opacity-100 h-auto" : "opacity-0 h-0 overflow-hidden"}`}>
                     <Field>
-                        <FieldLabel>Frutas derivadas seleccionadas:</FieldLabel>
+                        <FieldLabel>Frutas derivadas de {fruitName(values.frutaId) ?? "la fruta"}:</FieldLabel>
                         <div className="flex flex-wrap gap-2">
-                            {values.variedades.map((fruit) => (
-                                <RemovableChip
-                                    key={fruit}
-                                    label={fruit}
-                                    onRemove={() => set("variedades")(values.variedades.filter((f) => f !== fruit))}
-                                />
-                            ))}
+                            {derivadasLoading
+                                ? <span className="text-[13px] text-ink-muted">Cargando variedades...</span>
+                                : derivadas.map((derivada) => <RemovableChip key={derivada.frutaDerivadaId} label={derivada.name} />)}
                         </div>
                     </Field>
                 </div>
+
+                <AnimatedFieldError message={errors._form} />
             </div>
         </AppModal>
     );

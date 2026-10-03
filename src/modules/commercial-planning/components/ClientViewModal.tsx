@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { X, Contact, ExternalLink } from "lucide-react";
+import { X, Contact, ExternalLink, FileSignature, AlertCircle, RotateCw } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Button } from "@/shared/components/ui/button";
 import { InfoField } from "@/shared/components/InfoField";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
+import { Alert, AlertDescription } from "@/shared/components/ui/alert";
+import FormSection from "@/shared/components/FormSection";
+import { TABLE_HEAD_BG } from "@/shared/components/DataTableRow";
 import { getClienteNegocioContratos } from "@/modules/clients/api/cliente-negocio-contratos.api";
 import type { ContratoClienteNegocioDto } from "@/modules/clients/api/cliente-negocio-contratos.dto";
 import type { ClienteNegocio } from "@/modules/clients/api/cliente-negocio.mapper";
@@ -39,7 +42,7 @@ function ContractDocument({ label, value }: { label: string; value: string }) {
     if (!value.trim()) return <span className="text-ink-muted">{label}: No disponible</span>;
     if (!safeUrl) return <span className="break-all text-ink-muted">{label}: {value}</span>;
     return (
-        <a href={safeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand underline">
+        <a href={safeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-brand hover:underline">
             {label}<ExternalLink size={12} aria-hidden="true" />
         </a>
     );
@@ -74,7 +77,7 @@ function ClientViewModalContent({ open, onOpenChange, client }: ClientViewModalP
             open={open}
             onOpenChange={onOpenChange}
             icon={<Contact size={22} strokeWidth={2} />}
-            title="Detalles del cliente"
+            title="Detalles del Cliente"
             description="Información registrada y contratos vinculados a campañas."
             className="sm:max-w-4xl"
             footer={<Button variant="outline" size="xl" onClick={() => onOpenChange(false)}><X size={20} strokeWidth={2.5} /> Cerrar</Button>}
@@ -89,48 +92,54 @@ function ClientViewModalContent({ open, onOpenChange, client }: ClientViewModalP
                 <InfoField label="Tipo de cliente" value={client.tipoCliente === "exportador" ? "Exportador" : "Industria"} />
             </div>
 
-            <section aria-labelledby="client-contracts-heading" className="mt-7">
-                <h3 id="client-contracts-heading" className="mb-3 text-sm font-bold text-ink">Contratos por campaña</h3>
-                {loadState.status === "loading" && <p role="status" aria-live="polite" className="rounded-lg bg-surface-page p-4 text-sm text-ink-muted">Cargando contratos...</p>}
-                {loadState.status === "error" && (
-                    <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 p-4 text-sm text-destructive">
-                        <span>{loadState.message}</span>
-                        <Button type="button" variant="outline" size="sm" onClick={() => { setLoadState({ status: "loading" }); setRetryKey((key) => key + 1); }}>Reintentar</Button>
-                    </div>
-                )}
-                {loadState.status === "success" && loadState.contracts.length === 0 && (
-                    <p className="rounded-lg bg-surface-page p-4 text-sm text-ink-muted">Este cliente no tiene contratos vinculados a campañas.</p>
-                )}
-                {loadState.status === "success" && loadState.contracts.length > 0 && (
-                    <div className="overflow-x-auto rounded-xl border border-border">
-                        <Table aria-label="Contratos vinculados a campañas">
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Campaña</TableHead>
-                                    <TableHead>Fecha de registro</TableHead>
-                                    <TableHead className="text-right">Kilos acordados</TableHead>
-                                    <TableHead>Documentos</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loadState.contracts.map((contract) => (
-                                    <TableRow key={contract.clienteNegocioCampanaId}>
-                                        <TableCell className="font-medium text-ink">{contract.nombreCampania}</TableCell>
-                                        <TableCell>{formatRegistrationDate(contract.fechaRegistro)}</TableCell>
-                                        <TableCell className="text-right">{contract.kilosAcordados.toLocaleString("es-PE", { maximumFractionDigits: 3 })} kg</TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col items-start gap-1 text-xs">
-                                                <ContractDocument label="Contrato" value={contract.documentoUrl} />
-                                                <ContractDocument label="Ficha técnica" value={contract.fichaTecnicaUrl} />
-                                            </div>
-                                        </TableCell>
+            <div className="mt-7">
+                <FormSection icon={<FileSignature size={16} strokeWidth={2.5} />} title="Contratos por campaña">
+                    {loadState.status === "loading" && <p role="status" aria-live="polite" className="text-[13px] text-ink-muted">Cargando contratos...</p>}
+                    {loadState.status === "error" && (
+                        <Alert variant="destructive">
+                            <AlertCircle />
+                            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+                                {loadState.message}
+                                <Button type="button" variant="outline" size="sm" onClick={() => { setLoadState({ status: "loading" }); setRetryKey((key) => key + 1); }}>
+                                    <RotateCw size={14} /> Reintentar
+                                </Button>
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    {loadState.status === "success" && loadState.contracts.length === 0 && (
+                        <p className="text-[13px] text-ink-muted">Este cliente no tiene contratos vinculados a campañas.</p>
+                    )}
+                    {loadState.status === "success" && loadState.contracts.length > 0 && (
+                        <div className="overflow-x-auto rounded-xl border border-border">
+                            <Table aria-label="Contratos vinculados a campañas">
+                                <TableHeader className={TABLE_HEAD_BG}>
+                                    <TableRow className="border-b border-border hover:bg-transparent">
+                                        <TableHead className="h-12 px-4 font-semibold text-ink">Campaña</TableHead>
+                                        <TableHead className="h-12 font-semibold text-ink">Fecha de registro</TableHead>
+                                        <TableHead className="h-12 text-right font-semibold text-ink">Kilos acordados</TableHead>
+                                        <TableHead className="h-12 px-4 font-semibold text-ink">Documentos</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-            </section>
+                                </TableHeader>
+                                <TableBody>
+                                    {loadState.contracts.map((contract) => (
+                                        <TableRow key={contract.clienteNegocioCampanaId} className="border-b border-border hover:bg-surface-page/60">
+                                            <TableCell className="px-4 py-3 font-semibold text-ink">{contract.nombreCampania}</TableCell>
+                                            <TableCell className="font-medium text-ink-body">{formatRegistrationDate(contract.fechaRegistro)}</TableCell>
+                                            <TableCell className="text-right font-medium text-ink-body">{contract.kilosAcordados.toLocaleString("es-PE", { maximumFractionDigits: 3 })} kg</TableCell>
+                                            <TableCell className="px-4">
+                                                <div className="flex flex-col items-start gap-1 text-xs">
+                                                    <ContractDocument label="Contrato" value={contract.documentoUrl} />
+                                                    <ContractDocument label="Ficha técnica" value={contract.fichaTecnicaUrl} />
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </FormSection>
+            </div>
         </AppModal>
     );
 }

@@ -1,8 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Apple, FlaskConical, ShieldCheck, Plus, Pencil, Trash2, Save, X, RotateCw, ExternalLink, CircleCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
+import { Textarea } from "@/shared/components/ui/textarea";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { Alert, AlertDescription } from "@/shared/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
+import SegmentedTabs, { type SegmentedTabItem } from "@/shared/components/SegmentedTabs";
+import FormSection from "@/shared/components/FormSection";
+import RemovableChip from "@/shared/components/RemovableChip";
+import RowActions from "@/shared/components/RowActions";
+import StatusBadge from "@/shared/components/StatusBadge";
+import ConfirmModal from "@/shared/components/ConfirmModal";
+import { TABLE_HEAD_BG } from "@/shared/components/DataTableRow";
 import {
     assignProveedorFruta,
     createCertificadoProveedor,
@@ -36,13 +47,18 @@ import {
 import { createProviderSubresourceOperationGate } from "@/modules/providers/api/provider-subresources.guard";
 
 type Props = { providerId: number; onMutatingChange: (mutating: boolean) => void };
+type Tab = "frutas" | "examenes" | "certificados";
 type FormTarget = "exam" | "certificate" | null;
+type PendingDelete =
+    | { kind: "exam"; exam: ExamenProveedorDto }
+    | { kind: "certificate"; certificate: CertificadoProveedorDto }
+    | null;
 
-function dateInputValue(value: string): string {
-    return value.slice(0, 10);
-}
+/** El backend envía fechas ISO completas: para el input y la tabla solo sirve la parte de fecha */
+const dateInputValue = (value: string) => value.slice(0, 10);
+const displayDate = (value: string) => dateInputValue(value).split("-").reverse().join("/");
 
-function FieldInput({ id, label, value, error, disabled, type = "text", maxLength, onChange }: {
+function RequiredField({ id, label, value, error, disabled, type = "text", maxLength, onChange }: {
     id: string;
     label: string;
     value: string;
@@ -53,18 +69,42 @@ function FieldInput({ id, label, value, error, disabled, type = "text", maxLengt
     onChange: (value: string) => void;
 }) {
     const errorId = `${id}-error`;
-    return <Field data-invalid={Boolean(error)}>
-        <FieldLabel htmlFor={id}>{label} <span aria-hidden="true">*</span></FieldLabel>
-        <Input id={id} type={type} value={value} maxLength={maxLength} required aria-required="true" aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} disabled={disabled} onChange={(event) => onChange(event.target.value)} />
-        {error && <FieldError id={errorId}>{error}</FieldError>}
-    </Field>;
+    return (
+        <Field data-invalid={error ? true : undefined}>
+            <FieldLabel htmlFor={id}>{label} <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+            <Input
+                id={id}
+                type={type}
+                value={value}
+                maxLength={maxLength}
+                placeholder={type === "url" ? "https://..." : undefined}
+                required
+                aria-required="true"
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? errorId : undefined}
+                disabled={disabled}
+                onChange={(event) => onChange(event.target.value)}
+            />
+            {error && <FieldError id={errorId}>{error}</FieldError>}
+        </Field>
+    );
 }
 
-function ApiDocumentLink({ url }: { url: string }) {
-    return <a className="break-all text-sm font-medium text-brand underline" href={url} target="_blank" rel="noreferrer">Abrir documento</a>;
+function SectionError({ message, onRetry, disabled }: { message: string; onRetry: () => void; disabled: boolean }) {
+    return (
+        <Alert variant="destructive">
+            <AlertCircle />
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+                {message}
+                <Button variant="outline" size="sm" onClick={onRetry} disabled={disabled}><RotateCw size={14} /> Reintentar</Button>
+            </AlertDescription>
+        </Alert>
+    );
 }
 
+/** Frutas, exámenes y certificados del proveedor, cada uno en su pestaña, contra sus rutas del backend. */
 export default function ProviderSubresources({ providerId, onMutatingChange }: Props) {
+    const [activeTab, setActiveTab] = useState<Tab>("frutas");
     const [fruits, setFruits] = useState<ProveedorFrutaDto[]>([]);
     const [fruitCatalog, setFruitCatalog] = useState<FrutaDto[]>([]);
     const [exams, setExams] = useState<ExamenProveedorDto[]>([]);
@@ -82,6 +122,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
     const [certificateValues, setCertificateValues] = useState<CertificadoProveedorValues>(createEmptyCertificadoProveedorValues);
     const [certificateErrors, setCertificateErrors] = useState<Partial<Record<keyof CertificadoProveedorValues, string>>>({});
     const [editingCertificateId, setEditingCertificateId] = useState<number | null>(null);
+    const [pendingDelete, setPendingDelete] = useState<{ open: boolean; target: PendingDelete }>({ open: false, target: null });
     const operationGate = useRef(createProviderSubresourceOperationGate());
     const loadSequence = useRef(0);
     const operationsBusy = loading || isMutating;
@@ -115,6 +156,14 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
         }
     }, [providerId]);
 
+    useEffect(() => {
+        const timeout = window.setTimeout(() => { void loadSubresources(); }, 0);
+        return () => {
+            window.clearTimeout(timeout);
+            loadSequence.current += 1;
+        };
+    }, [loadSubresources]);
+
     const updateExamField = <FieldName extends keyof ExamenProveedorValues>(field: FieldName, value: ExamenProveedorValues[FieldName]) => {
         setExamValues((current) => ({ ...current, [field]: value }));
         setExamErrors((current) => ({ ...current, [field]: undefined }));
@@ -127,15 +176,8 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
         setRequestError(null);
     };
 
-    useEffect(() => {
-        const timeout = window.setTimeout(() => { void loadSubresources(); }, 0);
-        return () => {
-            window.clearTimeout(timeout);
-            loadSequence.current += 1;
-        };
-    }, [loadSubresources]);
-
-    const runMutation = async (successMessage: string, failureMessage: string, mutate: () => Promise<void>) => {
+    /** Una operación por vez; el éxito se informa solo si el backend respondió bien (eliminar no muestra éxito) */
+    const runMutation = async (successMessage: string | null, failureMessage: string, mutate: () => Promise<void>) => {
         if (!operationGate.current.beginMutation()) return false;
         setIsMutating(true);
         onMutatingChange(true);
@@ -166,7 +208,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
     };
 
     const removeFruit = async (item: ProveedorFrutaDto) => {
-        await runMutation("Fruta quitada correctamente.", "No se pudo quitar la fruta del proveedor.", async () => {
+        await runMutation(null, "No se pudo quitar la fruta del proveedor.", async () => {
             await unassignProveedorFruta(providerId, item.frutaId);
             setFruits((current) => current.filter((fruit) => fruit.frutaId !== item.frutaId));
         });
@@ -175,7 +217,9 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
     const startExamForm = (exam?: ExamenProveedorDto) => {
         setFormTarget("exam");
         setEditingExamId(exam?.examenProveedorId ?? null);
-        setExamValues(exam ? { fecha: dateInputValue(exam.fecha), tipoExamen: exam.tipoExamen, resultado: exam.resultado, origen: exam.origen, observacion: exam.observacion, documentoUrl: exam.documentoUrl } : createEmptyExamenProveedorValues());
+        setExamValues(exam
+            ? { fecha: dateInputValue(exam.fecha), tipoExamen: exam.tipoExamen, resultado: exam.resultado, origen: exam.origen, observacion: exam.observacion, documentoUrl: exam.documentoUrl }
+            : createEmptyExamenProveedorValues());
         setExamErrors({});
         setFeedback(null);
         setRequestError(null);
@@ -186,18 +230,17 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
         setExamErrors(nextErrors);
         if (Object.keys(nextErrors).length) return;
         const payload = toExamenProveedorInput(examValues);
-        const success = await runMutation(editingExamId === null ? "Examen creado correctamente." : "Examen actualizado correctamente.", "No se pudo guardar el examen. Revisa los datos e inténtalo nuevamente.", async () => {
+        const success = await runMutation(editingExamId === null ? "Examen registrado correctamente." : "Examen actualizado correctamente.", "No se pudo guardar el examen. Revisa los datos e inténtalo nuevamente.", async () => {
             const saved = editingExamId === null
                 ? await createExamenProveedor(providerId, payload)
                 : await updateExamenProveedor(providerId, editingExamId, payload);
-            setExams((current) => editingExamId === null ? [saved, ...current] : current.map((item) => item.examenProveedorId === saved.examenProveedorId ? saved : item));
+            setExams((current) => (editingExamId === null ? [saved, ...current] : current.map((item) => (item.examenProveedorId === saved.examenProveedorId ? saved : item))));
         });
         if (success) setFormTarget(null);
     };
 
     const removeExam = async (exam: ExamenProveedorDto) => {
-        if (!window.confirm(`¿Eliminar el examen ${exam.tipoExamen}?`)) return;
-        await runMutation("Examen eliminado correctamente.", "No se pudo eliminar el examen.", async () => {
+        await runMutation(null, "No se pudo eliminar el examen.", async () => {
             await deleteExamenProveedor(providerId, exam.examenProveedorId);
             setExams((current) => current.filter((item) => item.examenProveedorId !== exam.examenProveedorId));
         });
@@ -205,7 +248,10 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
 
     const startCertificateForm = (certificate?: CertificadoProveedorDto) => {
         setFormTarget("certificate");
-        setCertificateValues(certificate ? { fechaRevisionSenasa: dateInputValue(certificate.fechaRevisionSenasa), nombre: certificate.nombre, documentoUrl: certificate.documentoUrl } : createEmptyCertificadoProveedorValues());
+        setEditingCertificateId(certificate?.certificadoProveedorId ?? null);
+        setCertificateValues(certificate
+            ? { fechaRevisionSenasa: dateInputValue(certificate.fechaRevisionSenasa), nombre: certificate.nombre, documentoUrl: certificate.documentoUrl }
+            : createEmptyCertificadoProveedorValues());
         setCertificateErrors({});
         setFeedback(null);
         setRequestError(null);
@@ -217,117 +263,273 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
         if (Object.keys(nextErrors).length) return;
         const payload = toCertificadoProveedorInput(certificateValues);
         const certificateId = editingCertificateId;
-        const success = await runMutation(certificateId === null ? "Certificado creado correctamente." : "Certificado actualizado correctamente.", "No se pudo guardar el certificado. Revisa los datos e inténtalo nuevamente.", async () => {
+        const success = await runMutation(certificateId === null ? "Certificado registrado correctamente." : "Certificado actualizado correctamente.", "No se pudo guardar el certificado. Revisa los datos e inténtalo nuevamente.", async () => {
             const saved = certificateId === null
                 ? await createCertificadoProveedor(providerId, payload)
                 : await updateCertificadoProveedor(providerId, certificateId, payload);
-            setCertificates((current) => certificateId === null ? [saved, ...current] : current.map((item) => item.certificadoProveedorId === saved.certificadoProveedorId ? saved : item));
+            setCertificates((current) => (certificateId === null ? [saved, ...current] : current.map((item) => (item.certificadoProveedorId === saved.certificadoProveedorId ? saved : item))));
         });
-        if (success) { setFormTarget(null); setEditingCertificateId(null); }
-    };
-
-    const startCertificateEdit = (certificate: CertificadoProveedorDto) => {
-        setEditingCertificateId(certificate.certificadoProveedorId);
-        startCertificateForm(certificate);
+        if (success) {
+            setFormTarget(null);
+            setEditingCertificateId(null);
+        }
     };
 
     const removeCertificate = async (certificate: CertificadoProveedorDto) => {
-        if (!window.confirm(`¿Eliminar el certificado ${certificate.nombre}?`)) return;
-        await runMutation("Certificado eliminado correctamente.", "No se pudo eliminar el certificado.", async () => {
+        await runMutation(null, "No se pudo eliminar el certificado.", async () => {
             await deleteCertificadoProveedor(providerId, certificate.certificadoProveedorId);
             setCertificates((current) => current.filter((item) => item.certificadoProveedorId !== certificate.certificadoProveedorId));
         });
     };
 
-    return <section aria-label="Frutas, exámenes y certificados del proveedor" className="mt-5 border-t border-border pt-5">
-        <h3 className="mb-4 text-base font-bold text-ink">Frutas, exámenes y certificados</h3>
-        {feedback && <p role="status" aria-live="polite" className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{feedback}</p>}
-        {requestError && <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{requestError}</p>}
-        {loading && <p role="status" aria-live="polite" className="mb-3 text-sm text-ink-muted">Cargando información relacionada…</p>}
+    const confirmDelete = () => {
+        const target = pendingDelete.target;
+        if (!target) return;
+        if (target.kind === "exam") void removeExam(target.exam);
+        else void removeCertificate(target.certificate);
+    };
 
-        <section className="mb-5 rounded-xl border border-border p-4" aria-labelledby="provider-fruits-title">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h4 id="provider-fruits-title" className="font-semibold text-ink">Frutas</h4>
-                {errors.fruits && <Button variant="outline" size="sm" onClick={() => void loadSubresources()} disabled={loading || isMutating}>Reintentar</Button>}
-            </div>
-            {errors.fruits ? <p role="alert" className="text-sm text-red-700">{errors.fruits}</p> : <>
-                {!loading && fruits.length === 0 && <p className="mb-3 text-sm text-ink-muted">No hay frutas asociadas a este proveedor.</p>}
-                {fruits.length > 0 && <ul className="mb-3 space-y-2">{fruits.map((item) => <li key={item.frutaId} className="flex items-center justify-between gap-3 rounded-lg bg-surface-page px-3 py-2 text-sm"><span>{item.fruta.name}</span><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => void removeFruit(item)}>Quitar</Button></li>)}</ul>}
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                    <div className="flex-1">
-                        <label className="mb-1 block text-sm font-medium" htmlFor="provider-fruit-select">Fruta para asociar <span aria-hidden="true">*</span></label>
-                    <select id="provider-fruit-select" className="h-10 w-full min-w-0 rounded-lg border border-border bg-white px-3 text-sm" value={selectedFruitId} required aria-required="true" disabled={loading || isMutating || fruitCatalog.every((fruit) => fruits.some((item) => item.frutaId === fruit.frutaId))} onChange={(event) => setSelectedFruitId(event.target.value)}>
-                        <option value="">Seleccionar fruta</option>
-                        {fruitCatalog.filter((fruit) => !fruits.some((item) => item.frutaId === fruit.frutaId)).map((fruit) => <option key={fruit.frutaId} value={fruit.frutaId}>{fruit.name}</option>)}
-                    </select>
-                    </div>
-                    <Button variant="outline" disabled={!selectedFruitId || isMutating || loading} aria-busy={isMutating} onClick={() => void addFruit()}>{isMutating ? "Guardando…" : "Asociar fruta"}</Button>
-                </div>
-            </>}
-        </section>
+    const availableFruits = fruitCatalog.filter((fruit) => !fruits.some((item) => item.frutaId === fruit.frutaId));
+    const fruitItems = availableFruits.map((fruit) => ({ value: String(fruit.frutaId), label: fruit.name }));
 
-        <section className="mb-5 rounded-xl border border-border p-4" aria-labelledby="provider-exams-title">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h4 id="provider-exams-title" className="font-semibold text-ink">Exámenes</h4>
-                <div className="flex gap-2">
-                    {errors.exams && <Button variant="outline" size="sm" onClick={() => void loadSubresources()} disabled={loading || isMutating}>Reintentar</Button>}
-                    <Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startExamForm()}>Agregar examen</Button>
-                </div>
-            </div>
-            {errors.exams ? <p role="alert" className="text-sm text-red-700">{errors.exams}</p> : exams.length === 0 && !loading ? <p className="text-sm text-ink-muted">No hay exámenes registrados.</p> : <ul className="space-y-3">{exams.map((exam) => <li key={exam.examenProveedorId} className="rounded-lg bg-surface-page p-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1 text-sm"><p className="font-semibold">{exam.tipoExamen} · {exam.resultado}</p><p>Fecha: {dateInputValue(exam.fecha)} · Origen: {exam.origen}</p><p>{exam.observacion}</p><ApiDocumentLink url={exam.documentoUrl} /></div>
-                    <div className="flex gap-2"><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startExamForm(exam)}>Editar</Button><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => void removeExam(exam)}>Eliminar</Button></div>
-                </div>
-            </li>)}</ul>}
-            {formTarget === "exam" && <div className="mt-4 rounded-lg border border-border p-3">
-                <p className="mb-3 text-xs text-ink-muted"><span aria-hidden="true">*</span> Campos obligatorios.</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <FieldInput id="provider-exam-date" label="Fecha" value={examValues.fecha} error={examErrors.fecha} disabled={operationsBusy} type="date" onChange={(fecha) => updateExamField("fecha", fecha)} />
-                    <FieldInput id="provider-exam-type" label="Tipo de examen" value={examValues.tipoExamen} error={examErrors.tipoExamen} disabled={operationsBusy} maxLength={150} onChange={(tipoExamen) => updateExamField("tipoExamen", tipoExamen)} />
-                    <Field data-invalid={Boolean(examErrors.resultado)}>
-                        <FieldLabel htmlFor="provider-exam-result">Resultado <span aria-hidden="true">*</span></FieldLabel>
-                        <Select value={examValues.resultado} onValueChange={(resultado) => updateExamField("resultado", resultado ?? "")}>
-                            <SelectTrigger id="provider-exam-result" aria-required="true" aria-invalid={Boolean(examErrors.resultado)} aria-describedby={examErrors.resultado ? "provider-exam-result-error" : undefined} disabled={operationsBusy}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                            <SelectContent><SelectItem value="positivo">Positivo</SelectItem><SelectItem value="negativo">Negativo</SelectItem></SelectContent>
-                        </Select>
-                        {examErrors.resultado && <FieldError id="provider-exam-result-error">{examErrors.resultado}</FieldError>}
-                    </Field>
-                    <FieldInput id="provider-exam-origin" label="Origen" value={examValues.origen} error={examErrors.origen} disabled={operationsBusy} maxLength={255} onChange={(origen) => updateExamField("origen", origen)} />
-                    <FieldInput id="provider-exam-document" label="URL del documento" value={examValues.documentoUrl} error={examErrors.documentoUrl} disabled={operationsBusy} type="url" onChange={(documentoUrl) => updateExamField("documentoUrl", documentoUrl)} />
-                    <Field data-invalid={Boolean(examErrors.observacion)} className="sm:col-span-2">
-                        <FieldLabel htmlFor="provider-exam-observation">Observación <span aria-hidden="true">*</span></FieldLabel>
-                        <textarea id="provider-exam-observation" className="min-h-20 rounded-lg border border-border bg-white p-3 text-sm" value={examValues.observacion} required aria-required="true" aria-invalid={Boolean(examErrors.observacion)} aria-describedby={examErrors.observacion ? "provider-exam-observation-error" : undefined} disabled={operationsBusy} onChange={(event) => updateExamField("observacion", event.target.value)} />
-                        {examErrors.observacion && <FieldError id="provider-exam-observation-error">{examErrors.observacion}</FieldError>}
-                    </Field>
-                </div>
-                <div className="mt-3 flex justify-end gap-2"><Button variant="outline" size="sm" disabled={isMutating} onClick={() => setFormTarget(null)}>Cancelar</Button><Button size="sm" disabled={operationsBusy} aria-busy={isMutating} onClick={() => void saveExam()}>{isMutating ? "Guardando…" : "Guardar examen"}</Button></div>
-            </div>}
-        </section>
+    const tabs: SegmentedTabItem[] = [
+        { id: "frutas", label: "Frutas", icon: Apple, count: fruits.length },
+        { id: "examenes", label: "Exámenes", icon: FlaskConical, count: exams.length },
+        { id: "certificados", label: "Certificados", icon: ShieldCheck, count: certificates.length },
+    ];
 
-        <section className="rounded-xl border border-border p-4" aria-labelledby="provider-certificates-title">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h4 id="provider-certificates-title" className="font-semibold text-ink">Certificados</h4>
-                <div className="flex gap-2">
-                    {errors.certificates && <Button variant="outline" size="sm" onClick={() => void loadSubresources()} disabled={loading || isMutating}>Reintentar</Button>}
-                    <Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => { setEditingCertificateId(null); startCertificateForm(); }}>Agregar certificado</Button>
-                </div>
-            </div>
-            {errors.certificates ? <p role="alert" className="text-sm text-red-700">{errors.certificates}</p> : certificates.length === 0 && !loading ? <p className="text-sm text-ink-muted">No hay certificados registrados.</p> : <ul className="space-y-3">{certificates.map((certificate) => <li key={certificate.certificadoProveedorId} className="rounded-lg bg-surface-page p-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1 text-sm"><p className="font-semibold">{certificate.nombre}</p><p>Revisión SENASA: {dateInputValue(certificate.fechaRevisionSenasa)}</p><ApiDocumentLink url={certificate.documentoUrl} /></div>
-                    <div className="flex gap-2"><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startCertificateEdit(certificate)}>Editar</Button><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => void removeCertificate(certificate)}>Eliminar</Button></div>
-                </div>
-            </li>)}</ul>}
-            {formTarget === "certificate" && <div className="mt-4 rounded-lg border border-border p-3">
-                <p className="mb-3 text-xs text-ink-muted"><span aria-hidden="true">*</span> Campos obligatorios.</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <FieldInput id="provider-certificate-date" label="Fecha de revisión SENASA" value={certificateValues.fechaRevisionSenasa} error={certificateErrors.fechaRevisionSenasa} disabled={operationsBusy} type="date" onChange={(fechaRevisionSenasa) => updateCertificateField("fechaRevisionSenasa", fechaRevisionSenasa)} />
-                    <FieldInput id="provider-certificate-name" label="Nombre" value={certificateValues.nombre} error={certificateErrors.nombre} disabled={operationsBusy} maxLength={255} onChange={(nombre) => updateCertificateField("nombre", nombre)} />
-                    <FieldInput id="provider-certificate-document" label="URL del documento" value={certificateValues.documentoUrl} error={certificateErrors.documentoUrl} disabled={operationsBusy} type="url" onChange={(documentoUrl) => updateCertificateField("documentoUrl", documentoUrl)} />
-                </div>
-                <div className="mt-3 flex justify-end gap-2"><Button variant="outline" size="sm" disabled={isMutating} onClick={() => { setFormTarget(null); setEditingCertificateId(null); }}>Cancelar</Button><Button size="sm" disabled={operationsBusy} aria-busy={isMutating} onClick={() => void saveCertificate()}>{isMutating ? "Guardando…" : "Guardar certificado"}</Button></div>
-            </div>}
+    const changeTab = (value: string) => {
+        setActiveTab(value as Tab);
+        setFormTarget(null);
+        setFeedback(null);
+        setRequestError(null);
+    };
+
+    return (
+        <section aria-label="Frutas, exámenes y certificados del proveedor" className="mt-6 flex flex-col gap-4">
+            <SegmentedTabs tabs={tabs} value={activeTab} onChange={changeTab} />
+
+            {feedback && (
+                <Alert variant="success" role="status">
+                    <CircleCheck />
+                    <AlertDescription className="text-brand-dark">{feedback}</AlertDescription>
+                </Alert>
+            )}
+            {requestError && (
+                <Alert variant="destructive">
+                    <AlertCircle />
+                    <AlertDescription>{requestError}</AlertDescription>
+                </Alert>
+            )}
+            {loading && <p role="status" aria-live="polite" className="text-[13px] text-ink-muted">Cargando información relacionada…</p>}
+
+            {activeTab === "frutas" && (
+                <FormSection icon={<Apple size={16} strokeWidth={2.5} />} title="Frutas que produce">
+                    {errors.fruits ? (
+                        <SectionError message={errors.fruits} onRetry={() => void loadSubresources()} disabled={operationsBusy} />
+                    ) : (
+                        <>
+                            {!loading && fruits.length === 0
+                                ? <p className="text-[13px] text-ink-muted">No hay frutas asociadas a este proveedor.</p>
+                                : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {fruits.map((item) => (
+                                            <RemovableChip
+                                                key={item.frutaId}
+                                                dot
+                                                label={item.fruta.name}
+                                                onRemove={operationsBusy ? undefined : () => void removeFruit(item)}
+                                                className="gap-3 rounded-full py-2"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                                <Field className="flex-1">
+                                    <FieldLabel htmlFor="provider-fruit-select">Fruta para asociar:</FieldLabel>
+                                    <Select items={fruitItems} value={selectedFruitId || null} onValueChange={(value) => setSelectedFruitId((value as string | null) ?? "")} disabled={operationsBusy || availableFruits.length === 0}>
+                                        <SelectTrigger id="provider-fruit-select" className="w-full">
+                                            <SelectValue placeholder={availableFruits.length === 0 ? "Ya tiene todas las frutas del catálogo" : "Seleccionar fruta"} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {fruitItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                                <Button size="xl" disabled={!selectedFruitId || operationsBusy} aria-busy={isMutating} onClick={() => void addFruit()}>
+                                    <Plus size={18} strokeWidth={2.5} /> Asociar fruta
+                                </Button>
+                            </div>
+                        </>
+                    )}
+                </FormSection>
+            )}
+
+            {activeTab === "examenes" && (
+                <FormSection
+                    icon={<FlaskConical size={16} strokeWidth={2.5} />}
+                    title="Exámenes de laboratorio"
+                    aside={<Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startExamForm()}><Plus size={14} /> Registrar examen</Button>}
+                >
+                    {errors.exams ? (
+                        <SectionError message={errors.exams} onRetry={() => void loadSubresources()} disabled={operationsBusy} />
+                    ) : exams.length === 0 && !loading ? (
+                        <p className="text-[13px] text-ink-muted">No hay exámenes registrados.</p>
+                    ) : (
+                        <div className="overflow-x-auto rounded-xl border border-border bg-white">
+                            <Table className="min-w-150">
+                                <TableHeader className={TABLE_HEAD_BG}>
+                                    <TableRow className="border-b border-border hover:bg-transparent">
+                                        <TableHead className="h-12 px-4 font-semibold text-ink">Análisis</TableHead>
+                                        <TableHead className="h-12 font-semibold text-ink">Resultado</TableHead>
+                                        <TableHead className="h-12 font-semibold text-ink">Fecha</TableHead>
+                                        <TableHead className="h-12 font-semibold text-ink">Origen</TableHead>
+                                        <TableHead className="h-12 px-4 text-right font-semibold text-ink">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {exams.map((exam) => (
+                                        <TableRow key={exam.examenProveedorId} className="border-b border-border hover:bg-surface-page/60">
+                                            <TableCell className="px-4 py-3">
+                                                <p className="font-semibold text-ink">{exam.tipoExamen}</p>
+                                                <a href={exam.documentoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand hover:underline">
+                                                    Documento <ExternalLink size={11} aria-hidden="true" />
+                                                </a>
+                                            </TableCell>
+                                            <TableCell><StatusBadge status={exam.resultado === "positivo" ? "Positivo" : "Negativo"} /></TableCell>
+                                            <TableCell className="font-medium text-ink-body">{displayDate(exam.fecha)}</TableCell>
+                                            <TableCell className="font-medium text-ink-body">{exam.origen}</TableCell>
+                                            <TableCell className="px-4">
+                                                <RowActions primary={[
+                                                    { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: operationsBusy ? undefined : () => startExamForm(exam) },
+                                                    { label: "Eliminar", icon: <Trash2 size={18} strokeWidth={2.5} />, variant: "destructive", onClick: operationsBusy ? undefined : () => setPendingDelete({ open: true, target: { kind: "exam", exam } }) },
+                                                ]} />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+
+                    {formTarget === "exam" && (
+                        <div className="flex flex-col gap-4 rounded-2xl border border-brand-border bg-brand-surface/40 p-4">
+                            <p className="text-[13px] font-bold text-ink">{editingExamId === null ? "Nuevo examen" : "Editar examen"}</p>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <RequiredField id="provider-exam-date" label="Fecha" value={examValues.fecha} error={examErrors.fecha} disabled={operationsBusy} type="date" onChange={(fecha) => updateExamField("fecha", fecha)} />
+                                <RequiredField id="provider-exam-type" label="Tipo de examen" value={examValues.tipoExamen} error={examErrors.tipoExamen} disabled={operationsBusy} maxLength={150} onChange={(tipoExamen) => updateExamField("tipoExamen", tipoExamen)} />
+                                <Field data-invalid={examErrors.resultado ? true : undefined}>
+                                    <FieldLabel htmlFor="provider-exam-result">Resultado <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                                    <Select
+                                        items={[{ value: "positivo", label: "Positivo" }, { value: "negativo", label: "Negativo" }]}
+                                        value={examValues.resultado || null}
+                                        onValueChange={(resultado) => updateExamField("resultado", (resultado as string | null) ?? "")}
+                                        disabled={operationsBusy}
+                                    >
+                                        <SelectTrigger id="provider-exam-result" className="w-full" aria-required="true" aria-invalid={examErrors.resultado ? true : undefined} aria-describedby={examErrors.resultado ? "provider-exam-result-error" : undefined}>
+                                            <SelectValue placeholder="Seleccionar" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="positivo">Positivo</SelectItem>
+                                            <SelectItem value="negativo">Negativo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {examErrors.resultado && <FieldError id="provider-exam-result-error">{examErrors.resultado}</FieldError>}
+                                </Field>
+                                <RequiredField id="provider-exam-origin" label="Origen" value={examValues.origen} error={examErrors.origen} disabled={operationsBusy} maxLength={255} onChange={(origen) => updateExamField("origen", origen)} />
+                                <div className="sm:col-span-2">
+                                    <RequiredField id="provider-exam-document" label="Documento del examen (URL)" value={examValues.documentoUrl} error={examErrors.documentoUrl} disabled={operationsBusy} type="url" onChange={(documentoUrl) => updateExamField("documentoUrl", documentoUrl)} />
+                                </div>
+                                <Field data-invalid={examErrors.observacion ? true : undefined} className="sm:col-span-2">
+                                    <FieldLabel htmlFor="provider-exam-observation">Observación <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                                    <Textarea
+                                        id="provider-exam-observation"
+                                        className="min-h-24 resize-none rounded-xl"
+                                        value={examValues.observacion}
+                                        required
+                                        aria-required="true"
+                                        aria-invalid={examErrors.observacion ? true : undefined}
+                                        aria-describedby={examErrors.observacion ? "provider-exam-observation-error" : undefined}
+                                        disabled={operationsBusy}
+                                        onChange={(event) => updateExamField("observacion", event.target.value)}
+                                    />
+                                    {examErrors.observacion && <FieldError id="provider-exam-observation-error">{examErrors.observacion}</FieldError>}
+                                </Field>
+                            </div>
+                            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <Button variant="outline" disabled={isMutating} onClick={() => setFormTarget(null)}><X size={18} strokeWidth={2.5} /> Cancelar</Button>
+                                <Button disabled={operationsBusy} aria-busy={isMutating} onClick={() => void saveExam()}><Save size={18} strokeWidth={2.5} /> {isMutating ? "Guardando…" : "Guardar examen"}</Button>
+                            </div>
+                        </div>
+                    )}
+                </FormSection>
+            )}
+
+            {activeTab === "certificados" && (
+                <FormSection
+                    icon={<ShieldCheck size={16} strokeWidth={2.5} />}
+                    title="Certificados del proveedor"
+                    aside={<Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startCertificateForm()}><Plus size={14} /> Registrar certificado</Button>}
+                >
+                    {errors.certificates ? (
+                        <SectionError message={errors.certificates} onRetry={() => void loadSubresources()} disabled={operationsBusy} />
+                    ) : certificates.length === 0 && !loading ? (
+                        <p className="text-[13px] text-ink-muted">No hay certificados registrados.</p>
+                    ) : (
+                        <ul className="flex flex-col gap-2">
+                            {certificates.map((certificate) => (
+                                <li key={certificate.certificadoProveedorId} className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3">
+                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-brand-border bg-brand-surface" style={{ color: "var(--brand-gradient-mid)" }}>
+                                        <ShieldCheck size={18} strokeWidth={2} />
+                                    </span>
+                                    <div className="flex min-w-0 flex-1 flex-col">
+                                        <span className="truncate text-[13.5px] font-bold text-ink">{certificate.nombre}</span>
+                                        <span className="flex flex-wrap items-center gap-x-2 text-[12px] text-ink-muted">
+                                            Revisión SENASA {displayDate(certificate.fechaRevisionSenasa)}
+                                            <a href={certificate.documentoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-brand hover:underline">
+                                                Documento <ExternalLink size={11} aria-hidden="true" />
+                                            </a>
+                                        </span>
+                                    </div>
+                                    <RowActions primary={[
+                                        { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: operationsBusy ? undefined : () => startCertificateForm(certificate) },
+                                        { label: "Eliminar", icon: <Trash2 size={18} strokeWidth={2.5} />, variant: "destructive", onClick: operationsBusy ? undefined : () => setPendingDelete({ open: true, target: { kind: "certificate", certificate } }) },
+                                    ]} />
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+
+                    {formTarget === "certificate" && (
+                        <div className="flex flex-col gap-4 rounded-2xl border border-brand-border bg-brand-surface/40 p-4">
+                            <p className="text-[13px] font-bold text-ink">{editingCertificateId === null ? "Nuevo certificado" : "Editar certificado"}</p>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <RequiredField id="provider-certificate-name" label="Nombre" value={certificateValues.nombre} error={certificateErrors.nombre} disabled={operationsBusy} maxLength={255} onChange={(nombre) => updateCertificateField("nombre", nombre)} />
+                                <RequiredField id="provider-certificate-date" label="Fecha de revisión SENASA" value={certificateValues.fechaRevisionSenasa} error={certificateErrors.fechaRevisionSenasa} disabled={operationsBusy} type="date" onChange={(fechaRevisionSenasa) => updateCertificateField("fechaRevisionSenasa", fechaRevisionSenasa)} />
+                                <div className="sm:col-span-2">
+                                    <RequiredField id="provider-certificate-document" label="Documento del certificado (URL)" value={certificateValues.documentoUrl} error={certificateErrors.documentoUrl} disabled={operationsBusy} type="url" onChange={(documentoUrl) => updateCertificateField("documentoUrl", documentoUrl)} />
+                                </div>
+                            </div>
+                            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                <Button variant="outline" disabled={isMutating} onClick={() => { setFormTarget(null); setEditingCertificateId(null); }}><X size={18} strokeWidth={2.5} /> Cancelar</Button>
+                                <Button disabled={operationsBusy} aria-busy={isMutating} onClick={() => void saveCertificate()}><Save size={18} strokeWidth={2.5} /> {isMutating ? "Guardando…" : "Guardar certificado"}</Button>
+                            </div>
+                        </div>
+                    )}
+                </FormSection>
+            )}
+
+            <ConfirmModal
+                open={pendingDelete.open}
+                onOpenChange={(open) => setPendingDelete((current) => ({ ...current, open }))}
+                icon={<Trash2 size={28} strokeWidth={2.25} />}
+                title={pendingDelete.target?.kind === "certificate" ? "¿Eliminar certificado?" : "¿Eliminar examen?"}
+                description={pendingDelete.target?.kind === "certificate"
+                    ? <>Se eliminará el certificado <strong className="font-bold text-ink">{pendingDelete.target.certificate.nombre}</strong> del proveedor.</>
+                    : <>Se eliminará el examen <strong className="font-bold text-ink">{pendingDelete.target?.kind === "exam" ? pendingDelete.target.exam.tipoExamen : ""}</strong> del proveedor.</>}
+                confirmLabel="Sí, eliminar"
+                onConfirm={confirmDelete}
+            />
         </section>
-    </section>;
+    );
 }

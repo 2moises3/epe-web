@@ -113,11 +113,11 @@ export default function FileDropzone({ label, hideLabel, hint = "PDF · Máx. 10
                     description={`${file.name} (${formatFileSize(file.size)})`}
                     className="sm:max-w-190"
                 >
-                    <div className={cn("w-full overflow-hidden rounded-xl border border-border bg-surface-page", !isPdf(file) && !isImage(file) && "flex minh-[-40vh] items-center justify-center p-6")}>
+                    <div className={cn("w-full overflow-hidden rounded-xl border border-border bg-surface-page", !isPdf(file) && !isImage(file) && "flex min-h-[40vh] items-center justify-center p-6")}>
                         {isPdf(file) ? (
                             <iframe src={objectUrl} title={file.name} className="h-[70vh] w-full" />
                         ) : isImage(file) ? (
-                            <div className="flex maxh-[-70vh] w-full items-center justify-center bg-black/5 p-4">
+                            <div className="flex max-h-[70vh] w-full items-center justify-center bg-black/5 p-4">
                                 <img src={objectUrl} alt={file.name} className="max-h-full max-w-full rounded shadow-sm" />
                             </div>
                         ) : (

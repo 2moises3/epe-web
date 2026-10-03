@@ -25,7 +25,7 @@ export default function ModuleCard({
 
       {/* Efecto de iluminación (Shimmer on hover) */}
       <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-[-150%] w-full h-full bg-linear-to-r from-transparent via-white/60 to-transparent skewx-[--25deg] group-hover:left-[150%] transition-all duration-1000 ease-in-out"></div>
+        <div className="absolute top-0 left-[-150%] w-full h-full bg-linear-to-r from-transparent via-white/60 to-transparent skew-x-[-25deg] group-hover:left-[150%] transition-all duration-1000 ease-in-out"></div>
       </div>
 
       {/* Left section (Icon & Text) */}

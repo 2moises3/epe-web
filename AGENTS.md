@@ -18,6 +18,11 @@ Todo lo transversal / no-dominio vive aquí:
   - Lo que sí queda fuera: lógica de negocio/dominio. Eso vive en el módulo.
 - `shared/layout/` — chrome de la app: `Sidebar.tsx`, `TopNavBar.tsx`, `DashboardLayout.tsx`.
 
+## Gestor de paquetes
+
+- Solo **pnpm** (`pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm test`, `pnpm build`). La versión está fijada en `packageManager` de `package.json`.
+- La única referencia de dependencias es `pnpm-lock.yaml`. No generar ni versionar `package-lock.json` (ya está en `.gitignore`): un segundo lockfile desincroniza versiones entre quienes usan npm y pnpm, y el `Dockerfile` y el workflow de CI instalan con `--frozen-lockfile`.
+
 ## Convención de imports
 
 - Usar el alias `@/` para todo import interno (`@/modules/...`, `@/shared/...`, `@/lib/...`).
@@ -55,6 +60,8 @@ Todo lo transversal / no-dominio vive aquí:
 - Antes de implementar una integración ambigua (concepto/dato de negocio sin correspondencia clara, ausencia de endpoint, o decisión de producto), detenerse y consultar al usuario. Registrar la pregunta y dejar esa vista **Sin cambios — fecha / requiere definición** hasta recibir respuesta. No inferir ni fabricar datos o endpoints.
 - Al incorporar APIs nuevas o modificadas, repetir el cruce API↔vista, actualizar estados con la fecha actual y revisar las pruebas pertinentes.
 - No usar datos de prueba/mock/fixtures del frontend como fallback ni en vistas activas. Si no existe un endpoint backend para una vista/operación, deshabilitar el bloque y mostrar claramente que está pendiente de API; registrar la ausencia con fecha en `doc/reporte-conexion-vistas.md`. Conservar los archivos de datos de prueba como referencia histórica si existen; no borrarlos salvo solicitud explícita del usuario.
+- **Excepción — flujos de diseño sin endpoint (confirmado por el responsable de diseño, 2026-10-03):** cuando una operación todavía no tiene API (entrevistas, subida del archivo de un examen, pagos al transportista), el diseño no se deja muerto: el flujo funciona con **estado local en memoria** (se pierde al recargar) y sin datos precargados que simulen respuestas del backend. Cada uno de esos puntos queda marcado con `// TODO(api)` y su lógica separada de la pantalla (`<tema>.utils.ts`, con pruebas), para que quien conecte el backend solo reemplace el guardado local por la llamada. Nunca se muestra como si el backend hubiera confirmado nada y siempre se registra en `doc/reporte-conexion-vistas.md`.
+- **Archivos y documentos:** el backend solo guarda URLs, pero el diseño usa `FileDropzone` (subir archivo), no campos de URL. Todo formulario con zona de archivo convierte el archivo en URL justo antes de guardar con `uploadDocument(file)` de `shared/api/uploadDocument.ts`. Ese es el único punto que hay que implementar cuando se integre el servicio de archivos; mientras no exista falla con un aviso claro y no guarda nada. No volver a poner campos de URL en lugar de la zona de archivo.
 - El cache de la aplicación está deshabilitado intencionalmente en desarrollo y producción: no agregar estrategias cache-first/service-worker para documentos, assets ni llamadas API sin autorización explícita. Si se modifica SW o servidor, preservar `no-store` y verificar que no existan cachés antiguos activos.
 
 ## Organización de archivos — checklist
@@ -63,6 +70,6 @@ Antes de crear un archivo nuevo, decidir en este orden:
 
 1. ¿Es código de un dominio de negocio? → va en `src/modules/<domain>/{components,pages,api}`.
 2. ¿Es transversal / sin dominio? → va en `src/shared/`.
-3. No modificar `shared/components/ui/` a mano (se actualiza vía `npx shadcn@latest add`).
+3. Si a un componente de `shared/components/ui/` le falta un estilo, variante o lógica, se agrega ahí mismo (ver la regla de `ui/` arriba); no se crea un archivo que lo envuelva.
 4. Cuando el dominio empiece a consumir backend, seguir el patrón `<domain>.api.ts` / `<domain>.dto.ts` / `<domain>.mapper.ts` — nunca importar el DTO ni axios directo desde componentes/páginas.
 5. Usar siempre el alias `@/`, salvo dentro de `shared/components/ui/` (imports relativos, convención de shadcn).

@@ -8,6 +8,8 @@ import {
   toCampaignCertificateUpdatePayload,
   hasCampaignClientChanges,
   hasCampaignCertificateChanges,
+  validateCampaignClientCreate,
+  toCampaignClientCreatePayload,
 } from "@/modules/campaigns/api/campaign-mutations.validation";
 
 describe("campaign client relation editing", () => {
@@ -165,5 +167,46 @@ describe("campaign mutation guard", () => {
     expect(guard.acquire()).toBe(false);
     guard.release();
     expect(guard.acquire()).toBe(true);
+  });
+});
+
+describe("campaign client relation creation", () => {
+  const valid = {
+    clienteNegocioId: "7",
+    documentoUrl: " https://example.com/requerimiento.pdf ",
+    fechaRegistro: "2026-10-03",
+    fichaTecnicaUrl: "https://example.com/ficha.pdf",
+    cantidadKg: "1200.5",
+    kilosAcordados: "1000",
+  };
+
+  it("accepts a complete relation and builds the full create DTO", () => {
+    expect(validateCampaignClientCreate(valid)).toEqual({});
+    expect(toCampaignClientCreatePayload(valid)).toEqual({
+      clienteNegocioId: 7,
+      documentoUrl: "https://example.com/requerimiento.pdf",
+      fechaRegistro: "2026-10-03",
+      fichaTecnicaUrl: "https://example.com/ficha.pdf",
+      cantidadKg: 1200.5,
+      kilosAcordados: 1000,
+    });
+  });
+
+  it("requires every field the backend create DTO requires", () => {
+    expect(validateCampaignClientCreate({
+      clienteNegocioId: "",
+      documentoUrl: "",
+      fechaRegistro: "",
+      fichaTecnicaUrl: "ficha.pdf",
+      cantidadKg: "",
+      kilosAcordados: "-5",
+    })).toEqual({
+      clienteNegocioId: expect.any(String),
+      documentoUrl: expect.any(String),
+      fechaRegistro: expect.any(String),
+      fichaTecnicaUrl: expect.any(String),
+      cantidadKg: expect.any(String),
+      kilosAcordados: expect.any(String),
+    });
   });
 });

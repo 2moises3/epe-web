@@ -1,5 +1,5 @@
 import { isURL } from "validator";
-import type { UpdateClienteNegocioCampanaDto } from "@/modules/campaigns/api/cliente-negocio-campana.dto";
+import type { CreateClienteNegocioCampanaDto, UpdateClienteNegocioCampanaDto } from "@/modules/campaigns/api/cliente-negocio-campana.dto";
 import type {
   CreateCertificadoCampanaDto,
   EstadoCertificadoCampana,
@@ -93,6 +93,35 @@ export function toCampaignClientUpdatePayload(values: CampaignClientUpdateValues
   if (values.cantidadKg.trim()) payload.cantidadKg = Number(values.cantidadKg.trim());
   if (values.kilosAcordados.trim()) payload.kilosAcordados = Number(values.kilosAcordados.trim());
   return payload;
+}
+
+export interface CampaignClientCreateValues extends CampaignClientUpdateValues {
+  clienteNegocioId: string;
+}
+
+export type CampaignClientCreateErrors = Partial<Record<keyof CampaignClientCreateValues, string>>;
+
+/** El alta del vínculo exige todos los campos del DTO de creación del backend. */
+export function validateCampaignClientCreate(values: CampaignClientCreateValues): CampaignClientCreateErrors {
+  const errors: CampaignClientCreateErrors = {};
+  if (!/^\d+$/.test(values.clienteNegocioId.trim()) || Number(values.clienteNegocioId) <= 0) errors.clienteNegocioId = "Selecciona un cliente.";
+  if (!validUrl(values.documentoUrl)) errors.documentoUrl = "Ingresa una URL válida con http:// o https://.";
+  if (!validCalendarDate(values.fechaRegistro)) errors.fechaRegistro = "Ingresa una fecha válida.";
+  if (!validUrl(values.fichaTecnicaUrl)) errors.fichaTecnicaUrl = "Ingresa una URL válida con http:// o https://.";
+  if (parseNonNegative(values.cantidadKg, 3) === null) errors.cantidadKg = "Ingresa un número no negativo con hasta 3 decimales.";
+  if (parseNonNegative(values.kilosAcordados, 3) === null) errors.kilosAcordados = "Ingresa un número no negativo con hasta 3 decimales.";
+  return errors;
+}
+
+export function toCampaignClientCreatePayload(values: CampaignClientCreateValues): CreateClienteNegocioCampanaDto {
+  return {
+    clienteNegocioId: Number(values.clienteNegocioId),
+    documentoUrl: values.documentoUrl.trim(),
+    fechaRegistro: values.fechaRegistro,
+    fichaTecnicaUrl: values.fichaTecnicaUrl.trim(),
+    cantidadKg: Number(values.cantidadKg.trim()),
+    kilosAcordados: Number(values.kilosAcordados.trim()),
+  };
 }
 
 export function hasCampaignClientChanges(

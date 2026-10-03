@@ -17,7 +17,10 @@ export interface ClienteNegocioCampanaDto {
 export interface CreateClienteNegocioCampanaDto {
   clienteNegocioId: number;
   documentoUrl: string;
+  fechaRegistro: string;
+  fichaTecnicaUrl: string;
   cantidadKg: number;
+  kilosAcordados: number;
 }
 
 export interface UpdateClienteNegocioCampanaDto {
