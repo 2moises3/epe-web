@@ -13,6 +13,7 @@ import { navigationItems } from "@/shared/layout/navigationItems";
 import Hint from "@/shared/components/Hint";
 import ConfirmModal from "@/shared/components/ConfirmModal";
 import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
+import CompanyBreadcrumb from "@/shared/layout/CompanyBreadcrumb";
 
 interface TopNavBarProps {
     onLogout?: () => void;
@@ -25,7 +26,8 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
     const isRoot = location.pathname === '/modules' || location.pathname === '/';
 
     return (
-        <header className="flex h-16 shrink-0 items-center justify-between px-4 sm:px-8 lg:px-14 bg-white w-full z-20 border-b border-border">
+        <header className="shrink-0 bg-white w-full z-20 border-b border-border">
+            <div className="relative flex h-[72px] items-center justify-between px-4 sm:px-8 lg:px-14">
             <div className="flex items-center min-w-0">
                 {/* Botón de regresar animado (aparece empujando el logo) */}
                 <div
@@ -67,6 +69,7 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                     </div>
                 </div>
             </div>
+            <CompanyBreadcrumb />
 
             <div className="flex items-center gap-3 sm:gap-6 ml-auto shrink-0">
                 {/* Menú rápido de Módulos (Mini-Sidebar) */}
@@ -146,6 +149,7 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                 confirmLabel="Sí, cerrar sesión"
                 onConfirm={() => onLogout?.()}
             />
+            </div>
         </header>
     );
 }

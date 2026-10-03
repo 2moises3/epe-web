@@ -18,7 +18,7 @@ interface AppModalProps {
     className?: string;
 }
 
-function AnimatedModalBody({ children }: { children: ReactNode }) {
+function AnimatedModalBody({ children, ready = true }: { children: ReactNode; ready?: boolean }) {
     const viewportRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +37,16 @@ function AnimatedModalBody({ children }: { children: ReactNode }) {
 
                 if (!initialized) {
                     viewport.style.height = `${nextHeight}px`;
-                    initialized = true;
+                    
+                    if (ready) {
+                        initialized = true;
+                        
+                        // Permitir que el navegador pinte el tamaño inicial y luego agregar las clases de transición.
+                        // Esto evita el bug donde el modal aparece pequeño y crece lentamente al abrirse.
+                        requestAnimationFrame(() => {
+                            viewport.classList.add("transition-[height]", "duration-300", "ease-out");
+                        });
+                    }
                     return;
                 }
 
@@ -71,12 +80,12 @@ function AnimatedModalBody({ children }: { children: ReactNode }) {
             observer.disconnect();
             cancelAnimationFrame(animationFrame);
         };
-    }, []);
+    }, [ready]);
 
     return (
         <div
             ref={viewportRef}
-            className="min-h-0 flex-initial overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden transition-[height] duration-[800ms] ease-[cubic-bezier(0.45,0,0.25,1)] will-change-[height] motion-reduce:transition-none motion-reduce:will-change-auto"
+            className="min-h-0 flex-initial overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden will-change-[height] motion-reduce:transition-none motion-reduce:will-change-auto"
         >
             <div ref={contentRef} className="px-5 pb-6 sm:px-6">
                 {children}
@@ -86,7 +95,7 @@ function AnimatedModalBody({ children }: { children: ReactNode }) {
 }
 
 /** Shared shell only: each module owns its content; the footer (if any) always sits bottom-right, pinned outside the scroll area. */
-export default function AppModal({ open, onOpenChange, title, description, icon, children, footer, className }: AppModalProps) {
+export default function AppModal({ open, onOpenChange, title, description, icon, children, footer, className, ready = true }: AppModalProps & { ready?: boolean }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
@@ -114,7 +123,7 @@ export default function AppModal({ open, onOpenChange, title, description, icon,
                         </DialogClose>
                     </span>
                 </DialogHeader>
-                <AnimatedModalBody>{children}</AnimatedModalBody>
+                <AnimatedModalBody ready={ready}>{children}</AnimatedModalBody>
                 {footer && (
                     <div className="flex shrink-0 flex-col-reverse gap-3 px-5 py-4 sm:flex-row sm:justify-end sm:px-6 [&>button]:w-full sm:[&>button]:w-auto">
                         {footer}

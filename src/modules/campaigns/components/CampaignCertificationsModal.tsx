@@ -12,6 +12,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Separator } from "@/shared/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { DatePicker } from "@/shared/components/ui/date-picker";
 import { getUploadErrorMessage, uploadDocument } from "@/shared/api/uploadDocument";
 import {
     createCertificadoCampana,
@@ -254,7 +255,12 @@ export default function CampaignCertificationsModal({ open, campaniaId, onOpenCh
 
                         <Field data-invalid={invalid("fechaVencimiento")}>
                             <FieldLabel>Fecha Vencimiento: {required}</FieldLabel>
-                            <Input type="date" value={values.fechaVencimiento} disabled={isSaving} aria-invalid={invalid("fechaVencimiento")} onChange={(event) => updateField("fechaVencimiento", event.target.value)} />
+                            <DatePicker 
+                                value={values.fechaVencimiento} 
+                                disabled={isSaving} 
+                                aria-invalid={invalid("fechaVencimiento")} 
+                                onChange={(val) => updateField("fechaVencimiento", val)} 
+                            />
                             {errorFor("fechaVencimiento")}
                         </Field>
 

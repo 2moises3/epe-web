@@ -21,6 +21,7 @@ type DatePickerProps = {
   className?: string
   disabled?: boolean
   name?: string
+  "aria-invalid"?: boolean | "true" | "false"
 }
 
 function DatePicker({
@@ -31,6 +32,7 @@ function DatePicker({
   className,
   disabled,
   name,
+  "aria-invalid": ariaInvalid,
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue ?? "")
   const isControlled = value !== undefined
@@ -51,8 +53,9 @@ function DatePicker({
           <Button
             type="button"
             variant="outline"
+            aria-invalid={ariaInvalid}
             className={cn(
-              "h-11 w-full justify-start gap-2 rounded-lg px-2.5 shadow-none",
+              "h-11 w-full justify-start gap-2 rounded-lg px-2.5 shadow-none aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
               selected ? "text-ink font-medium" : "text-ink-muted font-normal",
               className
             )}

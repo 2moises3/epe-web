@@ -5,6 +5,7 @@ import AppModal from "@/shared/components/AppModal";
 import FileDropzone from "@/shared/components/FileDropzone";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
+import { DatePicker } from "@/shared/components/ui/date-picker";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
 import { getUploadErrorMessage, uploadDocument } from "@/shared/api/uploadDocument";
@@ -254,7 +255,11 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave, ca
                     </Field>
                     <Field data-invalid={errors.fechaRegistro ? true : undefined}>
                         <FieldLabel htmlFor="link-client-fechaRegistro">Fecha de registro: {required}</FieldLabel>
-                        <Input type="date" {...fieldProps("fechaRegistro")} />
+                        <DatePicker 
+                            value={String(fieldProps("fechaRegistro").value || "")} 
+                            onChange={(val) => set("fechaRegistro", val)} 
+                            aria-invalid={fieldProps("fechaRegistro")["aria-invalid"]} 
+                        />
                         {errorFor("fechaRegistro")}
                     </Field>
                 </div>

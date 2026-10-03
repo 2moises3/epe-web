@@ -4,7 +4,10 @@ import AppModal from "@/shared/components/AppModal";
 import RemovableChip from "@/shared/components/RemovableChip";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
+import { Textarea } from "@/shared/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { DatePicker } from "@/shared/components/ui/date-picker";
+import FileDropzone from "@/shared/components/FileDropzone";
 import { Button } from "@/shared/components/ui/button";
 import { createCampana, getCampana, getFrutaDerivadas, getFrutas, updateCampana } from "@/modules/campaigns/api/campaign.api";
 import type { CampanaEstado, FrutaDerivadaDto, FrutaDto } from "@/modules/campaigns/api/campaign.dto";
@@ -14,15 +17,19 @@ import { getBadRequestFieldErrors, getZodFieldErrors, type FormFieldErrors } fro
 
 interface CampaignFormValues {
     nombre: string;
+    añoTemporada: string;
     frutaId: number | null;
     fechaInicio: string;
     fechaFin: string;
     requerimientoComercial: string;
+    responsable: string;
+    observaciones: string;
     estado: CampanaEstado;
+    lineamientos: File | null;
 }
 
 const EMPTY_CAMPAIGN: CampaignFormValues = {
-    nombre: "", frutaId: null, fechaInicio: "", fechaFin: "", requerimientoComercial: "", estado: "planificacion",
+    nombre: "", añoTemporada: "", frutaId: null, fechaInicio: "", fechaFin: "", requerimientoComercial: "", responsable: "", observaciones: "", estado: "planificacion", lineamientos: null,
 };
 
 /** Propiedades del backend → campo del formulario, para ubicar los errores 400 debajo de cada campo */
@@ -45,8 +52,9 @@ interface CampaignFormModalProps {
 
 /** Error animado bajo el campo: el contenedor queda montado para poder animar su aparición. */
 function AnimatedFieldError({ message }: { message?: string }) {
+    if (!message) return null;
     return (
-        <div className={`transition-all duration-300 overflow-hidden ${message ? "opacity-100 max-h-16" : "opacity-0 max-h-0"}`}>
+        <div className="animate-in slide-in-from-top-1 fade-in duration-300">
             <FieldError className="flex items-center gap-2 text-[13px] font-medium">
                 <AlertCircle size={14} className="shrink-0" /> {message}
             </FieldError>
@@ -175,7 +183,8 @@ export default function CampaignFormModal({
             description={isEdit
                 ? "Modifica la información de la campaña existente."
                 : "Completa la información para registrar una nueva campaña."}
-            className="sm:max-w-175"
+            className="sm:max-w-[800px]"
+            ready={!isLoading && !derivadasLoading}
             footer={
                 <>
                     <Button variant="outline" size="xl" onClick={() => handleOpenChange(false)} disabled={saving}>
@@ -189,58 +198,35 @@ export default function CampaignFormModal({
                 </>
             }
         >
-            <div className="flex flex-col gap-6">
-                <Field data-invalid={invalid("nombre")}>
-                    <FieldLabel>Nombre de Campaña:</FieldLabel>
-                    <Input
-                        placeholder="Ej: Campaña Mango 2026"
-                        value={values.nombre}
-                        aria-invalid={invalid("nombre")}
-                        onChange={(e) => set("nombre", e.target.value)}
-                    />
-                    <AnimatedFieldError message={errors.nombre} />
-                </Field>
-
+            <div className="flex flex-col gap-5">
+                {/* Fila 1 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field data-invalid={invalid("fechaInicio")}>
-                        <FieldLabel>Fecha Inicio:</FieldLabel>
-                        <Input type="date" value={values.fechaInicio} aria-invalid={invalid("fechaInicio")} onChange={(e) => set("fechaInicio", e.target.value)} />
-                        <AnimatedFieldError message={errors.fechaInicio} />
+                    <Field data-invalid={invalid("nombre")}>
+                        <FieldLabel>Nombre de Campaña:</FieldLabel>
+                        <Input
+                            placeholder="Ej: Campaña Mango 2026"
+                            value={values.nombre}
+                            aria-invalid={invalid("nombre")}
+                            onChange={(e) => set("nombre", e.target.value)}
+                        />
+                        <AnimatedFieldError message={errors.nombre} />
                     </Field>
-                    <Field data-invalid={invalid("fechaFin")}>
-                        <FieldLabel>Fecha Fin:</FieldLabel>
-                        <Input type="date" value={values.fechaFin} aria-invalid={invalid("fechaFin")} onChange={(e) => set("fechaFin", e.target.value)} />
-                        <AnimatedFieldError message={errors.fechaFin} />
+                    <Field data-invalid={invalid("responsable")}>
+                        <FieldLabel>Responsable:</FieldLabel>
+                        <Input
+                            placeholder="Nombre del administrador"
+                            value={values.responsable}
+                            aria-invalid={invalid("responsable")}
+                            onChange={(e) => set("responsable", e.target.value)}
+                        />
+                        <AnimatedFieldError message={errors.responsable} />
                     </Field>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field data-invalid={invalid("frutaId")}>
-                        <FieldLabel>Seleccionar Fruta:</FieldLabel>
-                        {/* `items` hace que el recuadro muestre el nombre de la fruta y no su id */}
-                        <Select
-                            items={fruitItems}
-                            value={values.frutaId !== null ? String(values.frutaId) : null}
-                            onValueChange={(val) => set("frutaId", val ? Number(val) : null)}
-                        >
-                            <SelectTrigger className="w-full" aria-invalid={invalid("frutaId")}>
-                                <SelectValue placeholder="Seleccionar Fruta" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {fruitItems.length === 0 ? (
-                                    <SelectItem value="__sin-frutas__" disabled>No hay frutas registradas</SelectItem>
-                                ) : (
-                                    fruitItems.map((item) => (
-                                        <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
-                        <AnimatedFieldError message={errors.frutaId} />
-                    </Field>
-
-                    <Field data-invalid={invalid("requerimientoComercial")}>
-                        <FieldLabel>Requerimientos Comerciales:</FieldLabel>
+                {/* Fila 2 */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Field className="sm:col-span-1" data-invalid={invalid("requerimientoComercial")}>
+                        <FieldLabel>Requerimiento (KG):</FieldLabel>
                         <div className="relative">
                             <Input
                                 placeholder="Ej: 3000"
@@ -256,21 +242,102 @@ export default function CampaignFormModal({
                         </div>
                         <AnimatedFieldError message={errors.requerimientoComercial} />
                     </Field>
+                    <Field className="sm:col-span-1" data-invalid={invalid("fechaInicio")}>
+                        <FieldLabel>Fecha de inicio:</FieldLabel>
+                        <DatePicker 
+                            value={values.fechaInicio} 
+                            onChange={(val) => set("fechaInicio", val)} 
+                            aria-invalid={invalid("fechaInicio")}
+                        />
+                        <AnimatedFieldError message={errors.fechaInicio} />
+                    </Field>
+                    <Field className="sm:col-span-1" data-invalid={invalid("fechaFin")}>
+                        <FieldLabel>Fecha de fin:</FieldLabel>
+                        <DatePicker 
+                            value={values.fechaFin} 
+                            onChange={(val) => set("fechaFin", val)}
+                            aria-invalid={invalid("fechaFin")}
+                        />
+                        <AnimatedFieldError message={errors.fechaFin} />
+                    </Field>
                 </div>
 
-                {/* Frutas derivadas: vienen del catálogo de la fruta elegida, son informativas */}
-                <div className={`transition-all duration-300 ${derivadas.length > 0 || derivadasLoading ? "opacity-100 h-auto" : "opacity-0 h-0 overflow-hidden"}`}>
+                {/* Fila 3 */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Field className="sm:col-span-1" data-invalid={invalid("añoTemporada")}>
+                        <FieldLabel>Año o Temporada:</FieldLabel>
+                        <Input
+                            placeholder="Ej: 2025-2026"
+                            value={values.añoTemporada}
+                            aria-invalid={invalid("añoTemporada")}
+                            onChange={(e) => set("añoTemporada", e.target.value)}
+                        />
+                        <AnimatedFieldError message={errors.añoTemporada} />
+                    </Field>
+                    <Field className="sm:col-span-2" data-invalid={invalid("frutaId")}>
+                        <FieldLabel>Seleccionar Frutas:</FieldLabel>
+                        <Select
+                            items={fruitItems}
+                            value={values.frutaId !== null ? String(values.frutaId) : null}
+                            onValueChange={(val) => set("frutaId", val ? Number(val) : null)}
+                        >
+                            <SelectTrigger className="w-full" aria-invalid={invalid("frutaId")}>
+                                <SelectValue placeholder="Agregar fruta..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {fruitItems.length === 0 ? (
+                                    <SelectItem value="__sin-frutas__" disabled>No hay frutas registradas</SelectItem>
+                                ) : (
+                                    fruitItems.map((item) => (
+                                        <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                                    ))
+                                )}
+                            </SelectContent>
+                        </Select>
+                        <AnimatedFieldError message={errors.frutaId} />
+                    </Field>
+                </div>
+
+                {/* Fila 4 */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
+                    <Field className="sm:col-span-1 h-full">
+                        <FileDropzone 
+                            label="Lineamientos" 
+                            file={values.lineamientos} 
+                            onChange={(file) => set("lineamientos", file)} 
+                            hint="PDF o Imagen · Máx. 10 MB"
+                        />
+                    </Field>
+                    <Field className="sm:col-span-2 h-full flex flex-col">
+                        <FieldLabel>Observaciones Generales:</FieldLabel>
+                        <Textarea 
+                            className="flex-1 w-full min-h-24 resize-none" 
+                            value={values.observaciones}
+                            onChange={(e) => set("observaciones", e.target.value)}
+                        />
+                    </Field>
+                </div>
+
+                {/* Frutas derivadas: solo se renderiza si hay derivadas o si seleccionó fruta, para evitar el 'h-0' gap padding de flex */}
+                {(derivadas.length > 0 || (values.frutaId !== null && derivadasLoading)) && (
                     <Field>
-                        <FieldLabel>Frutas derivadas de {fruitName(values.frutaId) ?? "la fruta"}:</FieldLabel>
-                        <div className="flex flex-wrap gap-2">
+                        <FieldLabel>Variedades Seleccionadas:</FieldLabel>
+                        <div className="flex flex-wrap gap-2 mt-1">
                             {derivadasLoading
                                 ? <span className="text-[13px] text-ink-muted">Cargando variedades...</span>
                                 : derivadas.map((derivada) => <RemovableChip key={derivada.frutaDerivadaId} label={derivada.name} />)}
                         </div>
                     </Field>
-                </div>
+                )}
+                {derivadas.length === 0 && values.frutaId !== null && !derivadasLoading && (
+                    <Field>
+                        <FieldLabel>Variedades Seleccionadas:</FieldLabel>
+                        <p className="text-[13px] text-ink-muted mt-1">Ninguna aún.</p>
+                    </Field>
+                )}
 
-                <AnimatedFieldError message={errors._form} />
+                {/* Se evita renderizar <AnimatedFieldError /> vacío para que no afecte el gap-6 */}
+                {Boolean(errors._form) && <AnimatedFieldError message={errors._form} />}
             </div>
         </AppModal>
     );
