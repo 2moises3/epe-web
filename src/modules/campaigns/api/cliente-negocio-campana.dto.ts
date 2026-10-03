@@ -6,7 +6,10 @@ export interface ClienteNegocioCampanaDto {
   clienteNegocioId: number;
   campaniaId: number;
   documentoUrl: string;
+  fechaRegistro: string;
+  fichaTecnicaUrl: string;
   cantidadKg: number;
+  kilosAcordados: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,4 +18,12 @@ export interface CreateClienteNegocioCampanaDto {
   clienteNegocioId: number;
   documentoUrl: string;
   cantidadKg: number;
+}
+
+export interface UpdateClienteNegocioCampanaDto {
+  documentoUrl?: string;
+  fechaRegistro?: string;
+  fichaTecnicaUrl?: string;
+  cantidadKg?: number;
+  kilosAcordados?: number;
 }

@@ -7,10 +7,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(),  tailwindcss()],
   server: {
-    headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
-  },
-  preview: {
-    headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+    hmr: false,
   },
   resolve: {
     alias: {

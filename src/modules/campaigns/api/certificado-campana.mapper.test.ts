@@ -6,6 +6,8 @@ const baseDto: CertificadoCampanaDto = {
   certificadoId: 1,
   nombre: "Global GAP",
   documentUrl: "https://example.com/certificados/global-gap.pdf",
+  reciboUrl: "https://example.com/recibos/global-gap.pdf",
+  costo: 123.45,
   fechaVencimiento: "2026-08-31",
   campaniaId: 5,
   estado: "vigente",
@@ -44,6 +46,8 @@ describe("toCreateCertificadoCampanaDto", () => {
     const dto = toCreateCertificadoCampanaDto({
       nombre: "Global GAP",
       documentoUrl: "https://example.com/certificados/global-gap.pdf",
+      reciboUrl: "https://example.com/recibos/global-gap.pdf",
+      costo: 123.45,
       fechaVencimiento: new Date(2026, 7, 31),
       estado: "vigente",
     });
@@ -55,11 +59,15 @@ describe("toCreateCertificadoCampanaDto", () => {
     const dto = toCreateCertificadoCampanaDto({
       nombre: "Global GAP",
       documentoUrl: "https://example.com/certificados/global-gap.pdf",
+      reciboUrl: "https://example.com/recibos/global-gap.pdf",
+      costo: 123.45,
       fechaVencimiento: new Date(2026, 7, 31),
       estado: "vigente",
     });
 
     expect(dto.documentUrl).toBe("https://example.com/certificados/global-gap.pdf");
+    expect(dto.reciboUrl).toBe("https://example.com/recibos/global-gap.pdf");
+    expect(dto.costo).toBe(123.45);
     expect(dto).not.toHaveProperty("documentoUrl");
   });
 });

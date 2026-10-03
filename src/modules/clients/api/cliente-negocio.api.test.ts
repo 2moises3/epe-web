@@ -1,33 +1,70 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "@/shared/api/client";
-import { createClienteNegocio, deleteClienteNegocio, getClientesNegocio, updateClienteNegocio } from "@/modules/clients/api/cliente-negocio.api";
+import {
+  createClienteNegocio,
+  deleteClienteNegocio,
+  getClientesNegocio,
+  updateClienteNegocio,
+} from "@/modules/clients/api/cliente-negocio.api";
+import { toClienteNegocioInput } from "@/modules/clients/api/cliente-negocio.validation";
 
-const dto = {
-  clienteNegocioId: 9, nombreEmpresa: "Empresa", nombreContacto: "Contacto", telefono: "+51987654321",
-  ruc: "20123456789", correoCorporativo: "contacto@empresa.pe", ubicacion: "Lima", tipoCliente: "exportador" as const,
-  createdAt: "2026-09-20T00:00:00.000Z", updatedAt: "2026-09-20T00:00:00.000Z",
+vi.mock("@/shared/api/client", () => ({
+  apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+}));
+
+const input = {
+  nombreEmpresa: "Exportadora Andina",
+  nombreContacto: "Ana Pérez",
+  telefono: "+51987654321",
+  ruc: "20123456789",
+  correoCorporativo: "ana@example.com",
+  ubicacion: "Lima",
+  tipoCliente: "exportador" as const,
 };
+const dto = { ...input, clienteNegocioId: 7, createdAt: "2026-09-01", updatedAt: "2026-09-02" };
+
+beforeEach(() => vi.clearAllMocks());
 
 describe("cliente-negocio API", () => {
-  beforeEach(() => vi.restoreAllMocks());
-
-  it("lee y mapea el listado", async () => {
-    vi.spyOn(apiClient, "get").mockResolvedValue({ data: [dto] } as never);
+  it("loads and maps the persisted client list", async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [dto] });
     await expect(getClientesNegocio()).resolves.toEqual([dto]);
+    expect(apiClient.get).toHaveBeenCalledWith("/clientes-negocio");
   });
 
-  it("crea, actualiza y elimina usando los recursos REST del backend", async () => {
-    const post = vi.spyOn(apiClient, "post").mockResolvedValue({ data: dto } as never);
-    const patch = vi.spyOn(apiClient, "patch").mockResolvedValue({ data: dto } as never);
-    const del = vi.spyOn(apiClient, "delete").mockResolvedValue({} as never);
-    const input = { nombreEmpresa: "Empresa", nombreContacto: "Contacto", telefono: "+51987654321", ruc: "20123456789", correoCorporativo: "contacto@empresa.pe", ubicacion: "Lima", tipoCliente: "exportador" as const };
-
+  it("creates clients using the verified backend contract", async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({ data: dto });
     await expect(createClienteNegocio(input)).resolves.toEqual(dto);
-    await expect(updateClienteNegocio(9, { ubicacion: "Piura" })).resolves.toEqual(dto);
-    await deleteClienteNegocio(9);
+    expect(apiClient.post).toHaveBeenCalledWith("/clientes-negocio", input);
+  });
 
-    expect(post).toHaveBeenCalledWith("/clientes-negocio", input);
-    expect(patch).toHaveBeenCalledWith("/clientes-negocio/9", { ubicacion: "Piura" });
-    expect(del).toHaveBeenCalledWith("/clientes-negocio/9");
+  it("patches only the selected client's supported fields", async () => {
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: dto });
+    await expect(updateClienteNegocio(7, { nombreContacto: "Ana María Pérez" })).resolves.toEqual(dto);
+    expect(apiClient.patch).toHaveBeenCalledWith("/clientes-negocio/7", { nombreContacto: "Ana María Pérez" });
+  });
+
+  it("sends an entity-derived edit body without identifiers or audit fields", async () => {
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: dto });
+    const entity = { ...dto, nombreEmpresa: " Exportadora Andina " };
+    const input = toClienteNegocioInput(entity);
+
+    await updateClienteNegocio(entity.clienteNegocioId, input);
+
+    expect(apiClient.patch).toHaveBeenCalledWith("/clientes-negocio/7", {
+      nombreEmpresa: "Exportadora Andina",
+      nombreContacto: "Ana Pérez",
+      telefono: "+51987654321",
+      ruc: "20123456789",
+      correoCorporativo: "ana@example.com",
+      ubicacion: "Lima",
+      tipoCliente: "exportador",
+    });
+  });
+
+  it("deletes by id and resolves only after the API confirms", async () => {
+    vi.mocked(apiClient.delete).mockResolvedValue({ data: undefined });
+    await expect(deleteClienteNegocio(7)).resolves.toBeUndefined();
+    expect(apiClient.delete).toHaveBeenCalledWith("/clientes-negocio/7");
   });
 });

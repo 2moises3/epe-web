@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import AppModal from "@/shared/components/AppModal";
-import { X, UserRound } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
+import { getProveedor } from "@/modules/providers/api/proveedor.api";
+import { createProviderDetailsSession } from "@/modules/providers/api/provider-lifecycle";
+import ProviderSubresources from "@/modules/providers/components/ProviderSubresources";
 
 interface ProviderViewModalProps {
     open: boolean;
@@ -9,61 +12,55 @@ interface ProviderViewModalProps {
 }
 
 export default function ProviderViewModal({ open, onOpenChange, providerId }: ProviderViewModalProps) {
-    // Mock data based on the provided design
-    const mockProvider = {
-        name: "Fundo Los Olivos",
-        location: "Piura",
-        size: "45 ha",
-        fruits: [
-            { name: "Mango Kent", color: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-            { name: "Mango Tommy", color: "bg-purple-500", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" }
-        ],
-        details: [
-            { label: "CONTACTO", value: "Carlos Mendoza" },
-            { label: "TELÉFONO", value: "+51 973 441 220" },
-            { label: "UBICACIÓN", value: "Piura" },
-            { label: "HECTÁREAS", value: "45 ha" }
-        ]
+    const [session, setSession] = useState(createProviderDetailsSession);
+    const [isSubresourceMutating, setIsSubresourceMutating] = useState(false);
+    const { provider, error, loading: isLoading } = session;
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen && isSubresourceMutating) return;
+        onOpenChange(nextOpen);
     };
 
-    if (!providerId) return null;
+    useEffect(() => {
+        let active = true;
+        if (!open || providerId === null) return () => { active = false; };
+        getProveedor(providerId)
+            .then((data) => { if (active) setSession({ provider: data, error: null, loading: false }); })
+            .catch(() => { if (active) setSession({ provider: null, error: "No se pudo cargar el detalle del proveedor.", loading: false }); });
+
+        return () => { active = false; };
+    }, [open, providerId]);
+
+    if (!open || providerId === null) return null;
+
+    const details = provider ? [
+        ["Tipo de documento", provider.tipoDocumento],
+        ["Número de documento", provider.nmrDocumento],
+        ["Teléfono", provider.telefono],
+        ["Correo electrónico", provider.email],
+        ["Zona", provider.zona],
+        ["URL del documento de identidad", provider.identidadDocUrl],
+        ["Código de lugar de producción", provider.codigoLugarProduccion],
+    ] as const : [];
 
     return (
         <AppModal
             open={open}
-            onOpenChange={onOpenChange}
-            icon={<UserRound size={22} strokeWidth={2} />}
-            title={mockProvider.name}
-            description={`${mockProvider.location} · ${mockProvider.size}`}
-            className="sm:max-w-112.5"
-            footer={
-                <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        <X size={20} strokeWidth={2.5} /> Cerrar
-                    </Button>
-            }
+            onOpenChange={handleOpenChange}
+            title={provider ? `${provider.nombres} ${provider.apellido}` : "Detalle del proveedor"}
+            description={provider ? "Información registrada en el sistema." : "Consulta del registro de proveedor."}
+            className="sm:max-w-140"
+            footer={<Button variant="outline" size="xl" disabled={isSubresourceMutating} onClick={() => handleOpenChange(false)}>Cerrar</Button>}
         >
-            {/* Chips */}
-            <div className="flex flex-wrap gap-2 mb-6">
-                {mockProvider.fruits.map((fruit, idx) => (
-                    <div
-                        key={idx}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${fruit.bg} ${fruit.border} ${fruit.text} text-[12px] font-bold`}
-                    >
-                        <div className={`w-1.5 h-1.5 rounded-full ${fruit.color}`}></div>
-                        {fruit.name}
-                    </div>
-                ))}
-            </div>
-
-            {/* Details List */}
-            <div className="flex flex-col">
-                {mockProvider.details.map((detail, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-3.5 border-b border-border/50 last:border-0">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{detail.label}</span>
-                        <span className="text-[14px] font-semibold text-ink">{detail.value}</span>
-                    </div>
-                ))}
-            </div>
+            {isLoading && <p role="status" className="py-6 text-center text-ink-muted">Cargando proveedor…</p>}
+            {error && <p role="alert" className="py-6 text-center text-red-600">{error}</p>}
+            {provider && <dl className="flex flex-col">
+                {details.map(([label, value]) => <div key={label} className="flex flex-col gap-1 border-b border-border/50 py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+                    <dt className="text-xs font-bold uppercase tracking-wider text-ink-muted">{label}</dt>
+                    <dd className="break-all text-sm font-semibold text-ink">{value || "—"}</dd>
+                </div>)}
+            </dl>}
+            {provider && <ProviderSubresources providerId={provider.proveedorId} onMutatingChange={setIsSubresourceMutating} />}
         </AppModal>
     );
 }

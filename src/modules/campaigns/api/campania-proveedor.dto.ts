@@ -16,10 +16,22 @@ export interface CampaniaProveedorDto {
 export interface CreateCampaniaProveedorDto {
   campaniaId: number;
   proveedorId: number;
-  cantidadProveedor: string;
-  mtdCeratitis: string;
+  cantidadProveedor: number;
+  mtdCeratitis: number;
   frutaConvencionalEstimado?: number | null;
   tipoProveedor: TipoProveedorCampania;
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+  latitud?: number;
+  longitud?: number;
+  densidadPlantacion?: number;
+  distanciamiento?: number;
+  frecuenciaRiego?: number;
+  haTotalFinca?: number;
+  haCultivo?: number;
+  nombreAplicacion?: string;
+  aplicacionesAlAno?: number;
 }
 
 export type UpdateCampaniaProveedorDto = Partial<

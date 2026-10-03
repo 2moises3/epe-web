@@ -196,7 +196,7 @@ export default function CampaignTable({ status = "planificacion", search = "", s
             </TableCard>
 
             <CampaignEditModal open={editingCampaignId !== null} campaniaId={editingCampaignId} onOpenChange={(open) => !open && setEditingCampaignId(null)} onSuccess={handleEditSuccess} />
-            <CampaignCertificationsModal open={managingCertificationsCampaignId !== null} campaniaId={managingCertificationsCampaignId} onOpenChange={(open) => !open && setManagingCertificationsCampaignId(null)} onSuccess={() => { setManagingCertificationsCampaignId(null); setSuccessModalMode("certification"); setIsSuccessModalOpen(true); }} />
+            <CampaignCertificationsModal key={managingCertificationsCampaignId ?? "closed"} open={managingCertificationsCampaignId !== null} campaniaId={managingCertificationsCampaignId} onOpenChange={(open) => !open && setManagingCertificationsCampaignId(null)} onSuccess={() => { setManagingCertificationsCampaignId(null); setSuccessModalMode("certification"); setIsSuccessModalOpen(true); }} />
             <CampaignLinkClientModal open={managingClientsCampaignId !== null} campaniaId={managingClientsCampaignId} onOpenChange={(open) => !open && setManagingClientsCampaignId(null)} onSave={() => { setManagingClientsCampaignId(null); setSuccessModalMode("client"); setIsSuccessModalOpen(true); void loadCampaigns(); }} />
             <CampaignSuccessModal open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen} mode={successModalMode} />
         </>

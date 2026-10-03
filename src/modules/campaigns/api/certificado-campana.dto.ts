@@ -4,6 +4,8 @@ export interface CertificadoCampanaDto {
   certificadoId: number;
   nombre: string;
   documentUrl: string;
+  reciboUrl: string;
+  costo: number;
   fechaVencimiento: string;
   campaniaId: number;
   estado: EstadoCertificadoCampana;
@@ -12,6 +14,8 @@ export interface CertificadoCampanaDto {
 export interface CreateCertificadoCampanaDto {
   nombre: string;
   documentUrl: string;
+  reciboUrl: string;
+  costo: number;
   fechaVencimiento: string;
   estado: EstadoCertificadoCampana;
 }

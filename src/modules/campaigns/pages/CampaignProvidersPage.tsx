@@ -261,6 +261,7 @@ export default function CampaignProvidersPage() {
                     setIsSuccessModalOpen(true);
                     loadCampaniaProveedores();
                 }}
+                onRefresh={loadCampaniaProveedores}
             />
 
             <CampaignExamModal

@@ -28,7 +28,7 @@ const COPY: Record<CampaignSuccessMode, { title: string; description: string }> 
     exam: { title: "Examen Médico Registrado", description: "Se ha registrado el examen médico del proveedor exitosamente" },
     interview: { title: "Informe Registrado", description: "Se visualizara informe" },
     client: { title: "Clientes vinculados", description: "Los clientes se vincularon correctamente y ya puedes consultarlos en el detalle de la campaña." },
-    certification: { title: "Certificación Registrada", description: "Se ha registrado la certificación del proveedor exitosamente" },
+    certification: { title: "Certificación guardada", description: "Los cambios de la certificación de campaña se guardaron correctamente." },
     payment: { title: "Pago Registrado", description: "Se ha registrado el pago al transportista exitosamente" },
     receipt: { title: "Boleta Adjuntada", description: "Se ha adjuntado la boleta de pago exitosamente" },
     advance: { title: "Pago Completado", description: "Se ha cerrado el saldo pendiente del adelanto exitosamente" },
