@@ -3,9 +3,9 @@ import SegmentedTabs, { type SegmentedTabItem } from "@/shared/components/Segmen
 
 /** Estados de campaña en el orden en que se muestran */
 const CAMPAIGN_STATUS_TABS: SegmentedTabItem[] = [
-    { id: "Planificado", label: "Planificado", icon: CalendarDays, tone: "neutral" },
-    { id: "En proceso", label: "En proceso", icon: Settings, tone: "neutral" },
-    { id: "Terminado", label: "Finalizado", icon: Check, tone: "brand" },
+    { id: "planificacion", label: "Planificado", icon: CalendarDays, tone: "neutral" },
+    { id: "en proceso", label: "En proceso", icon: Settings, tone: "neutral" },
+    { id: "terminado", label: "Finalizado", icon: Check, tone: "brand" },
 ];
 
 interface CampaignStatusTabsProps {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { Briefcase, Calendar, Contact, Eye, Layers, Package, Pencil, ShieldCheck, Truck } from "lucide-react";
+import { format, differenceInMonths, differenceInDays } from "date-fns";
+import { Briefcase, Calendar, Contact, Eye, Layers, Package, Pencil, ShieldCheck, Truck, Apple } from "lucide-react";
 import { ListFilter } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import { Button } from "@/shared/components/ui/button";
@@ -32,6 +32,7 @@ const STATUS_BORDER: Record<string, string> = {
 };
 
 interface CampaignTableProps {
+    status?: string;
     search?: string;
     startDate?: string;
     endDate?: string;
@@ -39,7 +40,14 @@ interface CampaignTableProps {
     onClearFilters?: () => void;
 }
 
-export default function CampaignTable({ search = "", startDate = "", endDate = "", hasActiveFilters = false, onClearFilters }: CampaignTableProps) {
+function getCampaignDurationLabel(start: Date, end: Date) {
+    const months = differenceInMonths(end, start);
+    if (months > 0) return `${months} ${months === 1 ? "mes" : "meses"}`;
+    const days = differenceInDays(end, start);
+    return `${Math.max(0, days)} ${days === 1 ? "día" : "días"}`;
+}
+
+export default function CampaignTable({ status = "planificacion", search = "", startDate = "", endDate = "", hasActiveFilters = false, onClearFilters }: CampaignTableProps) {
     const [campaigns, setCampaigns] = useState<Campana[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -67,8 +75,8 @@ export default function CampaignTable({ search = "", startDate = "", endDate = "
     };
 
     const filteredCampaigns = useMemo(() => {
-        return filterCampanas(campaigns, search, startDate, endDate);
-    }, [campaigns, search, startDate, endDate]);
+        return filterCampanas(campaigns, search, startDate, endDate, status);
+    }, [campaigns, search, startDate, endDate, status]);
     const visibleCount = Math.max(1, Math.ceil(filteredCampaigns.length / PAGE_SIZE));
     const currentPage = Math.min(page, visibleCount);
     const pageItems = filteredCampaigns.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -131,19 +139,58 @@ export default function CampaignTable({ search = "", startDate = "", endDate = "
                 {viewMode === "table" && <div className="hidden overflow-hidden rounded-xl border border-border sm:block">
                     <Table className="table-fixed w-full">
                         <TableHeader className={TABLE_HEAD_BG}><TableRow className="border-b border-border hover:bg-transparent">
-                            <TableHead className="h-14 w-[30%] px-6 font-semibold text-ink">Campaña</TableHead>
-                            <TableHead className="h-14 font-semibold text-ink">Fruta</TableHead>
+                            <TableHead className="h-14 w-[35%] px-6 font-semibold text-ink">Campaña</TableHead>
                             <TableHead className="h-14 font-semibold text-ink">Periodo</TableHead>
-                            <TableHead className="h-14 text-center font-semibold text-ink">Req. comercial</TableHead>
+                            <TableHead className="h-14 font-semibold text-ink">Req. comercial</TableHead>
+                            <TableHead className="h-14 text-center font-semibold text-ink">Estado</TableHead>
                             <TableHead className="h-14 w-40 px-6 text-center font-semibold text-ink">Acciones</TableHead>
                         </TableRow></TableHeader>
-                        <TableBody>{pageItems.map((row) => <TableRow key={row.campaniaId} className="border-b border-border transition-colors hover:bg-surface-page/60">
-                            <TableCell className="relative h-20 px-6"><TableRowAccent color={STATUS_ACCENT[row.estado]} /><TableRowLead icon={<Package size={20} strokeWidth={2} />} title={row.nombre} subtitle={<StatusBadge status={row.estado} />} /></TableCell>
-                            <TableCell className="font-medium text-ink-body">{row.fruta?.name ?? "—"}</TableCell>
-                            <TableCell><div className="flex items-center gap-3"><Calendar size={18} className="shrink-0 text-ink-muted" /><div className="flex flex-col"><span className="text-[13px] font-semibold text-ink-body">{format(row.fechaInicio, "dd/MM/yyyy")} – {format(row.fechaFin, "dd/MM/yyyy")}</span></div></div></TableCell>
-                            <TableCell className="text-center font-semibold text-ink-body">{row.requerimientoComercial.toLocaleString("es-PE")} kg</TableCell>
-                            <TableCell className="px-6"><RowActions {...getRowActions(row)} className="justify-center text-ink-muted" /></TableCell>
-                        </TableRow>)}</TableBody>
+                        <TableBody>
+                            {pageItems.map((row) => (
+                                <TableRow key={row.campaniaId} className="border-b border-border transition-colors hover:bg-surface-page/60">
+                                    <TableCell className="relative h-20 px-0 pl-6 min-w-[280px]">
+                                        <TableRowAccent color={STATUS_ACCENT[row.estado]} />
+                                        <TableRowLead 
+                                            icon={<Apple className="text-brand" size={22} strokeWidth={2} />} 
+                                            title={row.nombre} 
+                                            subtitle={row.fruta?.name ? `Fruta: ${row.fruta.name}` : `CAM-${new Date(row.fechaInicio).getFullYear()}-${String(row.campaniaId).padStart(3, "0")}`} 
+                                        />
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Calendar size={18} strokeWidth={2} className="text-ink-muted shrink-0" />
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-[13.5px] text-ink-body leading-tight">
+                                                    {format(row.fechaInicio, "dd/MM/yyyy")} – {format(row.fechaFin, "dd/MM/yyyy")}
+                                                </span>
+                                                <span className="text-[12.5px] font-medium mt-1 text-ink-muted">
+                                                    {getCampaignDurationLabel(row.fechaInicio, row.fechaFin)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Package size={18} strokeWidth={2} className="text-ink-muted shrink-0" />
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-[13.5px] text-ink-body leading-tight">
+                                                    {row.requerimientoComercial.toLocaleString("es-PE")}
+                                                </span>
+                                                <span className="text-[12.5px] font-medium mt-1 text-ink-muted">Kilos</span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex justify-center">
+                                            <StatusBadge status={row.estado} />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="px-6 text-center">
+                                        <RowActions {...getRowActions(row)} className="justify-center text-ink-muted" />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
                     </Table>
                 </div>}
             </TableCard>

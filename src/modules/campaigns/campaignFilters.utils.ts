@@ -7,13 +7,15 @@ export function filterCampanas(
     search: string,
     startDate: string,
     endDate: string,
+    status: string,
 ): Campana[] {
     const searchText = search.trim().toLocaleLowerCase();
 
     return campanas.filter((campana) => {
+        const matchesStatus = !status || campana.estado === status;
         const matchesSearch = `${campana.nombre} ${campana.fruta?.name ?? ""}`.toLocaleLowerCase().includes(searchText);
         const matchesStart = !startDate || format(campana.fechaInicio, "yyyy-MM-dd") >= startDate;
         const matchesEnd = !endDate || format(campana.fechaFin, "yyyy-MM-dd") <= endDate;
-        return matchesSearch && matchesStart && matchesEnd;
+        return matchesStatus && matchesSearch && matchesStart && matchesEnd;
     });
 }

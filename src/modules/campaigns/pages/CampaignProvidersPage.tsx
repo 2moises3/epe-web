@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Search, CalendarDays, Settings2, UserPlus, Eye, Users, FilePlus } from "lucide-react";
@@ -53,7 +54,6 @@ export default function CampaignProvidersPage() {
             .catch(() => setError("No se pudieron cargar los proveedores de la campaña."))
             .finally(() => setIsLoading(false));
     };
-
     useEffect(() => {
         loadCampaniaProveedores();
         // eslint-disable-next-line react-hooks/exhaustive-deps

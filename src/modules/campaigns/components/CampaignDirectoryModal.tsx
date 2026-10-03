@@ -2,15 +2,15 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { CalendarDays } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
-import type { Campaign } from "@/modules/campaigns/campaigns.data";
+import type { Campana } from "@/modules/campaigns/api/campaign.mapper";
 import { getCampaignFruitVisual } from "@/modules/campaigns/campaignFruit";
-import { getCampaignTiming } from "@/modules/campaigns/campaignDetails.utils";
+import { format, differenceInDays } from "date-fns";
 
 interface CampaignDirectoryModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     title: string;
-    campaign: Campaign;
+    campaign: Campana | null;
     description: string;
     icon: LucideIcon;
     stats: { label: string; value: string | number; icon: LucideIcon; hint?: string }[];
@@ -20,8 +20,9 @@ interface CampaignDirectoryModalProps {
 
 /** Campaign content stays here; AppModal owns the title and close control. */
 export default function CampaignDirectoryModal({ open, onOpenChange, title, campaign, description, icon: Icon, stats, children, empty }: CampaignDirectoryModalProps) {
-    const visual = getCampaignFruitVisual(campaign.nombre, campaign.fruta);
-    const { duration } = getCampaignTiming(campaign.inicio, campaign.fin);
+    if (!campaign) return null;
+    const visual = getCampaignFruitVisual(campaign.nombre, campaign.fruta?.name ?? "");
+    const duration = differenceInDays(new Date(campaign.fechaFin), new Date(campaign.fechaInicio));
     return (
         <AppModal open={open} onOpenChange={onOpenChange} title={title} description={description} icon={<Icon size={22} strokeWidth={2} />} className="sm:max-w-3xl">
             <div className="relative mb-4 flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl bg-brand-surface/70 p-4 sm:gap-6 sm:pr-40">
@@ -32,7 +33,7 @@ export default function CampaignDirectoryModal({ open, onOpenChange, title, camp
                 </div>
                 <div className="relative flex items-start gap-2 sm:border-l sm:border-brand-border sm:pl-5">
                     <CalendarDays size={23} className="text-brand" aria-hidden="true" />
-                    <div><p className="text-[10px]">Periodo de campaña</p><p className="mt-1 text-[11px] font-semibold text-brand-dark">{campaign.inicio} – {campaign.fin}</p><p className="mt-1 text-[10px]">{duration === null ? "Sin duración disponible" : `${duration} días`}</p></div>
+                    <div><p className="text-[10px]">Periodo de campaña</p><p className="mt-1 text-[11px] font-semibold text-brand-dark">{format(campaign.fechaInicio, "dd/MM/yyyy")} – {format(campaign.fechaFin, "dd/MM/yyyy")}</p><p className="mt-1 text-[10px]">{duration} días</p></div>
                 </div>
             </div>
             <dl className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">

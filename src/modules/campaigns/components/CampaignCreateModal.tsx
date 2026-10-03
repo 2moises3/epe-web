@@ -1,22 +1,18 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
-import { Leaf } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/shared/components/ui/dialog";
+import { Sprout, X, Save } from "lucide-react";
+import AppModal from "@/shared/components/AppModal";
+import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
+import RemovableChip from "@/shared/components/RemovableChip";
+import FieldError from "@/shared/components/FieldError";
 import { getFrutas, getFrutaDerivadas, createCampana } from "@/modules/campaigns/api/campaign.api";
 import type { FrutaDto, FrutaDerivadaDto } from "@/modules/campaigns/api/campaign.dto";
 import { parseFecha } from "@/modules/campaigns/api/fecha.util";
-import { DatePicker } from "@/shared/components/ui/date-picker";
 import { campaignFormSchema } from "@/modules/campaigns/api/campaign-form.schema";
 import { getBadRequestFieldErrors, getZodFieldErrors, type FormFieldErrors } from "@/shared/validation/api-form-errors";
-import FieldError from "@/shared/components/FieldError";
 
 interface CampaignCreateModalProps {
     open: boolean;
@@ -82,147 +78,110 @@ export default function CampaignCreateModal({ open, onOpenChange, onSuccess }: C
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[600px] sm:max-w-[700px] p-8 rounded-2xl bg-white border-none shadow-2xl gap-0">
-                <DialogHeader className="mb-6">
-                    <div className="flex items-start gap-5">
-                        <div className="w-[52px] h-[52px] rounded-full bg-brand-surface flex items-center justify-center text-brand shrink-0 border border-brand-border">
-                            <Leaf size={24} strokeWidth={2} />
-                        </div>
-                        <div className="flex-1 pt-1">
-                            <DialogTitle className="text-xl font-bold text-ink">
-                                Nueva Campaña
-                            </DialogTitle>
-                            <DialogDescription className="text-[13.5px] text-ink-muted mt-1">
-                                Completa la información para registrar una nueva campaña.
-                            </DialogDescription>
-                        </div>
-                    </div>
-                </DialogHeader>
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            icon={<Sprout size={22} strokeWidth={2} />}
+            title="Nueva Campaña"
+            description="Completa la información para registrar una nueva campaña."
+            className="sm:max-w-175"
+            footer={
+                <>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                        <X size={20} strokeWidth={2.5} /> Cancelar
+                    </Button>
+                    <Button size="xl" onClick={handleSubmit} disabled={saving}>
+                        <Sprout size={20} strokeWidth={2.5} /> Crear Campaña
+                    </Button>
+                </>
+            }
+        >
+            <div className="flex flex-col gap-6">
+                <Field data-invalid={errors.nombre ? true : undefined}>
+                    <FieldLabel>Nombre de Campaña:</FieldLabel>
+                    <Input
+                        placeholder="Ej: Campaña Mango 2026"
+                        value={nombre}
+                        onChange={(e) => { setNombre(e.target.value); setErrors((p) => ({ ...p, nombre: undefined })); }}
+                    />
+                    <FieldError message={errors.nombre} />
+                </Field>
 
-                <div className="flex flex-col gap-6">
-                    {/* Nombre */}
-                    <div className="flex flex-col gap-2.5">
-                        <label className="text-[13px] font-semibold text-ink">Nombre de Campaña:</label>
-                        <Input
-                            value={nombre}
-                            onChange={(e) => { setNombre(e.target.value); setErrors((p) => ({ ...p, nombre: undefined })); }}
-                            placeholder="Ej: Campaña Mango 2026"
-                            className="rounded-lg h-11 border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
-                        />
-                        <FieldError message={errors.nombre} />
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field data-invalid={errors.fechaInicio ? true : undefined}>
+                        <FieldLabel>Fecha Inicio:</FieldLabel>
+                        <Input type="date" value={fechaInicio} onChange={(e) => { setFechaInicio(e.target.value); setErrors((p) => ({ ...p, fechaInicio: undefined })); }} />
+                        <FieldError message={errors.fechaInicio} />
+                    </Field>
+                    <Field data-invalid={errors.fechaFin ? true : undefined}>
+                        <FieldLabel>Fecha Fin:</FieldLabel>
+                        <Input type="date" value={fechaFin} onChange={(e) => { setFechaFin(e.target.value); setErrors((p) => ({ ...p, fechaFin: undefined })); }} />
+                        <FieldError message={errors.fechaFin} />
+                    </Field>
+                </div>
 
-                    {/* Fechas */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Fecha Inicio:</label>
-                            <DatePicker
-                                value={fechaInicio}
-                                onChange={(value) => { setFechaInicio(value); setErrors((p) => ({ ...p, fechaInicio: undefined })); }}
-                                className="rounded-lg h-11 border-border text-ink-muted shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
-                            />
-                            <FieldError message={errors.fechaInicio} />
-                        </div>
-                        <div className="flex flex-col gap-2.5">
-                            <label className="text-[13px] font-semibold text-ink">Fecha Fin:</label>
-                            <DatePicker
-                                value={fechaFin}
-                                onChange={(value) => { setFechaFin(value); setErrors((p) => ({ ...p, fechaFin: undefined })); }}
-                                className="rounded-lg h-11 border-border text-ink-muted shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand"
-                            />
-                            <FieldError message={errors.fechaFin} />
-                        </div>
-                    </div>
-                    
-                    {/* Frutas Derivadas */}
-                    <div className="grid grid-cols-2 gap-4 ">
-                        <div className="flex flex-col gap-2.5 ">
-                            <label className="text-[13px] font-semibold text-ink">Seleccionar Frutas:</label>
-                            <Select
-                                value={frutaId !== null ? String(frutaId) : ""}
-                                onValueChange={(val) => { setFrutaId(val ? Number(val) : null); setErrors((p) => ({ ...p, frutaId: undefined })); }}
-                            >
-                                <SelectTrigger className="w-full rounded-lg !h-11 border-border text-ink-muted shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand">
-                                    <SelectValue placeholder="Selecciona una fruta">
-                                        {frutas.find((f) => f.frutaId === frutaId)?.name}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent className="rounded-lg">
-                                    {frutas.length === 0 ? (
-                                        <SelectItem value="__no-fruits__" disabled className="justify-center text-ink-muted">
-                                            No hay frutas registradas.
-                                        </SelectItem>
-                                    ) : frutas.map((fruta) => (
-                                        <SelectItem key={fruta.frutaId} value={String(fruta.frutaId)} className="rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field data-invalid={errors.frutaId ? true : undefined}>
+                        <FieldLabel>Seleccionar Fruta:</FieldLabel>
+                        <Select
+                            value={frutaId !== null ? String(frutaId) : ""}
+                            onValueChange={(val) => { setFrutaId(val ? Number(val) : null); setErrors((p) => ({ ...p, frutaId: undefined })); }}
+                        >
+                            <SelectTrigger className={errors.frutaId ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30" : ""}>
+                                <SelectValue placeholder="Seleccionar Fruta" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {frutas.length === 0 ? (
+                                    <SelectItem value="__no-fruits__" disabled>No hay frutas registradas</SelectItem>
+                                ) : (
+                                    frutas.map((fruta) => (
+                                        <SelectItem key={fruta.frutaId} value={String(fruta.frutaId)}>
                                             {fruta.name}
                                         </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FieldError message={errors.frutaId} />
-                        </div>
-                    </div>
+                                    ))
+                                )}
+                            </SelectContent>
+                        </Select>
+                        <FieldError message={errors.frutaId} />
+                    </Field>
 
-                        {/* Derivadas de la fruta seleccionada (informativo, solo lectura) */}
-                        <div className={`flex flex-col gap-2.5 transition-all duration-300 ${frutaId !== null ? "opacity-100 h-auto" : "opacity-0 h-0 overflow-hidden"}`}>
-                            <label className="text-[13px] font-semibold text-ink">Frutas derivadas:</label>
-                            <div className="flex flex-wrap gap-2">
-                                {derivadasLoading ? (
-                                    <span className="text-[13px] text-gray-500">Cargando derivadas...</span>
-                                ) : derivadas.length === 0 ? (
-                                    <span className="text-[13px] text-gray-500">Esta fruta no tiene derivadas registradas.</span>
-                                ) : (
-                                    derivadas.map((derivada) => (
-                                        <div
-                                            key={derivada.frutaDerivadaId}
-                                            className="bg-brand-surface text-brand pr-3 pl-2 py-1.5 rounded-full text-[13px] font-semibold flex items-center gap-2"
-                                    >
-                                        {derivada.name}
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Requerimientos */}
-                    <div className="flex flex-col gap-2.5">
-                        <label className="text-[13px] font-semibold text-ink">Requerimientos Comerciales:</label>
+                    <Field data-invalid={errors.requerimientoComercial ? true : undefined}>
+                        <FieldLabel>Requerimientos Comerciales:</FieldLabel>
                         <div className="relative">
                             <Input
+                                placeholder="Ej: 3000"
                                 value={requerimientoComercial}
                                 onChange={(e) => { setRequerimientoComercial(e.target.value); setErrors((p) => ({ ...p, requerimientoComercial: undefined })); }}
-                                placeholder="Ej: 3000"
-                                className="rounded-lg h-11 border-border pr-12 shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
+                                className="pr-12"
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-brand-surface text-brand text-[11px] font-bold px-2 py-1 rounded-md">
                                 KG
                             </div>
                         </div>
                         <FieldError message={errors.requerimientoComercial} />
-                    </div>
-
-                    {errors._form && <p role="alert" className="text-[13px] text-red-500 font-medium">{errors._form}</p>}
+                    </Field>
                 </div>
 
-                <div className="flex justify-center gap-4 mt-8">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg h-11 px-8 border-border text-ink-muted font-bold hover:bg-muted hover:text-ink transition-colors"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={saving}
-                        className="rounded-lg h-11 px-6 bg-brand hover:bg-brand-dark text-white font-semibold gap-2 shadow-sm transition-colors active:scale-95"
-                    >
-                        <Leaf size={18} strokeWidth={2.5} />
-                        Crear Campaña
-                    </Button>
+                {/* Variedades derivadas: informativo */}
+                <div className={`transition-all duration-300 ${derivadas.length > 0 || derivadasLoading ? "opacity-100 h-auto" : "opacity-0 h-0 overflow-hidden"}`}>
+                    <Field>
+                        <FieldLabel>Frutas derivadas de la variedad seleccionada:</FieldLabel>
+                        <div className="flex flex-wrap gap-2">
+                            {derivadasLoading ? (
+                                <span className="text-[13px] text-ink-muted">Cargando variedades...</span>
+                            ) : (
+                                derivadas.map((derivada) => (
+                                    <RemovableChip
+                                        key={derivada.frutaDerivadaId}
+                                        label={derivada.name}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    </Field>
                 </div>
-            </DialogContent>
-        </Dialog>
+                {errors._form && <p role="alert" className="text-[13px] text-red-500 font-medium">{errors._form}</p>}
+            </div>
+        </AppModal>
     );
 }
