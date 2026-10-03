@@ -23,16 +23,16 @@ describe("filterCampanas", () => {
             campaign({ campaniaId: 3, nombre: "Mango Ataulfo", fechaFin: new Date(2026, 2, 11) }),
         ];
 
-        expect(filterCampanas(rows, "  MANGO ", "2026-01-10", "2026-03-10").map((row) => row.campaniaId)).toEqual([1]);
+        expect(filterCampanas(rows, "  MANGO ", "2026-01-10", "2026-03-10", "").map((row) => row.campaniaId)).toEqual([1]);
     });
 
     it("returns all campaigns when filters are empty", () => {
         const rows = [campaign(), campaign({ campaniaId: 2 })];
-        expect(filterCampanas(rows, "", "", "")).toEqual(rows);
+        expect(filterCampanas(rows, "", "", "", "")).toEqual(rows);
     });
 
     it("matches fruit names when the API model includes fruit details", () => {
         const rows = [campaign({ fruta: { frutaId: 9, name: "Mango Kent" } as Campana["fruta"] })];
-        expect(filterCampanas(rows, "kent", "", "")).toEqual(rows);
+        expect(filterCampanas(rows, "kent", "", "", "")).toEqual(rows);
     });
 });

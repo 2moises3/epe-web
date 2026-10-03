@@ -58,7 +58,7 @@ export default function CampaignManagementProvidersModal({ open, campaniaId, onO
                         <DirectoryIdentity name={cp.proveedor ? `${cp.proveedor.nombres} ${cp.proveedor.apellido}` : "Proveedor"} subtitle={TIPO_LABEL[cp.tipoProveedor] ?? cp.tipoProveedor} index={index} />,
                         <strong className="whitespace-nowrap text-ink">{cp.cantidadProveedor.toLocaleString()} kg</strong>,
                         <div className="flex max-w-36 flex-wrap gap-1"><span className="rounded-full bg-brand-surface px-2 py-1 text-[9px] text-brand-dark">Exportación</span></div>,
-                        <DirectoryContact name={cp.proveedor ? `${cp.proveedor.nombres} ${cp.proveedor.apellido}` : "-"} value={cp.proveedor?.telefono ?? "-"} href={`tel:${cp.proveedor?.telefono ?? ""}`} />,
+                        <DirectoryContact name={cp.proveedor ? `${cp.proveedor.nombres} ${cp.proveedor.apellido}` : "-"} value={String(cp.proveedor?.telefono ?? "-")} href={`tel:${cp.proveedor?.telefono ?? ""}`} />,
                     ],
                 }))} 
             />

@@ -25,6 +25,7 @@ export interface ComboboxProps {
     placeholder?: string;
     emptyMessage?: string;
     className?: string;
+    disabled?: boolean;
 }
 
 function Combobox({
@@ -33,7 +34,8 @@ function Combobox({
     onChange,
     placeholder = "Seleccionar...",
     emptyMessage = "No se encontraron resultados.",
-    className = ""
+    className = "",
+    disabled = false
 }: ComboboxProps) {
     const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -49,9 +51,11 @@ function Combobox({
             onValueChange={(val: string | null) => onChange(val ?? "")}
             inputValue={searchQuery}
             onInputValueChange={setSearchQuery}
+            disabled={disabled}
         >
             <ComboboxInput 
                 placeholder={placeholder} 
+                disabled={disabled}
                 className={cn("w-full rounded-lg !h-11 border-border shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand", className)}
             />
             <ComboboxContent className="rounded-lg max-h-60">

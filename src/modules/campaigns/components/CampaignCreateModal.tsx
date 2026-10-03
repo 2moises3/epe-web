@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from "react";
-import { Sprout, X, Save } from "lucide-react";
+import { Sprout, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
