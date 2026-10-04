@@ -1,0 +1,53 @@
+# Provider certificate S3 integration
+
+## Objective
+Integrate direct-to-S3 document upload and ephemeral download for `certificado_proveedor`, matching `test_documento.txt` without changing other document-bearing resources.
+
+## Problem and rationale
+Provider certificates currently accept a permanent `documentoUrl`, but the AWS test contract requires the backend to issue a short-lived upload URL, confirm the S3 object, and persist an `documentoArchivoId` reference.
+
+## Scope and constraints
+- Only provider certificates (`certificado_proveedor`). Do not change campaign certificates, exams, or unrelated resources.
+- Validate PDF/JPEG/PNG/WebP and a 10 MiB maximum before requesting upload.
+- Upload raw file to S3 using only the backend-provided method and headers; never send API Authorization to S3.
+- Confirm `DISPONIBLE` before creating the certificate; use `documentoArchivoId` in JSON.
+- Downloads request a fresh URL and do not persist it.
+- Preserve existing form, CRUD, and error-state conventions. Do not alter user-owned `.env`, `test_documento.txt`, or pre-existing `.atl` changes.
+
+## TDD and delivery
+- TDD: enabled by session configuration; source: `C:\Users\luis-keny\.codex\config.toml`; runner: `npm test` (Vitest).
+- Route: delegated direct; mapping trigger fired (4+ relevant files), writer trigger fired (multiple non-trivial files).
+- Estimated changed lines: ~300; delivery strategy: ask-on-risk.
+
+## Tasks
+- [x] T1 — Add and test typed S3 upload/confirmation/download API flow and certificate DTO/validation changes. Evidence: focused Vitest tests passed.
+- [x] T2 — Wire provider certificate form/list UI to upload, progress/error states, and ephemeral download; update backend/API integration matrix. Evidence: full Vitest suite and production build passed.
+
+## Acceptance criteria
+- Unsupported/oversize files fail before any upload-request API call.
+- Correct signed URL sequence, exact S3 method/headers, no Authorization, and no next step after failures.
+- Certificate create sends `documentoArchivoId` only after confirmation state is `DISPONIBLE`.
+- Download opens a newly requested `downloadUrl` safely.
+- No S3 flow is applied to other resources.
+- Documentation has current date, status, exact routes, and remaining caveats.
+
+## Checks
+- RED: focused Vitest tests covering validation, sequence, headers, confirmation gating, create DTO, and download.
+- GREEN/REFACTOR: `npm test` and `npm run build`.
+
+## Progress
+Implementation complete. Creation validates file type/size, obtains a presigned upload URL, sends the raw file with only returned method/headers, requires confirmation state `DISPONIBLE`, then posts `documentoArchivoId`. Existing certificate edits retain their current file; replacement and coordinated S3 deletion are not implemented. Download obtains a fresh signed URL.
+
+Verification:
+- RED observed: focused tests failed because the new validation/upload/download methods were not yet implemented.
+- `npm test`: 23 test files passed; 81 tests passed.
+- `npm run build`: passed (`tsc -b` and Vite production build); Vite emitted its existing large-chunk advisory.
+- No live AWS/API verification was performed; user testing remains.
+
+Current branch: `feat/provider-certificate-s3`.
+
+## Next step
+User to exercise the certificate upload/download flow against the configured AWS-backed API; investigate any runtime/CORS/backend contract failures from that test.
+
+## Persistence status
+- Engram recovery mirror: pending; the memory tool returned `unknown_session`, and no authoritative session ID is available in this runtime.

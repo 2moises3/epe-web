@@ -5,11 +5,12 @@ import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import {
     assignProveedorFruta,
-    createCertificadoProveedor,
+    createCertificadoProveedorWithFile,
     createExamenProveedor,
     deleteCertificadoProveedor,
     deleteExamenProveedor,
     getCertificadosProveedor,
+    getCertificadoProveedorDownloadUrl,
     getExamenesProveedor,
     getFrutasCatalogo,
     getFrutasProveedor,
@@ -31,6 +32,7 @@ import {
     toCertificadoProveedorInput,
     toExamenProveedorInput,
     validateCertificadoProveedor,
+    validateCertificadoProveedorFile,
     validateExamenProveedor,
 } from "@/modules/providers/api/provider-subresources.validation";
 import { createProviderSubresourceOperationGate } from "@/modules/providers/api/provider-subresources.guard";
@@ -80,6 +82,9 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
     const [examValues, setExamValues] = useState<ExamenProveedorValues>(createEmptyExamenProveedorValues);
     const [examErrors, setExamErrors] = useState<Partial<Record<keyof ExamenProveedorValues, string>>>({});
     const [certificateValues, setCertificateValues] = useState<CertificadoProveedorValues>(createEmptyCertificadoProveedorValues);
+    const [certificateFile, setCertificateFile] = useState<File | null>(null);
+    const [certificateFileError, setCertificateFileError] = useState<string | null>(null);
+    const [certificateStage, setCertificateStage] = useState<string | null>(null);
     const [certificateErrors, setCertificateErrors] = useState<Partial<Record<keyof CertificadoProveedorValues, string>>>({});
     const [editingCertificateId, setEditingCertificateId] = useState<number | null>(null);
     const operationGate = useRef(createProviderSubresourceOperationGate());
@@ -145,8 +150,8 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
             await mutate();
             setFeedback(successMessage);
             return true;
-        } catch {
-            setRequestError(failureMessage);
+        } catch (error) {
+            setRequestError(error instanceof Error ? error.message : failureMessage);
             return false;
         } finally {
             operationGate.current.endMutation();
@@ -205,7 +210,10 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
 
     const startCertificateForm = (certificate?: CertificadoProveedorDto) => {
         setFormTarget("certificate");
-        setCertificateValues(certificate ? { fechaRevisionSenasa: dateInputValue(certificate.fechaRevisionSenasa), nombre: certificate.nombre, documentoUrl: certificate.documentoUrl } : createEmptyCertificadoProveedorValues());
+        setCertificateValues(certificate ? { fechaRevisionSenasa: dateInputValue(certificate.fechaRevisionSenasa), nombre: certificate.nombre } : createEmptyCertificadoProveedorValues());
+        setCertificateFile(null);
+        setCertificateFileError(null);
+        setCertificateStage(null);
         setCertificateErrors({});
         setFeedback(null);
         setRequestError(null);
@@ -214,16 +222,30 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
     const saveCertificate = async () => {
         const nextErrors = validateCertificadoProveedor(certificateValues);
         setCertificateErrors(nextErrors);
-        if (Object.keys(nextErrors).length) return;
-        const payload = toCertificadoProveedorInput(certificateValues);
+        const fileError = certificateFile ? validateCertificadoProveedorFile(certificateFile) : null;
+        setCertificateFileError(fileError ?? (editingCertificateId === null && !certificateFile ? "Selecciona el archivo del certificado." : null));
+        if (Object.keys(nextErrors).length || fileError || (editingCertificateId === null && !certificateFile)) return;
         const certificateId = editingCertificateId;
         const success = await runMutation(certificateId === null ? "Certificado creado correctamente." : "Certificado actualizado correctamente.", "No se pudo guardar el certificado. Revisa los datos e inténtalo nuevamente.", async () => {
             const saved = certificateId === null
-                ? await createCertificadoProveedor(providerId, payload)
-                : await updateCertificadoProveedor(providerId, certificateId, payload);
+                ? await createCertificadoProveedorWithFile(providerId, certificateFile!, certificateValues, setCertificateStage)
+                : await updateCertificadoProveedor(providerId, certificateId, toCertificadoProveedorInput(certificateValues, certificates.find((item) => item.certificadoProveedorId === certificateId)!.documentoArchivoId));
             setCertificates((current) => certificateId === null ? [saved, ...current] : current.map((item) => item.certificadoProveedorId === saved.certificadoProveedorId ? saved : item));
         });
-        if (success) { setFormTarget(null); setEditingCertificateId(null); }
+        setCertificateStage(null);
+        if (success) { setFormTarget(null); setEditingCertificateId(null); setCertificateFile(null); }
+    };
+
+    const downloadCertificate = async (certificate: CertificadoProveedorDto) => {
+        const pendingWindow = window.open("about:blank", "_blank");
+        try {
+            const downloadUrl = await getCertificadoProveedorDownloadUrl(providerId, certificate.certificadoProveedorId);
+            if (pendingWindow) { pendingWindow.opener = null; pendingWindow.location.href = downloadUrl; }
+            else window.location.assign(downloadUrl);
+        } catch {
+            pendingWindow?.close();
+            setRequestError("No se pudo obtener el enlace de descarga del certificado.");
+        }
     };
 
     const startCertificateEdit = (certificate: CertificadoProveedorDto) => {
@@ -315,7 +337,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
             </div>
             {errors.certificates ? <p role="alert" className="text-sm text-red-700">{errors.certificates}</p> : certificates.length === 0 && !loading ? <p className="text-sm text-ink-muted">No hay certificados registrados.</p> : <ul className="space-y-3">{certificates.map((certificate) => <li key={certificate.certificadoProveedorId} className="rounded-lg bg-surface-page p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1 text-sm"><p className="font-semibold">{certificate.nombre}</p><p>Revisión SENASA: {dateInputValue(certificate.fechaRevisionSenasa)}</p><ApiDocumentLink url={certificate.documentoUrl} /></div>
+                    <div className="space-y-1 text-sm"><p className="font-semibold">{certificate.nombre}</p><p>Revisión SENASA: {dateInputValue(certificate.fechaRevisionSenasa)}</p><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => void downloadCertificate(certificate)}>Descargar documento</Button></div>
                     <div className="flex gap-2"><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startCertificateEdit(certificate)}>Editar</Button><Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => void removeCertificate(certificate)}>Eliminar</Button></div>
                 </div>
             </li>)}</ul>}
@@ -324,8 +346,17 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                 <div className="grid gap-3 sm:grid-cols-2">
                     <FieldInput id="provider-certificate-date" label="Fecha de revisión SENASA" value={certificateValues.fechaRevisionSenasa} error={certificateErrors.fechaRevisionSenasa} disabled={operationsBusy} type="date" onChange={(fechaRevisionSenasa) => updateCertificateField("fechaRevisionSenasa", fechaRevisionSenasa)} />
                     <FieldInput id="provider-certificate-name" label="Nombre" value={certificateValues.nombre} error={certificateErrors.nombre} disabled={operationsBusy} maxLength={255} onChange={(nombre) => updateCertificateField("nombre", nombre)} />
-                    <FieldInput id="provider-certificate-document" label="URL del documento" value={certificateValues.documentoUrl} error={certificateErrors.documentoUrl} disabled={operationsBusy} type="url" onChange={(documentoUrl) => updateCertificateField("documentoUrl", documentoUrl)} />
+                    <Field data-invalid={Boolean(certificateFileError)} className="sm:col-span-2">
+                        <FieldLabel htmlFor="provider-certificate-document">Archivo del certificado {editingCertificateId === null && <span aria-hidden="true">*</span>}</FieldLabel>
+                        <Input id="provider-certificate-document" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required={editingCertificateId === null} aria-required={editingCertificateId === null} aria-invalid={Boolean(certificateFileError)} aria-describedby={certificateFileError ? "provider-certificate-document-error" : "provider-certificate-document-help"} disabled={operationsBusy || editingCertificateId !== null} onChange={(event) => {
+                            const selected = event.target.files?.[0] ?? null;
+                            setCertificateFile(selected);
+                            setCertificateFileError(selected ? validateCertificadoProveedorFile(selected) ?? null : editingCertificateId === null ? "Selecciona el archivo del certificado." : null);
+                        }} />
+                        {certificateFileError ? <FieldError id="provider-certificate-document-error">{certificateFileError}</FieldError> : <p id="provider-certificate-document-help" className="text-xs text-ink-muted">PDF, JPEG, PNG o WebP; máximo 10 MB.{editingCertificateId !== null ? " La sustitución del archivo está fuera de este flujo; se conservará el documento actual." : ""}</p>}
+                    </Field>
                 </div>
+                {certificateStage && <p role="status" aria-live="polite" className="mt-3 text-sm text-ink-muted">{certificateStage}</p>}
                 <div className="mt-3 flex justify-end gap-2"><Button variant="outline" size="sm" disabled={isMutating} onClick={() => { setFormTarget(null); setEditingCertificateId(null); }}>Cancelar</Button><Button size="sm" disabled={operationsBusy} aria-busy={isMutating} onClick={() => void saveCertificate()}>{isMutating ? "Guardando…" : "Guardar certificado"}</Button></div>
             </div>}
         </section>

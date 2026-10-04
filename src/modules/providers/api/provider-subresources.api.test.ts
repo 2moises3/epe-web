@@ -39,7 +39,7 @@ const certificado = {
     proveedorId: 7,
     fechaRevisionSenasa: "2026-09-21T00:00:00.000Z",
     nombre: "Registro SENASA",
-    documentoUrl: "https://example.com/certificado.pdf",
+    documentoArchivoId: 4,
 };
 
 describe("provider subresource API", () => {
@@ -82,7 +82,7 @@ describe("provider subresource API", () => {
         patch.mockResolvedValueOnce({ data: certificado });
         deleteRequest.mockResolvedValueOnce({});
         const certificadoProveedorId = certificado.certificadoProveedorId;
-        const payload = { fechaRevisionSenasa: certificado.fechaRevisionSenasa, nombre: certificado.nombre, documentoUrl: certificado.documentoUrl };
+        const payload = { fechaRevisionSenasa: certificado.fechaRevisionSenasa, nombre: certificado.nombre, documentoArchivoId: certificado.documentoArchivoId };
 
         await expect(getCertificadosProveedor(7)).resolves.toEqual([certificado]);
         await expect(createCertificadoProveedor(7, payload)).resolves.toEqual(certificado);
@@ -92,5 +92,57 @@ describe("provider subresource API", () => {
         expect(post).toHaveBeenCalledWith("/proveedores/7/certificados", payload);
         expect(patch).toHaveBeenCalledWith("/proveedores/7/certificados/9", payload);
         expect(deleteRequest).toHaveBeenCalledWith("/proveedores/7/certificados/9");
+    });
+
+    it("uploads a certificate directly to S3, confirms availability, then creates it with the file ID", async () => {
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ archivoId: 4, estado: "DISPONIBLE" }) });
+        vi.stubGlobal("fetch", fetchMock);
+        post.mockResolvedValueOnce({ data: { archivoId: 4, estado: "PENDIENTE", uploadUrl: "https://s3.test/upload", method: "PUT", headers: { "Content-Type": "application/pdf" }, expiresInSeconds: 300 } })
+            .mockResolvedValueOnce({ data: { archivoId: 4, estado: "DISPONIBLE" } })
+            .mockResolvedValueOnce({ data: { ...certificado } });
+        const { createCertificadoProveedorWithFile } = await import("@/modules/providers/api/provider-subresources.api");
+        const file = new File(["pdf"], "certificado.pdf", { type: "application/pdf" });
+        await createCertificadoProveedorWithFile(7, file, { fechaRevisionSenasa: "2026-09-21", nombre: "Registro SENASA" });
+        expect(post.mock.calls).toEqual([
+            ["/proveedores/7/certificados/documentos/subida", { nombreOriginal: "certificado.pdf", mimeType: "application/pdf", tamanoBytes: 3 }],
+            ["/proveedores/7/certificados/documentos/4/confirmacion"],
+            ["/proveedores/7/certificados", { fechaRevisionSenasa: "2026-09-21", nombre: "Registro SENASA", documentoArchivoId: 4 }],
+        ]);
+        expect(fetchMock).toHaveBeenCalledWith("https://s3.test/upload", { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: file });
+        vi.unstubAllGlobals();
+    });
+
+    it("does not create a certificate when S3 confirmation is not available", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true }));
+        post.mockResolvedValueOnce({ data: { archivoId: 4, estado: "PENDIENTE", uploadUrl: "https://s3.test/upload", method: "PUT", headers: {}, expiresInSeconds: 300 } })
+            .mockResolvedValueOnce({ data: { archivoId: 4, estado: "PENDIENTE" } });
+        const { createCertificadoProveedorWithFile } = await import("@/modules/providers/api/provider-subresources.api");
+        await expect(createCertificadoProveedorWithFile(7, new File(["pdf"], "x.pdf", { type: "application/pdf" }), { fechaRevisionSenasa: "2026-09-21", nombre: "Registro" })).rejects.toThrow(/disponible/i);
+        expect(post).toHaveBeenCalledTimes(2);
+        vi.unstubAllGlobals();
+    });
+
+    it("stops after an unsuccessful S3 upload", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+        post.mockResolvedValueOnce({ data: { archivoId: 4, estado: "PENDIENTE", uploadUrl: "https://s3.test/upload", method: "PUT", headers: {}, expiresInSeconds: 300 } });
+        const { createCertificadoProveedorWithFile } = await import("@/modules/providers/api/provider-subresources.api");
+        await expect(createCertificadoProveedorWithFile(7, new File(["pdf"], "x.pdf", { type: "application/pdf" }), { fechaRevisionSenasa: "2026-09-21", nombre: "Registro" })).rejects.toThrow(/subir/i);
+        expect(post).toHaveBeenCalledTimes(1);
+        vi.unstubAllGlobals();
+    });
+
+    it("rejects invalid files before requesting an upload URL", async () => {
+        const { createCertificadoProveedorWithFile } = await import("@/modules/providers/api/provider-subresources.api");
+        await expect(createCertificadoProveedorWithFile(7, new File(["gif"], "x.gif", { type: "image/gif" }), { fechaRevisionSenasa: "2026-09-21", nombre: "Registro" })).rejects.toThrow(/tipo de archivo/i);
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    it("requests a fresh certificate download URL", async () => {
+        get.mockResolvedValueOnce({ data: { archivoId: 4, downloadUrl: "https://s3.test/download", expiresInSeconds: 300 } });
+        const { getCertificadoProveedorDownloadUrl } = await import("@/modules/providers/api/provider-subresources.api");
+        await expect(getCertificadoProveedorDownloadUrl(7, 9)).resolves.toBe("https://s3.test/download");
+        expect(get).toHaveBeenCalledWith("/proveedores/7/certificados/9/documento/descarga");
     });
 });
