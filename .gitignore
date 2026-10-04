@@ -22,6 +22,10 @@ git_diff.txt
 *_audit.json
 scratch/
 
+# Cache generada por el skill registry
+.atl/.skill-registry.cache.json
+.atl/
+
 # Este proyecto usa pnpm; un package-lock.json paralelo desincroniza las versiones
 package-lock.json
 

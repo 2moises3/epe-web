@@ -37,14 +37,39 @@ export interface CertificadoProveedorDto {
     proveedorId: number;
     fechaRevisionSenasa: string;
     nombre: string;
-    documentoUrl: string;
+    documentoArchivoId: number;
 }
 
 export interface CertificadoProveedorInput {
     fechaRevisionSenasa: string;
     nombre: string;
-    documentoUrl: string;
+    documentoArchivoId: number;
+}
+
+export interface CertificadoProveedorMetadataInput {
+    fechaRevisionSenasa: string;
+    nombre: string;
+}
+
+export interface CertificadoDocumentoUploadResponse {
+    archivoId: number;
+    estado: "PENDIENTE";
+    uploadUrl: string;
+    method: string;
+    headers: Record<string, string>;
+    expiresInSeconds: number;
+}
+
+export interface CertificadoDocumentoConfirmationResponse {
+    archivoId: number;
+    estado: "DISPONIBLE" | "PENDIENTE" | "RECHAZADO";
+}
+
+export interface CertificadoDocumentoDownloadResponse {
+    archivoId: number;
+    downloadUrl: string;
+    expiresInSeconds: number;
 }
 
 export type ExamenProveedorValues = Omit<ExamenProveedorInput, "resultado"> & { resultado: string };
-export type CertificadoProveedorValues = CertificadoProveedorInput;
+export type CertificadoProveedorValues = CertificadoProveedorMetadataInput;

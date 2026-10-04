@@ -11,13 +11,21 @@ export type ExamenProveedorField = keyof ExamenProveedorValues;
 export type CertificadoProveedorField = keyof CertificadoProveedorValues;
 export type ExamenProveedorErrors = Partial<Record<ExamenProveedorField, string>>;
 export type CertificadoProveedorErrors = Partial<Record<CertificadoProveedorField, string>>;
+export const MAX_CERTIFICADO_FILE_BYTES = 10 * 1024 * 1024;
+const CERTIFICADO_MIME_TYPES = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
+
+export function validateCertificadoProveedorFile(file: File): string | undefined {
+    if (!CERTIFICADO_MIME_TYPES.has(file.type)) return "El tipo de archivo no está permitido. Usa PDF, JPEG, PNG o WebP.";
+    if (file.size > MAX_CERTIFICADO_FILE_BYTES) return "El archivo supera el límite de 10 MB.";
+    return undefined;
+}
 
 export function createEmptyExamenProveedorValues(): ExamenProveedorValues {
     return { fecha: "", tipoExamen: "", resultado: "", origen: "", observacion: "", documentoUrl: "" };
 }
 
 export function createEmptyCertificadoProveedorValues(): CertificadoProveedorValues {
-    return { fechaRevisionSenasa: "", nombre: "", documentoUrl: "" };
+    return { fechaRevisionSenasa: "", nombre: "" };
 }
 
 function isDateOnly(value: string): boolean {
@@ -59,14 +67,13 @@ export function validateCertificadoProveedor(values: CertificadoProveedorValues)
     if (!isDateOnly(values.fechaRevisionSenasa)) errors.fechaRevisionSenasa = "Ingresa una fecha válida.";
     if (!values.nombre.trim()) errors.nombre = "Ingresa el nombre del certificado.";
     else if (values.nombre.trim().length > 255) errors.nombre = "El nombre admite hasta 255 caracteres.";
-    if (!isUrl(values.documentoUrl.trim())) errors.documentoUrl = "Ingresa una URL válida para el documento.";
     return errors;
 }
 
-export function toCertificadoProveedorInput(values: CertificadoProveedorValues): CertificadoProveedorInput {
+export function toCertificadoProveedorInput(values: CertificadoProveedorValues, documentoArchivoId: number): CertificadoProveedorInput {
     return {
         fechaRevisionSenasa: values.fechaRevisionSenasa,
         nombre: values.nombre.trim(),
-        documentoUrl: values.documentoUrl.trim(),
+        documentoArchivoId,
     };
 }
