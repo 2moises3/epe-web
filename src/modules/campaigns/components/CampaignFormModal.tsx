@@ -97,6 +97,7 @@ export default function CampaignFormModal({
                 .then((campana) => {
                     if (!active) return;
                     setValues({
+                        ...EMPTY_CAMPAIGN,
                         nombre: campana.nombre,
                         frutaId: campana.frutaId,
                         fechaInicio: formatFecha(campana.fechaInicio),
