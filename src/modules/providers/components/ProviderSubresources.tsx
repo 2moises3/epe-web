@@ -15,7 +15,7 @@ import {
     getFrutasCatalogo,
     getFrutasProveedor,
     unassignProveedorFruta,
-    updateCertificadoProveedor,
+    updateCertificadoProveedorWithFile,
     updateExamenProveedor,
 } from "@/modules/providers/api/provider-subresources.api";
 import type {
@@ -29,7 +29,6 @@ import type {
 import {
     createEmptyCertificadoProveedorValues,
     createEmptyExamenProveedorValues,
-    toCertificadoProveedorInput,
     toExamenProveedorInput,
     validateCertificadoProveedor,
     validateCertificadoProveedorFile,
@@ -223,13 +222,13 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
         const nextErrors = validateCertificadoProveedor(certificateValues);
         setCertificateErrors(nextErrors);
         const fileError = certificateFile ? validateCertificadoProveedorFile(certificateFile) : null;
-        setCertificateFileError(fileError ?? (editingCertificateId === null && !certificateFile ? "Selecciona el archivo del certificado." : null));
-        if (Object.keys(nextErrors).length || fileError || (editingCertificateId === null && !certificateFile)) return;
+        setCertificateFileError(fileError ?? (!certificateFile ? "Selecciona el archivo del certificado." : null));
+        if (Object.keys(nextErrors).length || fileError || !certificateFile) return;
         const certificateId = editingCertificateId;
         const success = await runMutation(certificateId === null ? "Certificado creado correctamente." : "Certificado actualizado correctamente.", "No se pudo guardar el certificado. Revisa los datos e inténtalo nuevamente.", async () => {
             const saved = certificateId === null
-                ? await createCertificadoProveedorWithFile(providerId, certificateFile!, certificateValues, setCertificateStage)
-                : await updateCertificadoProveedor(providerId, certificateId, toCertificadoProveedorInput(certificateValues, certificates.find((item) => item.certificadoProveedorId === certificateId)!.documentoArchivoId));
+                ? await createCertificadoProveedorWithFile(providerId, certificateFile, certificateValues, setCertificateStage)
+                : await updateCertificadoProveedorWithFile(providerId, certificateId, certificateFile, certificateValues, setCertificateStage);
             setCertificates((current) => certificateId === null ? [saved, ...current] : current.map((item) => item.certificadoProveedorId === saved.certificadoProveedorId ? saved : item));
         });
         setCertificateStage(null);
@@ -347,13 +346,13 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                     <FieldInput id="provider-certificate-date" label="Fecha de revisión SENASA" value={certificateValues.fechaRevisionSenasa} error={certificateErrors.fechaRevisionSenasa} disabled={operationsBusy} type="date" onChange={(fechaRevisionSenasa) => updateCertificateField("fechaRevisionSenasa", fechaRevisionSenasa)} />
                     <FieldInput id="provider-certificate-name" label="Nombre" value={certificateValues.nombre} error={certificateErrors.nombre} disabled={operationsBusy} maxLength={255} onChange={(nombre) => updateCertificateField("nombre", nombre)} />
                     <Field data-invalid={Boolean(certificateFileError)} className="sm:col-span-2">
-                        <FieldLabel htmlFor="provider-certificate-document">Archivo del certificado {editingCertificateId === null && <span aria-hidden="true">*</span>}</FieldLabel>
-                        <Input id="provider-certificate-document" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required={editingCertificateId === null} aria-required={editingCertificateId === null} aria-invalid={Boolean(certificateFileError)} aria-describedby={certificateFileError ? "provider-certificate-document-error" : "provider-certificate-document-help"} disabled={operationsBusy || editingCertificateId !== null} onChange={(event) => {
+                        <FieldLabel htmlFor="provider-certificate-document">Archivo del certificado <span aria-hidden="true">*</span></FieldLabel>
+                        <Input id="provider-certificate-document" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required aria-required="true" aria-invalid={Boolean(certificateFileError)} aria-describedby={certificateFileError ? "provider-certificate-document-error" : "provider-certificate-document-help"} disabled={operationsBusy} onChange={(event) => {
                             const selected = event.target.files?.[0] ?? null;
                             setCertificateFile(selected);
-                            setCertificateFileError(selected ? validateCertificadoProveedorFile(selected) ?? null : editingCertificateId === null ? "Selecciona el archivo del certificado." : null);
+                            setCertificateFileError(selected ? validateCertificadoProveedorFile(selected) ?? null : "Selecciona el archivo del certificado.");
                         }} />
-                        {certificateFileError ? <FieldError id="provider-certificate-document-error">{certificateFileError}</FieldError> : <p id="provider-certificate-document-help" className="text-xs text-ink-muted">PDF, JPEG, PNG o WebP; máximo 10 MB.{editingCertificateId !== null ? " La sustitución del archivo está fuera de este flujo; se conservará el documento actual." : ""}</p>}
+                        {certificateFileError ? <FieldError id="provider-certificate-document-error">{certificateFileError}</FieldError> : <p id="provider-certificate-document-help" className="text-xs text-ink-muted">PDF, JPEG, PNG o WebP; máximo 10 MB. Al editar, el nuevo archivo reemplaza el documento del certificado.</p>}
                     </Field>
                 </div>
                 {certificateStage && <p role="status" aria-live="polite" className="mt-3 text-sm text-ink-muted">{certificateStage}</p>}

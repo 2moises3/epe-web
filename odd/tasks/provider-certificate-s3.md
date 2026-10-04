@@ -22,11 +22,13 @@ Provider certificates currently accept a permanent `documentoUrl`, but the AWS t
 ## Tasks
 - [x] T1 — Add and test typed S3 upload/confirmation/download API flow and certificate DTO/validation changes. Evidence: focused Vitest tests passed.
 - [x] T2 — Wire provider certificate form/list UI to upload, progress/error states, and ephemeral download; update backend/API integration matrix. Evidence: full Vitest suite and production build passed.
+- [x] T3 — Require a replacement file when editing a provider certificate; upload and confirm it through S3, then PATCH using the new `documentoArchivoId`. Update tests and the integration matrix. Evidence: focused replacement-flow test, full suite and build passed.
 
 ## Acceptance criteria
 - Unsupported/oversize files fail before any upload-request API call.
 - Correct signed URL sequence, exact S3 method/headers, no Authorization, and no next step after failures.
 - Certificate create sends `documentoArchivoId` only after confirmation state is `DISPONIBLE`.
+- Certificate edit requires a new valid file and sends its `documentoArchivoId` only after S3 confirmation returns `DISPONIBLE`.
 - Download opens a newly requested `downloadUrl` safely.
 - No S3 flow is applied to other resources.
 - Documentation has current date, status, exact routes, and remaining caveats.
@@ -36,18 +38,19 @@ Provider certificates currently accept a permanent `documentoUrl`, but the AWS t
 - GREEN/REFACTOR: `npm test` and `npm run build`.
 
 ## Progress
-Implementation complete. Creation validates file type/size, obtains a presigned upload URL, sends the raw file with only returned method/headers, requires confirmation state `DISPONIBLE`, then posts `documentoArchivoId`. Existing certificate edits retain their current file; replacement and coordinated S3 deletion are not implemented. Download obtains a fresh signed URL.
+T1–T3 are complete. Backend contract verified: PATCH accepts optional positive documentoArchivoId and checks availability within the proveedor-specific S3 prefix. Both create and edit validate file type/size, obtain a presigned upload URL, send the raw file with only returned method/headers, require confirmation state `DISPONIBLE`, then POST/PATCH with the uploaded `documentoArchivoId`. Download obtains a fresh signed URL. Coordinated S3 deletion remains out of scope.
 
 Verification:
-- RED observed: focused tests failed because the new validation/upload/download methods were not yet implemented.
-- `npm test`: 23 test files passed; 81 tests passed.
+- RED observed for T3: the focused replacement test failed because `updateCertificadoProveedorWithFile` did not yet exist.
+- Focused Vitest: provider subresource API tests passed (9 tests).
+- `npm test`: 23 test files passed; 82 tests passed.
 - `npm run build`: passed (`tsc -b` and Vite production build); Vite emitted its existing large-chunk advisory.
 - No live AWS/API verification was performed; user testing remains.
 
 Current branch: `feat/provider-certificate-s3`.
 
 ## Next step
-User to exercise the certificate upload/download flow against the configured AWS-backed API; investigate any runtime/CORS/backend contract failures from that test.
+User exercises create/edit/download against the configured AWS-backed API; report runtime or CORS/backend contract failures for follow-up.
 
 ## Persistence status
-- Engram recovery mirror: pending; the memory tool returned `unknown_session`, and no authoritative session ID is available in this runtime.
+- Engram recovery mirror: saved via CLI under the project memory.

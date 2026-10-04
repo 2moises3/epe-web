@@ -145,4 +145,22 @@ describe("provider subresource API", () => {
         await expect(getCertificadoProveedorDownloadUrl(7, 9)).resolves.toBe("https://s3.test/download");
         expect(get).toHaveBeenCalledWith("/proveedores/7/certificados/9/documento/descarga");
     });
+
+    it("uploads and confirms a replacement before patching the certificate with the new file ID", async () => {
+        const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+        vi.stubGlobal("fetch", fetchMock);
+        post.mockResolvedValueOnce({ data: { archivoId: 11, estado: "PENDIENTE", uploadUrl: "https://s3.test/replacement", method: "PUT", headers: { "Content-Type": "image/png" }, expiresInSeconds: 300 } })
+            .mockResolvedValueOnce({ data: { archivoId: 11, estado: "DISPONIBLE" } });
+        patch.mockResolvedValueOnce({ data: { ...certificado, documentoArchivoId: 11 } });
+        const { updateCertificadoProveedorWithFile } = await import("@/modules/providers/api/provider-subresources.api");
+        const file = new File(["png"], "replacement.png", { type: "image/png" });
+        await expect(updateCertificadoProveedorWithFile(7, 9, file, { fechaRevisionSenasa: "2026-09-21", nombre: "Registro SENASA" })).resolves.toMatchObject({ documentoArchivoId: 11 });
+        expect(post.mock.calls).toEqual([
+            ["/proveedores/7/certificados/documentos/subida", { nombreOriginal: "replacement.png", mimeType: "image/png", tamanoBytes: 3 }],
+            ["/proveedores/7/certificados/documentos/11/confirmacion"],
+        ]);
+        expect(patch).toHaveBeenCalledWith("/proveedores/7/certificados/9", { fechaRevisionSenasa: "2026-09-21", nombre: "Registro SENASA", documentoArchivoId: 11 });
+        expect(fetchMock).toHaveBeenCalledWith("https://s3.test/replacement", { method: "PUT", headers: { "Content-Type": "image/png" }, body: file });
+        vi.unstubAllGlobals();
+    });
 });
