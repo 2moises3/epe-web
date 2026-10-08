@@ -3,7 +3,7 @@ import { FileText, Upload, Eye, X, Image as ImageIcon } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import Hint from "@/shared/components/Hint";
 import { cn } from "@/lib/utils";
-
+import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
 function formatFileSize(bytes: number) {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -55,7 +55,7 @@ export default function FileDropzone({ label, hideLabel, hint = "PDF · Máx. 10
             {!file ? (
                 <label
                     htmlFor={inputId}
-                    className="group relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border p-6 text-center transition-colors hover:border-brand/30 hover:bg-brand-surface/40"
+                    className="group relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-center transition-colors hover:border-brand/30 hover:bg-brand-surface/40"
                 >
                     <input
                         id={inputId}
@@ -64,16 +64,19 @@ export default function FileDropzone({ label, hideLabel, hint = "PDF · Máx. 10
                         className="sr-only"
                         onChange={(event) => onChange(event.target.files?.[0] ?? null)}
                     />
-                    <span className="mb-1 flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface-page text-ink-muted transition-colors group-hover:border-brand/30 group-hover:text-brand">
+                    <span className="mb-1 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-page text-ink-muted transition-colors group-hover:border-brand/30 group-hover:text-brand">
                         <Upload size={18} strokeWidth={2.5} />
                     </span>
                     <span className="text-[14px] font-bold text-ink">Haz clic para adjuntar</span>
                     <span className="text-[12px] font-medium text-ink-muted">{hint}</span>
                 </label>
             ) : (
-                <div className="flex items-center gap-3 rounded-2xl border border-brand-border bg-brand-surface/40 p-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand-border bg-white text-brand">
-                        <FileIcon size={20} strokeWidth={2} />
+                <div className="flex items-center gap-3 rounded-lg border border-brand-border bg-brand-surface/40 p-3">
+                    <span 
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-white border border-transparent bg-clip-padding"
+                        style={BRAND_ACTIVE_SURFACE}
+                    >
+                        <FileIcon size={20} strokeWidth={2.5} />
                     </span>
                     <div className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate text-[13.5px] font-bold text-ink">{file.name}</span>

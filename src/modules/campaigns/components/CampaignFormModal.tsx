@@ -141,7 +141,6 @@ export default function CampaignFormModal({
 
     const handleSubmit = async () => {
         if (saving || isLoading) return;
-        // Sin fruta se valida como 0 para que salga el mensaje propio ("Selecciona una fruta.") y no el genérico de tipo
         const validation = campaignFormSchema.safeParse({ ...values, frutaId: values.frutaId ?? 0 });
         if (!validation.success) {
             setErrors(getZodFieldErrors(validation.error));
@@ -265,7 +264,7 @@ export default function CampaignFormModal({
                 {/* Fila 3 */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Field className="sm:col-span-1" data-invalid={invalid("añoTemporada")}>
-                        <FieldLabel>Año o Temporada:</FieldLabel>
+                        <FieldLabel optional>Año o Temporada:</FieldLabel>
                         <Input
                             placeholder="Ej: 2025-2026"
                             value={values.añoTemporada}
@@ -300,18 +299,20 @@ export default function CampaignFormModal({
 
                 {/* Fila 4 */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
-                    <Field className="sm:col-span-1 h-full">
+                    <Field className="sm:col-span-1 h-full" data-invalid={invalid("lineamientos")}>
                         <FileDropzone 
                             label="Lineamientos" 
                             file={values.lineamientos} 
                             onChange={(file) => set("lineamientos", file)} 
                             hint="PDF o Imagen · Máx. 10 MB"
                         />
+                        <AnimatedFieldError message={errors.lineamientos} />
                     </Field>
                     <Field className="sm:col-span-2 h-full flex flex-col">
-                        <FieldLabel>Observaciones Generales:</FieldLabel>
+                        <FieldLabel optional>Observaciones Generales:</FieldLabel>
                         <Textarea 
                             className="flex-1 w-full min-h-24 resize-none" 
+                            placeholder="Escribe aquí las observaciones..."
                             value={values.observaciones}
                             onChange={(e) => set("observaciones", e.target.value)}
                         />

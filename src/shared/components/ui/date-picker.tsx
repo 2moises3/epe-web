@@ -55,7 +55,7 @@ function DatePicker({
             variant="outline"
             aria-invalid={ariaInvalid}
             className={cn(
-              "h-11 w-full justify-start gap-2 rounded-lg px-2.5 shadow-none aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+              "h-11 w-full justify-start gap-2 rounded-lg px-2.5 shadow-none aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20",
               selected ? "text-ink font-medium" : "text-ink-muted font-normal",
               className
             )}
