@@ -6,6 +6,18 @@
     <link rel="icon" type="image/svg+xml" href="/image/logo_empresa_only.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AgroExportaciones F&V</title>
+    <!-- Aplica el tema guardado (o el del sistema) antes de pintar, para evitar el destello claro en modo oscuro.
+         Misma lógica y clave que src/shared/hooks/useTheme.ts -->
+    <script>
+        (function () {
+            var theme = null;
+            try { theme = localStorage.getItem("epe-theme"); } catch (e) {}
+            if (theme !== "light" && theme !== "dark") {
+                theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            }
+            if (theme === "dark") document.documentElement.classList.add("dark");
+        })();
+    </script>
 </head>
 
 <body>

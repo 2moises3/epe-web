@@ -9,6 +9,9 @@ export interface ProveedorDto {
   telefono: number;
   email: string;
   codigoLugarProduccion: number;
+  estadoSanidadAgraria?: string;
+  identidadDocArchivo?: File | null;
+  frutas?: { frutaId: string; variedades: string[] }[];
 }
 
 export type TipoDocumentoProveedor = "DNI" | "Pasaporte" | "Carnet de extranjeria";
@@ -23,6 +26,9 @@ export interface ProveedorInput {
   telefono: number;
   email: string;
   codigoLugarProduccion: number;
+  estadoSanidadAgraria: string;
+  identidadDocArchivo: File | null;
+  frutas: { frutaId: string; variedades: string[] }[];
 }
 
 export type ProveedorFormValues = Omit<ProveedorInput, "tipoDocumento" | "nmrDocumento" | "telefono" | "codigoLugarProduccion"> & {
@@ -30,4 +36,7 @@ export type ProveedorFormValues = Omit<ProveedorInput, "tipoDocumento" | "nmrDoc
   nmrDocumento: string;
   telefono: string;
   codigoLugarProduccion: string;
+  estadoSanidadAgraria: string;
+  identidadDocArchivo: File | null;
+  frutas: { frutaId: string; variedades: string[] }[];
 };

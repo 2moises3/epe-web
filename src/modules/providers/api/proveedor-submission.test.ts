@@ -12,6 +12,9 @@ const validInput: ProveedorFormValues = {
   telefono: "987654321",
   email: "ana@example.com",
   codigoLugarProduccion: "42",
+  estadoSanidadAgraria: "Registrado",
+  identidadDocArchivo: null,
+  frutas: [],
 };
 
 describe("provider submission", () => {

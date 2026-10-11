@@ -43,7 +43,7 @@ export default function CampaignPaymentDetailsModal({ open, onOpenChange, paymen
 
                 <Field>
                     <FieldLabel variant="compact" className="text-[10px] tracking-wide">Estado</FieldLabel>
-                    <div className="flex h-10 items-center rounded-lg border border-border/60 bg-white px-3">
+                    <div className="flex h-10 items-center rounded-lg border border-border/60 bg-card px-3">
                         <StatusBadge status={payment.estado} />
                     </div>
                 </Field>

@@ -141,12 +141,12 @@ export default function CampaignRegisterPaymentModal({ open, onOpenChange, onSav
                         value={tipo || null}
                         onValueChange={(value) => update("tipo", ((value as PaymentType | null) ?? ""))}
                     >
-                        <SelectTrigger className="w-full !h-11 rounded-lg border-border shadow-none text-ink font-medium [&>svg]:opacity-50 focus:ring-1 focus:ring-brand/30 focus:border-brand" aria-invalid={errors.tipo ? true : undefined}>
+                        <SelectTrigger className="w-full" aria-invalid={errors.tipo ? true : undefined}>
                             <SelectValue placeholder="Seleccionar" />
                         </SelectTrigger>
-                        <SelectContent className="rounded-lg">
-                            <SelectItem value="Adelanto" className="rounded-lg">Adelanto</SelectItem>
-                            <SelectItem value="Completo" className="rounded-lg">Completo</SelectItem>
+                        <SelectContent>
+                            <SelectItem value="Adelanto">Adelanto</SelectItem>
+                            <SelectItem value="Completo">Completo</SelectItem>
                         </SelectContent>
                     </Select>
                     {errors.tipo && <FieldError>{errors.tipo}</FieldError>}

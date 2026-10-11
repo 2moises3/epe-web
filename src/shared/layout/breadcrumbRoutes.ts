@@ -28,7 +28,16 @@ export function getBreadcrumbLevels(pathname: string): BreadcrumbLevel[] {
                 ? "Pagos a transportistas"
                 : "Detalle";
 
-        levels.push({ label: campaignSection });
+        levels.push({ 
+            label: campaignSection,
+            href: segments.length > 3 ? `/${rootSegment}/${segments[1]}/${segments[2]}` : undefined
+        });
+
+        if (segments.length > 3) {
+            levels.push({ label: "Detalle" });
+        }
+    } else if (rootSegment === "proveedores" && segments[2] === "fincas") {
+        levels.push({ label: "Fincas" });
     } else if (segments.length > 1) {
         levels.push({ label: "Detalle" });
     }

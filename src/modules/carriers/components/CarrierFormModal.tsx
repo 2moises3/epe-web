@@ -1,8 +1,7 @@
 import { X, Truck, Save, Building2 } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm } from "@/shared/hooks/useModalForm";
-import { Field, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 
 export interface CarrierFormValues {
@@ -61,24 +60,10 @@ export default function CarrierFormModal({
             }
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <Field className="sm:col-span-2">
-                    <FieldLabel>Nombre de la Empresa:</FieldLabel>
-                    <Input value={values.nombre} onChange={(e) => set("nombre")(e.target.value)} />
-                </Field>
-
-                <Field>
-                    <FieldLabel>RUC:</FieldLabel>
-                    <Input value={values.ruc} onChange={(e) => set("ruc")(e.target.value)} />
-                </Field>
-                <Field>
-                    <FieldLabel>Número:</FieldLabel>
-                    <Input value={values.numero} onChange={(e) => set("numero")(e.target.value)} />
-                </Field>
-
-                <Field className="sm:col-span-2">
-                    <FieldLabel>Correo:</FieldLabel>
-                    <Input type="email" value={values.correo} onChange={(e) => set("correo")(e.target.value)} />
-                </Field>
+                <InputField id="carrier-nombre" label="Nombre de la Empresa:" className="sm:col-span-2" value={values.nombre} onChange={set("nombre")} />
+                <InputField id="carrier-ruc" label="RUC:" value={values.ruc} onChange={set("ruc")} />
+                <InputField id="carrier-numero" label="Número:" value={values.numero} onChange={set("numero")} />
+                <InputField id="carrier-correo" label="Correo:" type="email" className="sm:col-span-2" value={values.correo} onChange={set("correo")} />
             </div>
         </AppModal>
     );

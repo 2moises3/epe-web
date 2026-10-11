@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { X, Send, Truck, FileText, AlignLeft, Building2, Info } from "lucide-react";
+import { X, Send, Truck, Building2, Info } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
-import FormSection from "@/shared/components/FormSection";
+import ModalSection from "@/shared/components/ModalSection";
 import FileDropzone from "@/shared/components/FileDropzone";
 import RemovableChip from "@/shared/components/RemovableChip";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
@@ -82,7 +82,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4 rounded-2xl border border-brand-border/60 bg-brand-surface p-4 sm:flex-row sm:items-center sm:gap-5">
                     <div className="flex items-center gap-4">
-                        <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-brand shadow-sm">
+                        <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-card text-brand shadow-sm">
                             <Truck size={22} strokeWidth={2} />
                         </span>
                         <div className="flex flex-col">
@@ -96,11 +96,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                     </p>
                 </div>
 
-                <section className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-[14.5px] font-bold text-ink">Empresas destinatarias</h3>
-                        <Badge variant="brand" className="h-5 px-2 text-[12px] font-bold">{count}</Badge>
-                    </div>
+                <ModalSection title="Empresas destinatarias" aside={<Badge variant="brand" className="h-5 px-2 text-[12px] font-bold">{count}</Badge>}>
                     {count > 0 ? (
                         <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto pr-1">
                             {selectedCarriers.map((carrier) => (
@@ -119,9 +115,9 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                             Selecciona al menos una empresa en la tabla para enviar el requerimiento.
                         </div>
                     )}
-                </section>
+                </ModalSection>
 
-                <FormSection icon={<FileText size={17} strokeWidth={2.25} />} title="Documento del requerimiento" aside="Formatos permitidos: PDF, Word o Excel">
+                <ModalSection title="Documento del requerimiento" aside="Formatos permitidos: PDF, Word o Excel">
                     <div className="flex flex-col gap-2">
                         <FileDropzone
                             label="Documento del requerimiento"
@@ -133,9 +129,9 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                         />
                         <FieldError>{fileError}</FieldError>
                     </div>
-                </FormSection>
+                </ModalSection>
 
-                <FormSection icon={<AlignLeft size={17} strokeWidth={2.25} />} title="Detalle del requerimiento" aside="Opcional">
+                <ModalSection title="Detalle del requerimiento" aside="Opcional">
                     <div className="flex flex-col gap-1.5">
                         <Textarea
                             value={detail}
@@ -149,7 +145,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                             {detail.length.toLocaleString("en-US")}/{MAX_DETAIL_LENGTH.toLocaleString("en-US")}
                         </FieldDescription>
                     </div>
-                </FormSection>
+                </ModalSection>
             </div>
         </AppModal>
     );

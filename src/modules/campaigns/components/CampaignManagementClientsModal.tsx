@@ -6,7 +6,7 @@ import CampaignDirectoryTable, { DirectoryIdentity, DirectoryContact } from "@/m
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
 import ConfirmModal from "@/shared/components/ConfirmModal";
 import FileDropzone from "@/shared/components/FileDropzone";
-import FormSection from "@/shared/components/FormSection";
+import ModalSection from "@/shared/components/ModalSection";
 import RowActions from "@/shared/components/RowActions";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
@@ -217,7 +217,7 @@ export default function CampaignManagementClientsModal({ open, campaniaId, onOpe
 
                 {editing && (
                     <div className="mb-5 rounded-2xl border border-brand-border bg-brand-surface/40 p-4">
-                        <FormSection icon={<Pencil size={16} strokeWidth={2.5} />} title={`Editar vínculo con ${clientName(editing.client)}`} aside="Solo se guardan los campos que cambies">
+                        <ModalSection title={`Editar vínculo con ${clientName(editing.client)}`} aside="Solo se guardan los campos que cambies">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 {EDIT_FIELDS.slice(0, 3).map(({ field, label, type }) => (
                                     <Field key={field} data-invalid={fieldErrors[field] ? true : undefined}>
@@ -263,7 +263,7 @@ export default function CampaignManagementClientsModal({ open, campaniaId, onOpe
                                     <Save size={18} strokeWidth={2.5} /> {isSaving ? "Guardando..." : "Guardar cambios"}
                                 </Button>
                             </div>
-                        </FormSection>
+                        </ModalSection>
                     </div>
                 )}
 

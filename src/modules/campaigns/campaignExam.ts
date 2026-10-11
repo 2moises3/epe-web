@@ -13,6 +13,9 @@ export interface ExamValues {
     tipoExamen: string;
     resultado: ExamResult | "";
     origen: string;
+    identificacionMuestra: string;
+    fechaEnvioMuestra: string;
+    estadoEnvioResultado: string;
     observacion: string;
     archivo: File | null;
 }
@@ -25,19 +28,28 @@ export interface LocalExam {
     tipoExamen: string;
     resultado: ExamResult;
     origen: string;
+    identificacionMuestra: string;
+    fechaEnvioMuestra: string;
+    estadoEnvioResultado: string;
     observacion: string;
     archivoNombre: string | null;
 }
 
-export type ExamErrors = Partial<Record<"fecha" | "tipoExamen" | "resultado" | "origen", string>>;
+export type ExamErrors = Partial<Record<"fecha" | "tipoExamen" | "resultado" | "origen" | "identificacionMuestra" | "fechaEnvioMuestra" | "estadoEnvioResultado" | "archivo", string>>;
 
-export const EMPTY_EXAM: ExamValues = { fecha: "", tipoExamen: "", resultado: "", origen: "", observacion: "", archivo: null };
+export const EMPTY_EXAM: ExamValues = { fecha: "", tipoExamen: "", resultado: "positivo", origen: "", identificacionMuestra: "", fechaEnvioMuestra: "", estadoEnvioResultado: "", observacion: "", archivo: null };
 
 export const EXAM_TYPES = [
     { value: "suelo", label: "Análisis de suelo" },
     { value: "foliar", label: "Análisis foliar" },
     { value: "agua", label: "Análisis de agua" },
     { value: "sanidad", label: "Análisis de sanidad" },
+];
+
+export const ESTADOS_ENVIO_RESULTADO = [
+    { value: "Pendiente", label: "Pendiente" },
+    { value: "En proceso", label: "En proceso" },
+    { value: "Entregado", label: "Entregado" },
 ];
 
 export function validateExam(values: ExamValues): ExamErrors {
@@ -47,5 +59,11 @@ export function validateExam(values: ExamValues): ExamErrors {
     if (values.resultado !== "positivo" && values.resultado !== "negativo") errors.resultado = "Selecciona un resultado.";
     if (!values.origen.trim()) errors.origen = "Ingresa el origen del examen.";
     else if (values.origen.trim().length > 255) errors.origen = "El origen admite hasta 255 caracteres.";
+    
+    if (!values.identificacionMuestra.trim()) errors.identificacionMuestra = "Ingresa la identificación de la muestra.";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(values.fechaEnvioMuestra)) errors.fechaEnvioMuestra = "Ingresa la fecha de envío.";
+    if (!values.estadoEnvioResultado) errors.estadoEnvioResultado = "Selecciona el estado.";
+    if (!values.archivo) errors.archivo = "Adjunta un documento.";
+    
     return errors;
 }

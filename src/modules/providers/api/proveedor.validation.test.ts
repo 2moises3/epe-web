@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+                                                                      import { describe, expect, it } from "vitest";
 import type { ProveedorDto } from "@/modules/providers/api/proveedor.dto";
 import type { ProveedorFormValues } from "@/modules/providers/api/proveedor.dto";
 import { toProveedorInput, toProveedorPayload, validateProveedorInput } from "@/modules/providers/api/proveedor.validation";
@@ -13,6 +13,9 @@ const validInput: ProveedorFormValues = {
   telefono: "987654321",
   email: " ana@example.com ",
   codigoLugarProduccion: "42",
+  estadoSanidadAgraria: "Registrado",
+  identidadDocArchivo: null,
+  frutas: [],
 };
 
 describe("provider form contract", () => {
@@ -27,6 +30,9 @@ describe("provider form contract", () => {
       telefono: 987654321,
       email: "ana@example.com",
       codigoLugarProduccion: 42,
+      estadoSanidadAgraria: "Registrado",
+      identidadDocArchivo: null,
+      frutas: [],
     });
   });
 
@@ -63,6 +69,9 @@ describe("provider form contract", () => {
       telefono: "987654321",
       email: "ana@example.com",
       codigoLugarProduccion: "42",
+      estadoSanidadAgraria: "",
+      identidadDocArchivo: null,
+      frutas: [],
     });
   });
 });

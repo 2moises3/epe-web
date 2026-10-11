@@ -257,7 +257,7 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave, ca
                         <FieldLabel htmlFor="link-client-fechaRegistro">Fecha de registro: {required}</FieldLabel>
                         <DatePicker 
                             value={String(fieldProps("fechaRegistro").value || "")} 
-                            onChange={(val) => set("fechaRegistro", val)} 
+                            onChange={(val) => update("fechaRegistro", val)} 
                             aria-invalid={fieldProps("fechaRegistro")["aria-invalid"]} 
                         />
                         {errorFor("fechaRegistro")}

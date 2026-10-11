@@ -97,6 +97,7 @@ export default function CampaignFormModal({
                 .then((campana) => {
                     if (!active) return;
                     setValues({
+                        ...EMPTY_CAMPAIGN,
                         nombre: campana.nombre,
                         frutaId: campana.frutaId,
                         fechaInicio: formatFecha(campana.fechaInicio),
@@ -226,19 +227,14 @@ export default function CampaignFormModal({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <Field className="sm:col-span-1" data-invalid={invalid("requerimientoComercial")}>
                         <FieldLabel>Requerimiento (KG):</FieldLabel>
-                        <div className="relative">
-                            <Input
-                                placeholder="Ej: 3000"
-                                inputMode="decimal"
-                                value={values.requerimientoComercial}
-                                aria-invalid={invalid("requerimientoComercial")}
-                                onChange={(e) => set("requerimientoComercial", e.target.value)}
-                                className="pr-12"
-                            />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-brand-surface text-brand text-[11px] font-bold px-2 py-1 rounded-md">
-                                KG
-                            </div>
-                        </div>
+                        <Input
+                            placeholder="Ej: 3000"
+                            inputMode="decimal"
+                            unit="KG"
+                            value={values.requerimientoComercial}
+                            aria-invalid={invalid("requerimientoComercial")}
+                            onChange={(e) => set("requerimientoComercial", e.target.value)}
+                        />
                         <AnimatedFieldError message={errors.requerimientoComercial} />
                     </Field>
                     <Field className="sm:col-span-1" data-invalid={invalid("fechaInicio")}>

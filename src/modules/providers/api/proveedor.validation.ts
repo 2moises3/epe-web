@@ -14,6 +14,9 @@ export function toProveedorInput(provider: ProveedorDto): ProveedorFormValues {
     telefono: String(provider.telefono),
     email: provider.email,
     codigoLugarProduccion: String(provider.codigoLugarProduccion),
+    estadoSanidadAgraria: "",
+    identidadDocArchivo: null,
+    frutas: [],
   };
 }
 
@@ -28,13 +31,16 @@ export function toProveedorPayload(values: ProveedorFormValues): ProveedorInput 
     telefono: Number(values.telefono.trim()),
     email: values.email.trim(),
     codigoLugarProduccion: Number(values.codigoLugarProduccion.trim()),
+    estadoSanidadAgraria: values.estadoSanidadAgraria.trim(),
+    identidadDocArchivo: values.identidadDocArchivo,
+    frutas: values.frutas,
   };
 }
 
 export function validateProveedorInput(values: ProveedorFormValues): ProveedorFieldErrors {
   const errors: ProveedorFieldErrors = {};
   const required: ProveedorField[] = [
-    "nombres", "apellido", "tipoDocumento", "nmrDocumento", "identidadDocUrl", "zona", "telefono", "email", "codigoLugarProduccion",
+    "nombres", "apellido", "tipoDocumento", "nmrDocumento", "zona", "telefono", "email", "codigoLugarProduccion", "estadoSanidadAgraria"
   ];
   for (const field of required) {
     if (!String(values[field] ?? "").trim()) errors[field] = "Este campo es obligatorio.";
@@ -51,13 +57,15 @@ export function validateProveedorInput(values: ProveedorFormValues): ProveedorFi
       errors[field] = "Ingresa un número entero válido mayor que cero.";
     }
   }
-  if (!errors.identidadDocUrl) {
+  if (values.identidadDocUrl) {
     try {
       const url = new URL(values.identidadDocUrl.trim());
       if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Unsupported URL protocol");
     } catch {
       errors.identidadDocUrl = "Ingresa una URL válida que comience con http:// o https://.";
     }
+  } else if (!values.identidadDocArchivo) {
+    errors.identidadDocArchivo = "Debes adjuntar un documento de identidad.";
   }
   if (!errors.zona && !values.zona.trim()) errors.zona = "Este campo es obligatorio.";
   if (!errors.email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim()) || values.email.trim().length > 320)) {

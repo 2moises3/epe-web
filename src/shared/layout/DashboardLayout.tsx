@@ -15,7 +15,7 @@ export default function DashboardLayout({ children, onLogout }: DashboardLayoutP
 
                 <div className="flex flex-1 overflow-hidden w-full relative z-10">
                     {/* `relative` para que los fondos absolutos de cada página se anclen acá y no en un ancestro lejano */}
-                    <main className="relative flex-1 overflow-y-auto bg-surface-page">
+                    <main className="relative flex-1 overflow-y-auto page-ambient">
                         {children}
                     </main>
                 </div>

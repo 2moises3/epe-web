@@ -39,7 +39,7 @@ export default function RowActions({ primary, secondary = [], align = "end", cla
                             "shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-ink-muted transition-all duration-300 hover:text-white hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm outline-none focus-visible:ring-2",
                             action.variant === "destructive"
                                 ? "hover:bg-destructive hover:shadow-[0_4px_12px_rgba(220,38,38,0.3)] focus-visible:ring-destructive/50"
-                                : "hover:bg-[#69b935] hover:shadow-[0_4px_12px_rgba(105,185,53,0.3)] focus-visible:ring-[#69b935]/50"
+                                : "hover:bg-brand hover:shadow-[0_4px_12px_-2px_var(--brand-gradient-glow)] focus-visible:ring-brand/50"
                         )}
                     >
                         {action.icon}
@@ -56,12 +56,12 @@ export default function RowActions({ primary, secondary = [], align = "end", cla
                         <Hint label="Más opciones">
                             <DropdownMenuTrigger
                                 aria-label="Más opciones"
-                                className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-ink-muted transition-all duration-300 hover:bg-[#69b935] hover:text-white hover:shadow-[0_4px_12px_rgba(105,185,53,0.3)] hover:-translate-y-0.5 data-[state=open]:bg-[#69b935] data-[state=open]:text-white data-[state=open]:shadow-[0_4px_12px_rgba(105,185,53,0.3)] active:translate-y-0 active:shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-[#69b935]/50"
+                                className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-ink-muted transition-all duration-300 hover:bg-brand hover:text-white hover:shadow-[0_4px_12px_-2px_var(--brand-gradient-glow)] hover:-translate-y-0.5 data-[state=open]:bg-brand data-[state=open]:text-white data-[state=open]:shadow-[0_4px_12px_-2px_var(--brand-gradient-glow)] active:translate-y-0 active:shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
                             >
                                 <MoreVertical size={18} strokeWidth={2.5} />
                             </DropdownMenuTrigger>
                         </Hint>
-                        <DropdownMenuContent align={align} sideOffset={8} className="w-52 p-1.5 rounded-xl shadow-xl border-border/50 bg-white">
+                        <DropdownMenuContent align={align} sideOffset={8} className="w-52 p-1.5 rounded-xl shadow-xl border-border/50 bg-popover">
                             {secondary.map((action) => (
                                 <DropdownMenuItem
                                     key={action.label}
@@ -70,10 +70,11 @@ export default function RowActions({ primary, secondary = [], align = "end", cla
                                     className={cn(
                                         "gap-2.5 px-3 py-2.5 text-[14px] font-medium rounded-lg cursor-pointer transition-all duration-200",
                                         action.variant === "brand"
-                                            ? "text-brand [&_svg]:text-brand hover:!text-brand focus:!text-brand hover:bg-brand-surface focus:bg-brand-surface"
+                                            ? "text-brand [&_svg]:text-brand"
                                             : action.variant === "destructive"
                                                 ? ""
-                                                : "text-ink-body hover:!text-[#2e7d32] hover:bg-[#69b935]/15 focus:!text-[#2e7d32] focus:bg-[#69b935]/15 [&_svg]:text-ink-muted hover:[&_svg]:!text-[#2e7d32] focus:[&_svg]:!text-[#2e7d32]"
+                                                // El resaltado verde (texto + ícono) lo da DropdownMenuItem
+                                                : "text-ink-body [&_svg]:text-ink-muted"
                                     )}
                                 >
                                     {action.icon}

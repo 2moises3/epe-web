@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Fondo del header de cualquier tabla de listado: mismo verde suave en todas, nunca un hex suelto */
-export const TABLE_HEAD_BG = "bg-brand-surface";
+/** Fondo del header de cualquier tabla de listado: la "firma" verde de las tablas; en oscuro, una banda verde tenue sobre la card */
+export const TABLE_HEAD_BG = "bg-brand-surface dark:bg-brand/15";
 
 interface TableRowAccentProps {
     /** Clase de color de fondo, ej. "bg-brand" o "bg-status-warning"; por defecto un gris neutro */

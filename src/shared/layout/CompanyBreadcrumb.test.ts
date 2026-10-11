@@ -20,6 +20,13 @@ describe("getBreadcrumbLevels", () => {
         ]);
     });
 
+    it("names the fincas management view of a provider", () => {
+        expect(getBreadcrumbLevels("/proveedores/3/fincas")).toEqual([
+            { label: "Proveedores", href: "/proveedores" },
+            { label: "Fincas" },
+        ]);
+    });
+
     it("hides itself on non-operational routes", () => {
         expect(getBreadcrumbLevels("/modules")).toEqual([]);
     });

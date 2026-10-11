@@ -14,13 +14,18 @@ interface SegmentedControlProps {
 }
 
 export default function SegmentedControl({ options, value, onChange, className }: SegmentedControlProps) {
-    const activeIndex = Math.max(0, options.findIndex((opt) => opt.value === value));
+    const actualIndex = options.findIndex((opt) => opt.value === value);
+    const activeIndex = Math.max(0, actualIndex);
+    const hasSelection = actualIndex !== -1;
 
     return (
         <div className={cn("relative inline-flex h-11 w-full p-1 bg-status-neutral-surface/60 rounded-lg items-center", className)}>
             <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 rounded-md border border-transparent transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                className={cn(
+                    "absolute inset-y-1 left-1 rounded-md border border-transparent transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                    hasSelection ? "opacity-100" : "opacity-0"
+                )}
                 style={{
                     ...BRAND_ACTIVE_SURFACE,
                     width: `calc((100% - 0.5rem) / ${options.length})`,

@@ -22,7 +22,7 @@ const TRACK_STYLE: CSSProperties = {
     ...GRADIENT_BORDER_CLIP,
     backgroundColor: "var(--background)",
     backgroundImage:
-        "linear-gradient(var(--background), var(--background)), linear-gradient(180deg, color-mix(in oklab, var(--border), white 70%), color-mix(in oklab, var(--border), var(--ink) 12%))",
+        "linear-gradient(var(--background), var(--background)), linear-gradient(180deg, color-mix(in oklab, var(--border), var(--background) 70%), color-mix(in oklab, var(--border), var(--ink) 12%))",
     boxShadow: "0 8px 28px -12px rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.04)",
 };
 

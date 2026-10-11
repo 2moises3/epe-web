@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, UserRound, ExternalLink, AlertCircle } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import ModalSection from "@/shared/components/ModalSection";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
@@ -87,26 +88,28 @@ export default function ProviderViewModal({ open, onOpenChange, providerId }: Pr
             )}
             {provider && (
                 <>
-                    <dl className="flex flex-col">
-                        {details.map((detail) => (
-                            <div key={detail.label} className="flex flex-col gap-1 border-b border-border/50 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-                                <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{detail.label}</dt>
-                                <dd className="break-all text-[14px] font-semibold text-ink">{detail.value}</dd>
+                    <ModalSection title="Datos del proveedor">
+                        <dl className="flex flex-col">
+                            {details.map((detail) => (
+                                <div key={detail.label} className="flex flex-col gap-1 border-b border-border/50 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                                    <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">{detail.label}</dt>
+                                    <dd className="break-all text-[14px] font-semibold text-ink">{detail.value}</dd>
+                                </div>
+                            ))}
+                            <div className="flex flex-col gap-1 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                                <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">DOCUMENTO DE IDENTIDAD</dt>
+                                <dd className="text-[14px] font-semibold">
+                                    {documentUrl ? (
+                                        <a href={documentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">
+                                            Abrir documento <ExternalLink size={13} aria-hidden="true" />
+                                        </a>
+                                    ) : (
+                                        <span className="text-ink-muted">No disponible</span>
+                                    )}
+                                </dd>
                             </div>
-                        ))}
-                        <div className="flex flex-col gap-1 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-                            <dt className="text-[11px] font-bold uppercase tracking-wider text-ink-muted">DOCUMENTO DE IDENTIDAD</dt>
-                            <dd className="text-[14px] font-semibold">
-                                {documentUrl ? (
-                                    <a href={documentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">
-                                        Abrir documento <ExternalLink size={13} aria-hidden="true" />
-                                    </a>
-                                ) : (
-                                    <span className="text-ink-muted">No disponible</span>
-                                )}
-                            </dd>
-                        </div>
-                    </dl>
+                        </dl>
+                    </ModalSection>
                     <ProviderSubresources key={provider.proveedorId} providerId={provider.proveedorId} onMutatingChange={setIsSubresourceMutating} />
                 </>
             )}

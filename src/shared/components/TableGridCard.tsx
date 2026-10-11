@@ -12,7 +12,8 @@ interface TableGridCardProps {
     badge?: ReactNode;
     /** Recuadro de datos entre el header y las acciones; cada tabla arma su propio layout adentro (grid, lista, con íconos...) */
     children?: ReactNode;
-    actions: ReactNode;
+    /** Franja inferior de acciones; se omite (y no se dibuja la franja) en las listas de solo lectura */
+    actions?: ReactNode;
     className?: string;
 }
 
@@ -23,7 +24,7 @@ interface TableGridCardProps {
  */
 export default function TableGridCard({ accentColor, icon, title, subtitle, badge, children, actions, className }: TableGridCardProps) {
     return (
-        <div className={cn("rounded-xl border border-border bg-white overflow-hidden", accentColor && cn("border-l-[3px]", accentColor), className)}>
+        <div className={cn("rounded-xl border border-border bg-card overflow-hidden", accentColor && cn("border-l-[3px]", accentColor), className)}>
             <div className="flex items-start justify-between gap-3 p-4 pb-3">
                 <div className="flex items-center gap-3 min-w-0">
                     {icon && (
@@ -41,9 +42,13 @@ export default function TableGridCard({ accentColor, icon, title, subtitle, badg
 
             {children}
 
-            <div className="flex items-center mt-3 px-2.5 py-1.5 border-t border-border bg-surface-page/50">
-                {actions}
-            </div>
+            {actions ? (
+                <div className="flex items-center mt-3 px-2.5 py-1.5 border-t border-border bg-surface-page/50">
+                    {actions}
+                </div>
+            ) : (
+                <div className="pb-4" />
+            )}
         </div>
     );
 }

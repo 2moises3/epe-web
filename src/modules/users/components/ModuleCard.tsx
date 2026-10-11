@@ -20,12 +20,12 @@ export default function ModuleCard({
   return (
     <div
       onClick={onClick}
-      className="group relative flex items-stretch w-full h-full min-h-35 bg-white rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] overflow-hidden border-l-[3px] border-transparent hover:border-brand"
+      className="group relative flex items-stretch w-full h-full min-h-35 bg-card rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden border-l-[3px] border-transparent hover:border-brand"
     >
 
       {/* Efecto de iluminación (Shimmer on hover) */}
       <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-[-150%] w-full h-full bg-linear-to-r from-transparent via-white/60 to-transparent skew-x-[-25deg] group-hover:left-[150%] transition-all duration-1000 ease-in-out"></div>
+        <div className="absolute top-0 left-[-150%] w-full h-full bg-linear-to-r from-transparent via-white/60 dark:via-white/[0.06] to-transparent skew-x-[-25deg] group-hover:left-[150%] transition-all duration-1000 ease-in-out"></div>
       </div>
 
       {/* Left section (Icon & Text) */}
@@ -69,7 +69,7 @@ export default function ModuleCard({
         </div>
 
         {/* Degradado que difumina la imagen hacia el fondo de la card */}
-        <div className="absolute inset-y-0 left-0 w-24 bg-linear-to-r from-white via-white/55 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-y-0 left-0 w-24 bg-linear-to-r from-card via-card/55 to-transparent pointer-events-none"></div>
       </div>
     </div>
   );

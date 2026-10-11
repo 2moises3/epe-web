@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Eye, Users, FilePlus, Tractor, Truck, SearchX, ListFilter, Link, TriangleAlert, RotateCw, UserPlus, UserCheck } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Eye, Users, FilePlus, Tractor, Truck, SearchX, ListFilter, Link, TriangleAlert, RotateCw, UserPlus, UserCheck, Pencil } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import FilterBar, { FilterSearch } from "@/shared/components/FilterBar";
@@ -24,13 +24,13 @@ import CampaignLinkProviderModal from "@/modules/campaigns/components/CampaignLi
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
 import CampaignExamModal from "@/modules/campaigns/components/CampaignExamModal";
 import CampaignInterviewModal from "@/modules/campaigns/components/CampaignInterviewModal";
-import CampaignProviderDetailsModal from "@/modules/campaigns/components/CampaignProviderDetailsModal";
+import type { ExamValues } from "@/modules/campaigns/campaignExam";
+import type { InterviewValues } from "@/modules/campaigns/campaignInterview";
+
 import { getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
 import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
 import type { TipoProveedorCampania } from "@/modules/campaigns/api/campania-proveedor.dto";
 import { formatCampaignNumber } from "@/modules/campaigns/campaignDetails.utils";
-import type { ExamValues, LocalExam } from "@/modules/campaigns/campaignExam";
-import type { InterviewValues } from "@/modules/campaigns/campaignInterview";
 
 const PAGE_SIZE = 8;
 
@@ -66,11 +66,12 @@ export default function CampaignProvidersPage() {
     const [interviewModal, setInterviewModal] = useState<RelationModal>(CLOSED);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [successMode, setSuccessMode] = useState<SuccessMode>("provider");
-    const [details, setDetails] = useState<RelationModal>(CLOSED);
+
     // TODO(api): no hay servicio para entrevistas ni para subir el archivo del examen; se guardan en memoria
     // (se pierden al recargar) para que el flujo funcione. Ver campaignInterview.ts y campaignExam.ts.
-    const [localExams, setLocalExams] = useState<LocalExam[]>([]);
+
     const [interviews, setInterviews] = useState<Record<number, InterviewValues>>({});
+
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<TableViewMode>("table");
     const [search, setSearch] = useState("");
@@ -129,19 +130,7 @@ export default function CampaignProvidersPage() {
     const handleSaveExam = (values: ExamValues) => {
         const relation = examModal.relation;
         if (!relation || values.resultado === "") return;
-        setLocalExams((current) => [
-            {
-                id: crypto.randomUUID(),
-                proveedorId: relation.proveedorId,
-                fecha: values.fecha,
-                tipoExamen: values.tipoExamen,
-                resultado: values.resultado as LocalExam["resultado"],
-                origen: values.origen.trim(),
-                observacion: values.observacion.trim(),
-                archivoNombre: values.archivo?.name ?? null,
-            },
-            ...current,
-        ]);
+
         setExamModal((current) => ({ ...current, open: false }));
         showSuccess("exam");
     };
@@ -154,19 +143,26 @@ export default function CampaignProvidersPage() {
         showSuccess("interview");
     };
 
-    /** Ver detalles siempre visible; examen y entrevista solo aplican a productores */
+    const [editModal, setEditModal] = useState<RelationModal>(CLOSED);
+
+    const navigate = useNavigate();
+
+    /** Ver detalles y examen aplican a todos; entrevista solo a productores */
     const getRowActions = (row: CampaniaProveedor): { primary: RowAction[]; secondary: RowAction[] } => ({
         primary: [
-            { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => setDetails({ open: true, relation: row }) },
+            { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => navigate(`/campaigns/${campaniaId}/providers/${row.cxpId}`) },
+            { label: "Editar vínculo", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditModal({ open: true, relation: row }) },
         ],
-        secondary: row.tipoProveedor === "productor"
-            ? [
-                { label: "Registrar examen", icon: <FilePlus size={16} strokeWidth={2.5} />, onClick: () => setExamModal({ open: true, relation: row }) },
-                interviews[row.cxpId]
-                    ? { label: "Ver entrevista", icon: <UserCheck size={16} strokeWidth={2.5} />, onClick: () => setInterviewModal({ open: true, relation: row }) }
-                    : { label: "Registrar entrevista", icon: <UserPlus size={16} strokeWidth={2.5} />, onClick: () => setInterviewModal({ open: true, relation: row }) },
-            ]
-            : [],
+        secondary: [
+            { label: "Registrar examen", icon: <FilePlus size={16} strokeWidth={2.5} />, onClick: () => setExamModal({ open: true, relation: row }) },
+            ...(row.tipoProveedor === "productor"
+                ? [
+                    interviews[row.cxpId]
+                        ? { label: "Ver entrevista", icon: <UserCheck size={16} strokeWidth={2.5} />, onClick: () => setInterviewModal({ open: true, relation: row }) }
+                        : { label: "Registrar entrevista", icon: <UserPlus size={16} strokeWidth={2.5} />, onClick: () => setInterviewModal({ open: true, relation: row }) },
+                ]
+                : []),
+        ],
     });
 
     const accentFor = (row: CampaniaProveedor) => (row.tipoProveedor === "productor" ? "bg-brand" : "bg-status-neutral");
@@ -295,11 +291,26 @@ export default function CampaignProvidersPage() {
             </TableCard>
 
             <CampaignLinkProviderModal
+                mode="create"
                 open={isLinkModalOpen}
                 campaniaId={isValidCampaign ? campaniaId : null}
                 onOpenChange={setIsLinkModalOpen}
                 onSave={() => {
                     setIsLinkModalOpen(false);
+                    showSuccess("provider");
+                    void loadRelations();
+                }}
+                onRefresh={() => void loadRelations()}
+            />
+
+            <CampaignLinkProviderModal
+                mode="edit"
+                open={editModal.open}
+                initialData={editModal.relation}
+                campaniaId={isValidCampaign ? campaniaId : null}
+                onOpenChange={(open) => setEditModal((current) => ({ ...current, open }))}
+                onSave={() => {
+                    setEditModal((current) => ({ ...current, open: false }));
                     showSuccess("provider");
                     void loadRelations();
                 }}
@@ -320,19 +331,6 @@ export default function CampaignProvidersPage() {
                 initialValues={interviewModal.relation ? interviews[interviewModal.relation.cxpId] : undefined}
                 onSave={handleSaveInterview}
             />
-
-            <CampaignProviderDetailsModal
-                open={details.open}
-                onOpenChange={(open) => setDetails((current) => ({ ...current, open }))}
-                relation={details.relation}
-                localExams={localExams}
-                interview={details.relation ? interviews[details.relation.cxpId] ?? null : null}
-                onRegisterInterview={() => {
-                    setInterviewModal({ open: true, relation: details.relation });
-                    setDetails((current) => ({ ...current, open: false }));
-                }}
-            />
-
             <CampaignSuccessModal
                 open={isSuccessModalOpen}
                 onOpenChange={setIsSuccessModalOpen}

@@ -38,7 +38,7 @@ export default function CampaignDirectoryModal({ open, onOpenChange, title, camp
             </div>
             <dl className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
                 {stats.map(({ label, value, icon: StatIcon, hint }) => (
-                    <div key={label} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-white px-2.5 py-3 sm:px-3">
+                    <div key={label} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card px-2.5 py-3 sm:px-3">
                         <span className="hidden size-11 shrink-0 items-center justify-center rounded-2xl bg-brand-surface sm:flex" style={{ color: "var(--brand-gradient-mid)" }}><StatIcon size={22} aria-hidden="true" /></span>
                         <div><dt className="text-[10px] font-medium">{label}</dt>
                         <dd className="mt-1 text-xl font-bold leading-tight tracking-tight text-ink tabular-nums sm:text-2xl">{value}</dd>

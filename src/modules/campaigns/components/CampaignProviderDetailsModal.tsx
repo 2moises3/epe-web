@@ -28,12 +28,11 @@ interface CampaignProviderDetailsModalProps {
     interview?: InterviewValues | null;
     /** Abre el formulario de entrevista desde la pestaña vacía */
     onRegisterInterview?: () => void;
+    /** Abre el formulario de examen desde la pestaña vacía */
+    onRegisterExam?: () => void;
 }
 
-const TABS: SegmentedTabItem[] = [
-    { id: "examen", label: "Examen", icon: FlaskConical },
-    { id: "entrevista", label: "Entrevista", icon: UserCheck },
-];
+
 
 type ExamState =
     | { status: "loading" }
@@ -47,7 +46,7 @@ function formatExamDate(value: string) {
 
 function PanelMessage({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
     return (
-        <Empty className="min-h-100 rounded-xl border border-border bg-white">
+        <Empty className="min-h-100 rounded-xl border border-border bg-card">
             <EmptyHeader>
                 <EmptyMedia variant="brand">{icon}</EmptyMedia>
                 <EmptyTitle>{title}</EmptyTitle>
@@ -74,7 +73,7 @@ function InterviewReport({ interview }: { interview: InterviewValues }) {
                     </InfoSection>
 
                     <InfoSection icon={Leaf} title="Fertilización">
-                        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-white px-4 py-3">
+                        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card px-4 py-3">
                             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-surface" style={{ color: "var(--brand-gradient-mid)" }}>
                                 <Leaf size={18} strokeWidth={2.5} />
                             </span>
@@ -110,18 +109,41 @@ function InterviewReport({ interview }: { interview: InterviewValues }) {
     );
 }
 
+/** Resumen de la información de la vinculación del proveedor con la campaña */
+function RelationInfo({ relation }: { relation: CampaniaProveedor }) {
+    return (
+        <div className="bg-surface-page/40 rounded-xl p-4 sm:p-6 min-h-100 border border-border">
+            <div className="flex flex-col gap-6">
+                <InfoSection icon={ClipboardList} title="Datos de la Vinculación">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <StatTile icon={Ruler} label="Cantidad Estimada" value={`${formatCampaignNumber(Number(relation.cantidadProveedor))} kg`} />
+                        <StatTile icon={FlaskConical} label="MTD Ceratitis" value={formatCampaignNumber(Number(relation.mtdCeratitis))} />
+                        <StatTile icon={UserCheck} label="Precio Estimado" value="—" hint="No disponible" />
+                        <StatTile icon={UserCheck} label="Moneda" value="—" hint="No disponible" />
+                    </div>
+                </InfoSection>
+                <InfoSection icon={ClipboardList} title="Observaciones">
+                    <div className="text-[14px] text-ink-body font-medium p-4 bg-card border border-border rounded-lg">
+                        Sin observaciones registradas.
+                    </div>
+                </InfoSection>
+            </div>
+        </div>
+    );
+}
+
 /** Detalle de un proveedor dentro de la campaña: datos del vínculo y exámenes registrados del proveedor. */
-export default function CampaignProviderDetailsModal({ open, onOpenChange, relation, localExams = [], interview = null, onRegisterInterview }: CampaignProviderDetailsModalProps) {
-    const [activeTab, setActiveTab] = useState<"examen" | "entrevista">("examen");
+export default function CampaignProviderDetailsModal({ open, onOpenChange, relation, localExams = [], interview = null, onRegisterInterview, onRegisterExam }: CampaignProviderDetailsModalProps) {
+    const [activeTab, setActiveTab] = useState<"informacion" | "fincas" | "examen" | "entrevista">("informacion");
     const [examState, setExamState] = useState<ExamState>({ status: "loading" });
     const proveedorId = relation?.proveedorId;
 
     useEffect(() => {
         if (!open || proveedorId === undefined) return;
         let active = true;
-        // Al abrir arranca en la pestaña de examen y con la lista cargando, como una sesión nueva
+        // Al abrir arranca en la pestaña de información y con la lista de exámenes cargando de fondo
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setActiveTab("examen");
+        setActiveTab("informacion");
         setExamState({ status: "loading" });
         getExamenesProveedor(proveedorId)
             .then((exams) => { if (active) setExamState({ status: "success", exams }); })
@@ -133,6 +155,14 @@ export default function CampaignProviderDetailsModal({ open, onOpenChange, relat
 
     const isProducer = relation.tipoProveedor === "productor";
     const name = relation.proveedor ? `${relation.proveedor.nombres} ${relation.proveedor.apellido}` : "Proveedor sin datos";
+
+    // Pestañas dinámicas según el tipo de proveedor
+    const TABS: SegmentedTabItem[] = [
+        { id: "informacion", label: "Información", icon: isProducer ? Tractor : Truck },
+        { id: "fincas", label: "Fincas", icon: MapPin },
+        { id: "examen", label: "Examen", icon: FlaskConical },
+        ...(isProducer ? [{ id: "entrevista", label: "Entrevista", icon: UserCheck }] : []),
+    ];
 
     // Los registrados en esta sesión van primero; así lo recién guardado se ve sin esperar al backend
     const apiExams = examState.status === "success" ? examState.exams : [];
@@ -148,20 +178,32 @@ export default function CampaignProviderDetailsModal({ open, onOpenChange, relat
             icon={isProducer ? <Tractor size={22} strokeWidth={2} /> : <Truck size={22} strokeWidth={2} />}
             title={`${isProducer ? "Productor" : "Acopiador"} - ${name}`}
             description={`Cantidad: ${formatCampaignNumber(Number(relation.cantidadProveedor))} kg · MTD Ceratitis: ${formatCampaignNumber(Number(relation.mtdCeratitis))}`}
-            className="sm:max-w-225"
+            className="sm:max-w-275 md:max-w-250"
         >
             <SegmentedTabs
                 tabs={TABS}
                 value={activeTab}
-                onChange={(val) => setActiveTab(val as "examen" | "entrevista")}
+                onChange={(val) => setActiveTab(val as "informacion" | "fincas" | "examen" | "entrevista")}
                 className="mb-5"
             />
 
-            {activeTab === "entrevista" ? (
+            {activeTab === "informacion" ? (
+                <RelationInfo relation={relation} />
+            ) : activeTab === "fincas" ? (
+                <Empty className="min-h-100 rounded-xl border border-border bg-card">
+                    <EmptyHeader>
+                        <EmptyMedia variant="brand"><MapPin size={28} strokeWidth={2} /></EmptyMedia>
+                        <EmptyTitle>Fincas Participantes</EmptyTitle>
+                        <EmptyDescription>
+                            Las fincas vinculadas a este proveedor aparecerán aquí. (Por conectar con API)
+                        </EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
+            ) : activeTab === "entrevista" ? (
                 interview ? (
                     <InterviewReport interview={interview} />
                 ) : (
-                    <Empty className="min-h-100 rounded-xl border border-border bg-white">
+                    <Empty className="min-h-100 rounded-xl border border-border bg-card">
                         <EmptyHeader>
                             <EmptyMedia variant="brand"><ClipboardList size={28} strokeWidth={2} /></EmptyMedia>
                             <EmptyTitle>Sin entrevista registrada</EmptyTitle>
@@ -179,9 +221,18 @@ export default function CampaignProviderDetailsModal({ open, onOpenChange, relat
             ) : examState.status === "error" ? (
                 <PanelMessage icon={<TriangleAlert size={28} strokeWidth={2} />} title="No se pudieron cargar los exámenes" description="Cierra y vuelve a abrir el detalle para intentarlo nuevamente." />
             ) : rows.length === 0 ? (
-                <PanelMessage icon={<FlaskConical size={28} strokeWidth={2} />} title="Sin exámenes registrados" description="Este proveedor aún no tiene exámenes de laboratorio registrados." />
+                <Empty className="min-h-100 rounded-xl border border-border bg-card">
+                    <EmptyHeader>
+                        <EmptyMedia variant="brand"><FlaskConical size={28} strokeWidth={2} /></EmptyMedia>
+                        <EmptyTitle>Sin exámenes registrados</EmptyTitle>
+                        <EmptyDescription>Este proveedor aún no tiene exámenes de laboratorio registrados.</EmptyDescription>
+                    </EmptyHeader>
+                    {onRegisterExam && (
+                        <Button size="xl" onClick={onRegisterExam}><FlaskConical size={20} strokeWidth={2.5} /> Registrar examen</Button>
+                    )}
+                </Empty>
             ) : (
-                <div className="rounded-xl border border-border overflow-hidden overflow-x-auto min-h-100 bg-white">
+                <div className="rounded-xl border border-border overflow-hidden overflow-x-auto min-h-100 bg-card">
                     <Table className="min-w-150">
                         <TableHeader className={TABLE_HEAD_BG}>
                             <TableRow className="border-b border-border hover:bg-transparent">

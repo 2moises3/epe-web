@@ -134,7 +134,7 @@ export default function CarriersPage() {
                 </Alert>
             )}
             {isLoading ? (
-                <div role="status" className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-white p-10 text-ink-muted">
+                <div role="status" className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-10 text-ink-muted">
                     <Spinner className="size-7 text-brand" />
                     <p className="text-[14px] font-medium">Cargando empresas de transporte...</p>
                 </div>

@@ -18,7 +18,7 @@ export function InfoField({ label, value, suffix, className }: InfoFieldProps) {
     return (
         <div className={cn("flex min-w-0 flex-col gap-2", className)}>
             <label className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{label}</label>
-            <div className="relative flex h-10 items-center rounded-lg border border-border/60 bg-white px-3 text-[13px] font-medium text-ink">
+            <div className="relative flex h-10 items-center rounded-lg border border-border/60 bg-card px-3 text-[13px] font-medium text-ink">
                 <span className="truncate">{value}</span>
                 {suffix && <span className="absolute right-3 text-xs font-bold text-ink-muted">{suffix}</span>}
             </div>
@@ -61,7 +61,7 @@ interface StatTileProps {
  */
 export function StatTile({ icon: Icon, label, value, hint, className }: StatTileProps) {
     return (
-        <div className={cn("flex items-start gap-3 rounded-xl border border-border/60 bg-white px-3 py-3", className)}>
+        <div className={cn("flex items-start gap-3 rounded-xl border border-border/60 bg-card px-3 py-3", className)}>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-surface" style={{ color: "var(--brand-gradient-mid)" }}>
                 <Icon size={17} strokeWidth={2.5} />
             </span>

@@ -14,6 +14,7 @@ import Hint from "@/shared/components/Hint";
 import ConfirmModal from "@/shared/components/ConfirmModal";
 import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
 import CompanyBreadcrumb from "@/shared/layout/CompanyBreadcrumb";
+import ThemeToggle from "@/shared/components/ThemeToggle";
 
 interface TopNavBarProps {
     onLogout?: () => void;
@@ -26,7 +27,7 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
     const isRoot = location.pathname === '/modules' || location.pathname === '/';
 
     return (
-        <header className="shrink-0 bg-white w-full z-20 border-b border-border">
+        <header className="shrink-0 bg-card w-full z-20 border-b border-border dark:border-b-brand/15">
             <div className="relative flex h-[72px] items-center justify-between px-4 sm:px-8 lg:px-14">
             <div className="flex items-center min-w-0">
                 {/* Botón de regresar animado (aparece empujando el logo) */}
@@ -39,7 +40,9 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                         <button
                             onClick={() => {
                                 const segments = location.pathname.split('/').filter(Boolean);
-                                if (segments.length > 1) {
+                                if (segments.length > 3) {
+                                    navigate(`/${segments[0]}/${segments[1]}/${segments[2]}`);
+                                } else if (segments.length > 1) {
                                     // Si estamos dentro de un módulo (ej. /campaigns/1/providers), volvemos a la raíz del módulo (/campaigns)
                                     navigate(`/${segments[0]}`);
                                 } else {
@@ -47,7 +50,7 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                                     navigate('/modules');
                                 }
                             }}
-                            className="text-ink-muted hover:text-brand transition-all flex items-center justify-center shrink-0 w-8 h-8 rounded-full hover:bg-black/5 mr-1 sm:mr-4 active:scale-95"
+                            className="text-ink-muted hover:text-brand transition-all flex items-center justify-center shrink-0 w-8 h-8 rounded-full hover:bg-muted mr-1 sm:mr-4 active:scale-95"
                             aria-label="Regresar"
                         >
                             <ArrowLeft size={22} strokeWidth={2} />
@@ -97,17 +100,19 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
+                <ThemeToggle />
+
                 <Hint label="Notificaciones" side="bottom">
                     <button className="text-ink-muted hover:text-brand transition-all relative active:scale-95" aria-label="Notificaciones">
                         <Bell size={22} strokeWidth={2} />
-                        <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                        <span className="absolute top-0 right-0 w-2 h-2 bg-destructive rounded-full border border-card"></span>
                     </button>
                 </Hint>
 
                 <div className="hidden sm:block h-9 w-px bg-border shrink-0"></div>
 
                 <DropdownMenu>
-                    <DropdownMenuTrigger className="flex items-center gap-3 p-1 sm:p-1.5 sm:pl-2 rounded-xl transition-all hover:bg-black/5 outline-none focus-visible:ring-2 focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand/40 active:scale-95">
+                    <DropdownMenuTrigger className="flex items-center gap-3 p-1 sm:p-1.5 sm:pl-2 rounded-xl transition-all hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand/40 active:scale-95">
                         <span
                             className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border border-transparent text-white"
                             style={BRAND_ACTIVE_SURFACE}

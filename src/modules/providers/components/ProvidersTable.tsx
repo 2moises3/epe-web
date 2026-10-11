@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pencil, Eye, Trash2, Truck, UserRound, ListFilter, MapPin, Phone, TriangleAlert, RotateCw, SearchX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Pencil, Eye, Trash2, Truck, LandPlot, Sprout, UserRound, ListFilter, MapPin, Phone, TriangleAlert, RotateCw, SearchX } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,6 +20,10 @@ import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type Ta
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ProviderFormModal from "@/modules/providers/components/ProviderFormModal";
 import ProviderViewModal from "@/modules/providers/components/ProviderViewModal";
+import ProviderAgronomicoModal from "@/modules/providers/components/ProviderAgronomicoModal";
+import ProviderSuccessModal, { type ProviderSuccessMode } from "@/modules/providers/components/ProviderSuccessModal";
+import { saveDatosAgronomicos, useProviderLocalData } from "@/modules/providers/providerLocalData.store";
+import type { DatosAgronomicos } from "@/modules/providers/providerAgronomico.utils";
 import type { ProveedorInput } from "@/modules/providers/api/proveedor.dto";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import type { createInFlightGuard } from "@/modules/providers/api/proveedor-submission";
@@ -41,12 +46,27 @@ interface ProvidersTableProps {
 }
 
 export default function ProvidersTable({ data, isLoading, loadError, onRetry, hasActiveFilters, onClearFilters, mutationGuard, onSave, onDelete }: ProvidersTableProps) {
+    const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<TableViewMode>("table");
     // Se conserva el proveedor al cerrar para que los modales no se vacíen durante su animación de salida
     const [editing, setEditing] = useState<{ open: boolean; provider: Proveedor | null }>({ open: false, provider: null });
     const [viewing, setViewing] = useState<{ open: boolean; providerId: number | null }>({ open: false, providerId: null });
     const [deleting, setDeleting] = useState<{ open: boolean; provider: Proveedor | null }>({ open: false, provider: null });
+    // `saved` se fija al abrir: así el modal no cambia de "agregar" a "actualizar" mientras se cierra tras guardar
+    const [registeringAgronomico, setRegisteringAgronomico] = useState<{ open: boolean; provider: Proveedor | null; saved?: DatosAgronomicos }>({ open: false, provider: null });
+    const [success, setSuccess] = useState<{ open: boolean; mode: ProviderSuccessMode }>({ open: false, mode: "agronomico" });
+    // Fincas y datos agronómicos viven en un almacén en memoria: ver providerLocalData.store.ts
+    const { agronomicos } = useProviderLocalData();
+
+    const handleSaveAgronomico = (datos: DatosAgronomicos) => {
+        const provider = registeringAgronomico.provider;
+        if (!provider) return;
+        const isUpdate = registeringAgronomico.saved !== undefined;
+        saveDatosAgronomicos(provider.proveedorId, datos);
+        setRegisteringAgronomico((current) => ({ ...current, open: false }));
+        setSuccess({ open: true, mode: isUpdate ? "agronomico-edit" : "agronomico" });
+    };
 
     /** Exporta los proveedores visibles a CSV y lo descarga */
     const handleExportCSV = () =>
@@ -56,12 +76,21 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
             data.map((row) => [fullName(row), documentLabel(row), row.zona, String(row.telefono), row.email, String(row.codigoLugarProduccion)]),
         );
 
-    /** Ver, editar y eliminar quedan siempre visibles: es el CRUD del proveedor */
-    const getRowActions = (row: Proveedor): { primary: RowAction[] } => ({
+    /** Ver, editar y eliminar quedan siempre visibles: es el CRUD del proveedor; el resto va en el menú de 3 puntos */
+    const getRowActions = (row: Proveedor): { primary: RowAction[]; secondary: RowAction[] } => ({
         primary: [
             { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditing({ open: true, provider: row }) },
             { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => setViewing({ open: true, providerId: row.proveedorId }) },
             { label: "Eliminar", icon: <Trash2 size={18} strokeWidth={2.5} />, variant: "destructive", onClick: () => setDeleting({ open: true, provider: row }) },
+        ],
+        secondary: [
+            { label: "Gestión de fincas", icon: <LandPlot size={18} strokeWidth={2.5} />, onClick: () => navigate(`/proveedores/${row.proveedorId}/fincas`) },
+            {
+                // Se agregan tras una visita; una vez guardados, la misma acción pasa a actualizarlos
+                label: agronomicos[row.proveedorId] ? "Actualizar datos agronómicos" : "Agregar datos agronómicos",
+                icon: <Sprout size={18} strokeWidth={2.5} />,
+                onClick: () => setRegisteringAgronomico({ open: true, provider: row, saved: agronomicos[row.proveedorId] }),
+            },
         ],
     });
 
@@ -140,7 +169,7 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                                     <TableHead className="text-ink font-semibold h-14">Documento</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Zona</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Teléfono</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-44">Acciones</TableHead>
+                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-56">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -182,6 +211,16 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                 onOpenChange={(open) => setViewing((current) => ({ ...current, open }))}
                 providerId={viewing.providerId}
             />
+
+            <ProviderAgronomicoModal
+                open={registeringAgronomico.open}
+                onOpenChange={(open) => setRegisteringAgronomico((current) => ({ ...current, open }))}
+                providerName={registeringAgronomico.provider ? fullName(registeringAgronomico.provider) : ""}
+                savedData={registeringAgronomico.saved}
+                onSave={handleSaveAgronomico}
+            />
+
+            <ProviderSuccessModal open={success.open} onOpenChange={(open) => setSuccess((current) => ({ ...current, open }))} mode={success.mode} />
 
             <ConfirmModal
                 open={deleting.open}

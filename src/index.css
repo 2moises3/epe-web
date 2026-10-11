@@ -119,38 +119,76 @@
     --sidebar-ring: oklch(0.705 0.015 286.067);
 }
 
+/*
+ * Modo oscuro (mismo criterio que Supabase/Spotify/Vercel): las superficies son grises NEUTROS que suben de
+ * claridad por nivel (página → card → popover → muted) y el verde queda solo para lo que comunica algo:
+ * botones, enlaces, íconos de marca, estados activos y badges. brand-surface/brand-border son apenas un
+ * velo verde sobre la card, para que los círculos de ícono y los resaltados no se vuelvan "fondo verde".
+ * Todo componente debe pintar con estos tokens (bg-card, text-ink, border-border…), nunca con bg-white ni hex.
+ */
 .dark {
-    --background: oklch(0.141 0.005 285.823);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.21 0.006 285.885);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.21 0.006 285.885);
-    --popover-foreground: oklch(0.985 0 0);
+    color-scheme: dark;
+    --brand: #6fae3f;
+    --brand-dark: #ededed;
+    --brand-surface: color-mix(in oklab, var(--brand) 13%, #1a1a1d);
+    --brand-border: color-mix(in oklab, var(--brand) 28%, #1a1a1d);
+    --ink: #ededed;
+    --ink-body: #b4b4b9;
+    --ink-muted: #8b8b93;
+    --surface-page: #111113;
+    --status-warning: #fb923c;
+    --status-neutral: #8b8b93;
+    --status-neutral-surface: #232327;
+    --status-highlight: #fbbf24;
+    --status-highlight-surface: #2a2416;
+    --status-neutral-border: #34343a;
+    --status-highlight-border: #4a3c18;
+    --background: #111113;
+    --foreground: #ededed;
+    --card: #19191c;
+    --card-foreground: #ededed;
+    --popover: #1e1e22;
+    --popover-foreground: #ededed;
     --primary: oklch(0.768 0.233 130.85);
-    --primary-foreground: oklch(0.405 0.101 131.063);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
-    --accent-foreground: oklch(0.985 0 0);
+    --primary-foreground: oklch(0.205 0.06 131.063);
+    --secondary: #232327;
+    --secondary-foreground: #ededed;
+    --muted: #232327;
+    --muted-foreground: #8b8b93;
+    --accent: #232327;
+    --accent-foreground: #ededed;
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.552 0.016 285.938);
+    --border: #2a2a2f;
+    --input: #34343a;
+    --ring: #52525b;
     --chart-1: oklch(0.897 0.196 126.665);
     --chart-2: oklch(0.768 0.233 130.85);
     --chart-3: oklch(0.648 0.2 131.684);
     --chart-4: oklch(0.532 0.157 131.589);
     --chart-5: oklch(0.453 0.124 130.933);
-    --sidebar: oklch(0.21 0.006 285.885);
-    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar: #19191c;
+    --sidebar-foreground: #ededed;
     --sidebar-primary: oklch(0.768 0.233 130.85);
     --sidebar-primary-foreground: oklch(0.274 0.072 132.109);
-    --sidebar-accent: oklch(0.274 0.006 286.033);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.552 0.016 285.938);
+    --sidebar-accent: #232327;
+    --sidebar-accent-foreground: #ededed;
+    --sidebar-border: #2a2a2f;
+    --sidebar-ring: #52525b;
+}
+
+/* Cambio de tema: el nuevo tema se revela en un círculo que crece desde el botón (View Transitions API).
+   --theme-x/--theme-y/--theme-r las fija ThemeToggle con la posición del clic. */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+    animation: theme-reveal 520ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes theme-reveal {
+    from { clip-path: circle(0 at var(--theme-x, 50%) var(--theme-y, 0)); }
+    to { clip-path: circle(var(--theme-r, 150%) at var(--theme-x, 50%) var(--theme-y, 0)); }
 }
 
 @layer base {
@@ -169,6 +207,17 @@
 }
 
 @layer components {
+  /*
+   * Fondo de las páginas del dashboard. En oscuro suma un resplandor verde muy tenue arriba: le da
+   * atmósfera de marca sin teñir la estructura (cards, tablas y menús siguen en gris neutro).
+   */
+  .page-ambient {
+    background-color: var(--surface-page);
+    }
+  .dark .page-ambient {
+    background-image: radial-gradient(ellipse 75% 420px at 50% -120px, color-mix(in oklab, var(--brand) 11%, transparent), transparent 75%);
+    background-repeat: no-repeat;
+    }
   /*
    * Hover/estado activo con el degradado de marca (--brand-gradient): para íconos y controles chicos
    * que antes tenían su propio verde plano. Es una clase CSS -no un estilo inline- porque necesita

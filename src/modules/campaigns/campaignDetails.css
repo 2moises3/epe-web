@@ -1,12 +1,12 @@
 .campaign-details {
-    --campaign-muted: #728299;
-    --campaign-line: #e7ece3;
+    --campaign-muted: var(--ink-muted);
+    --campaign-line: var(--border);
     position: relative;
     isolation: isolate;
     min-height: 100%;
     overflow: clip;
     color: var(--ink);
-    background: radial-gradient(ellipse at 18% 52%, #e9efdf80, transparent 66%), #f8f9f5;
+    background: radial-gradient(ellipse at 18% 52%, color-mix(in oklab, var(--brand-surface) 50%, transparent), transparent 66%), var(--surface-page);
 }
 
 .campaign-details::before,
@@ -17,7 +17,7 @@
     width: 115px;
     height: 215px;
     border-radius: 0 100% 0 100%;
-    background: linear-gradient(125deg, #c7dcb180, #e9efdf20);
+    background: linear-gradient(125deg, color-mix(in oklab, var(--brand-border) 50%, transparent), color-mix(in oklab, var(--brand-surface) 12%, transparent));
     pointer-events: none;
 }
 .campaign-details::before { top: -90px; left: -80px; transform: rotate(12deg); }
@@ -25,7 +25,7 @@
 .campaign-details-inner { width: 100%; }
 .campaign-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 19px; }
 .campaign-page-heading h1 { font-size: 25px; font-weight: 800; letter-spacing: -1px; line-height: 1.25; }
-.campaign-page-heading > div > p { margin-top: 3px; font-size: 12px; color: #627181; font-weight: 500; }
+.campaign-page-heading > div > p { margin-top: 3px; font-size: 12px; color: var(--ink-muted); font-weight: 500; }
 .campaign-heading-signature { display: flex; align-items: center; gap: 15px; width: 47%; color: #8d9c7d; }
 .campaign-heading-signature > span { display: flex; align-items: center; gap: 9px; flex-shrink: 0; font: italic 23px/1.3 "Segoe Script", "Bradley Hand", cursive; transform: rotate(-4deg); }
 .campaign-heading-signature svg { color: #a7c47e; fill: #a7c47e33; }
@@ -36,18 +36,18 @@
 .campaign-bottom-grid { margin-top: 16px; align-items: start; }
 .campaign-main-column,
 .campaign-side-column { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.campaign-panel { gap: 0; min-width: 0; padding: 0; border: 1px solid var(--campaign-line); border-radius: 16px; background: #fff; color: var(--ink); box-shadow: 0 4px 20px #2c491207; --tw-ring-shadow: 0 0 #0000; }
+.campaign-panel { gap: 0; min-width: 0; padding: 0; border: 1px solid var(--campaign-line); border-radius: 16px; background: var(--card); color: var(--ink); box-shadow: 0 4px 20px #2c491207; --tw-ring-shadow: 0 0 #0000; }
 .campaign-top-grid, .campaign-main-column, .campaign-side-column { animation: campaign-arrive 450ms ease-out both; }
 .campaign-main-column { animation-delay: 65ms; }
 .campaign-side-column { animation-delay: 120ms; }
-.campaign-overview { position: relative; min-height: 252px; background: linear-gradient(115deg, white 40%, #f6f8f1); }
+.campaign-overview { position: relative; min-height: 252px; background: linear-gradient(115deg, var(--card) 40%, color-mix(in oklab, var(--brand-surface) 45%, var(--card))); }
 .campaign-overview-copy { position: relative; z-index: 1; width: 57%; padding: 22px 18px 17px 22px; }
 .campaign-eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #538443; }
 .campaign-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 12px; margin-top: 3px; }
 .campaign-title-row h2 { font-size: clamp(22px, 2.05vw, 32px); font-weight: 800; letter-spacing: -1.15px; line-height: 1.25; overflow-wrap: anywhere; }
 .campaign-title-row [data-slot="badge"] { padding: 4px 10px; font-size: 10px; gap: 6px; }
 .campaign-description { max-width: 380px; margin-top: 8px; font-size: 11.5px; line-height: 1.55; color: var(--campaign-muted); }
-.campaign-dates { display: grid; grid-template-columns: 1fr 1fr .8fr; gap: 0; margin-top: 19px; padding-block: 12px; border-block: 1px solid #edf0e9; }
+.campaign-dates { display: grid; grid-template-columns: 1fr 1fr .8fr; gap: 0; margin-top: 19px; padding-block: 12px; border-block: 1px solid var(--campaign-line); }
 .campaign-dates > div { display: flex; align-items: center; gap: 8px; padding-right: 8px; min-width: 0; }
 .campaign-dates > div + div { border-left: 1px solid var(--campaign-line); padding-left: 14px; }
 .campaign-dates svg { flex-shrink: 0; color: var(--brand); }
@@ -71,7 +71,7 @@
 .campaign-metric h3 { margin-top: 4px; min-height: 27px; font-size: 10px; line-height: 1.45; font-weight: 700; }
 .campaign-metric-value { margin-top: 5px; font-size: 24px; line-height: 1.3; font-weight: 800; letter-spacing: -.7px; font-variant-numeric: tabular-nums; }
 .campaign-metric-value > span { font-size: 15px; font-weight: 700; letter-spacing: -.4px; }
-.campaign-metric-value.is-pending { color: #899ab0; }
+.campaign-metric-value.is-pending { color: var(--ink-muted); }
 .campaign-metric-description { margin-top: 5px; font-size: 9px; line-height: 1.5; color: var(--campaign-muted); }
 .campaign-metric-warm { border-color: #efe6ce; background: linear-gradient(130deg, #fff, #fcfbf7); }
 .campaign-metric-warm .campaign-icon-circle { color: #a0710e; background: #fff2cc; }
@@ -83,7 +83,7 @@
 .campaign-harvest { padding: 20px; }
 .campaign-percentage { margin-left: auto; font-size: 29px; line-height: 1; font-weight: 800; letter-spacing: -1px; color: #245e24; font-variant-numeric: tabular-nums; }
 .campaign-progress { margin-top: 17px; }
-.campaign-progress [data-slot="progress-track"] { height: 13px; background: #edf0f1; }
+.campaign-progress [data-slot="progress-track"] { height: 13px; background: var(--muted); }
 .campaign-progress [data-slot="progress-indicator"] { border-radius: 99px; background: linear-gradient(90deg, #78ae49, #3e7d2c); transition: width 700ms ease; }
 .campaign-harvest-bottom { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; gap: 20px; margin-top: 13px; }
 .campaign-harvest-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -111,7 +111,7 @@
 .campaign-stat-red { color: #ce4242; }
 .campaign-list-label { margin-block: 5px 2px; font-size: 9px; font-weight: 500; color: var(--campaign-muted); }
 .campaign-contact-row { display: flex; align-items: center; gap: 9px; padding-block: 9px; min-width: 0; }
-.campaign-contact-row + .campaign-contact-row { border-top: 1px solid #eff1ed; }
+.campaign-contact-row + .campaign-contact-row { border-top: 1px solid var(--campaign-line); }
 .campaign-avatar { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 31px; height: 31px; border-radius: 50%; font-size: 11px; font-weight: 700; color: #396629; background: #edf4e7; }
 .campaign-contact-row h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; font-weight: 700; }
 .campaign-contact-row p { margin-top: 1px; font-size: 9px; color: var(--campaign-muted); }
@@ -122,12 +122,12 @@
 .campaign-certifications { padding: 17px 17px 6px; }
 .campaign-certifications .campaign-section-heading { gap: 8px; }
 .campaign-cert-count { font-size: 9px; color: var(--campaign-muted); white-space: nowrap; }
-.campaign-expand-all { flex-shrink: 0; border-radius: 50%; border-color: #e9edeb; background: #f9faf9; color: #405148; }
+.campaign-expand-all { flex-shrink: 0; border-radius: 50%; border-color: var(--campaign-line); background: var(--muted); color: var(--ink-body); }
 .campaign-expand-all svg, .campaign-certification-toggle > svg { transition: transform 200ms ease; }
 .campaign-certification-list { margin-top: 8px; }
-.campaign-certification + .campaign-certification { border-top: 1px solid #edf0eb; }
+.campaign-certification + .campaign-certification { border-top: 1px solid var(--campaign-line); }
 .campaign-certification-toggle { display: flex; width: 100%; align-items: center; gap: 11px; padding: 10px 0; text-align: left; border-radius: 8px; transition: background 180ms ease; }
-.campaign-certification-toggle:hover { background: #f8faf5; }
+.campaign-certification-toggle:hover { background: color-mix(in oklab, var(--brand-surface) 50%, transparent); }
 .campaign-certification-toggle:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .campaign-certification-toggle > svg { flex-shrink: 0; color: var(--campaign-muted); }
 .campaign-cert-info { flex: 1; min-width: 0; }
@@ -137,7 +137,7 @@
 .campaign-cert-files { margin-left: 49px; padding-bottom: 13px; }
 .campaign-cert-files:not([hidden]) { animation: campaign-arrive 180ms ease-out; }
 .campaign-cert-files ul { display: flex; flex-direction: column; gap: 7px; }
-.campaign-cert-files li { display: flex; align-items: center; gap: 7px; color: #627665; font-size: 10px; overflow-wrap: anywhere; }
+.campaign-cert-files li { display: flex; align-items: center; gap: 7px; color: var(--ink-body); font-size: 10px; overflow-wrap: anywhere; }
 .campaign-cert-files svg { flex-shrink: 0; }
 .campaign-cert-files > p { margin-top: 8px; font-size: 9px; color: var(--campaign-muted); }
 .campaign-brand-banner { position: relative; min-height: 135px; overflow: hidden; isolation: isolate; border-radius: 15px; background: linear-gradient(110deg, #edf3e4, #e6eedb); }
@@ -149,6 +149,33 @@
 .campaign-brand-banner > img { position: absolute; inset: 0 0 0 auto; width: 54%; height: 100%; object-fit: cover; object-position: 60% center; border-radius: 76% 0 0 0 / 100% 0 0 0; }
 .campaign-empty { padding: 20px 5px; color: var(--campaign-muted); font-size: 12px; line-height: 1.7; }
 .campaign-muted { color: var(--campaign-muted); }
+
+/* Modo oscuro: superficies y líneas ya salen de los tokens; aquí solo se aclaran los acentos de color
+   (verdes, morado y cálido) que en claro son tonos oscuros sobre fondo pastel. */
+.dark .campaign-heading-signature,
+.dark .campaign-heading-signature > p { color: var(--ink-muted) !important; }
+.dark .campaign-heading-signature > div { background: var(--border); }
+.dark .campaign-eyebrow,
+.dark .campaign-section-icon,
+.dark .campaign-stat-green { color: #8cc65e; }
+.dark .campaign-chip,
+.dark .campaign-avatar,
+.dark .campaign-icon-circle { color: #9ccc6f; background: var(--brand-surface); }
+.dark .campaign-chip-purple { color: #c9a6ee; background: #2c2240; }
+.dark .campaign-fruit-photo { background: var(--muted); }
+.dark .campaign-metric-warm { border-color: var(--status-highlight-border); background: linear-gradient(130deg, var(--card), var(--status-highlight-surface)); }
+.dark .campaign-metric-warm .campaign-icon-circle { color: #f3c560; background: #3a2e10; }
+.dark .campaign-percentage { color: #9ad16a; }
+.dark .campaign-harvest-note { background: var(--brand-surface); }
+.dark .campaign-harvest-note p { color: var(--ink); }
+.dark .campaign-view-all { border-color: var(--border); background: var(--muted); color: var(--ink); }
+.dark .campaign-view-all:hover { background: var(--accent); color: var(--brand); }
+.dark .campaign-stat-red { color: #f07a7a; }
+.dark .campaign-brand-banner { background: linear-gradient(110deg, color-mix(in oklab, var(--brand) 18%, var(--card)), var(--card) 70%); }
+.dark .campaign-brand-banner::before { background: color-mix(in oklab, var(--brand) 22%, var(--card)); }
+.dark .campaign-brand-copy > p { color: #cfe6bd; }
+.dark .campaign-brand-copy > span { color: var(--ink-muted); }
+.dark .campaign-metric:hover { box-shadow: 0 7px 22px #0006; }
 
 @keyframes campaign-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 

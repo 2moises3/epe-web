@@ -1,23 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Link2, AlertCircle, UserRound, MapPin, Sprout } from "lucide-react";
+import { X, Link2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import AppModal from "@/shared/components/AppModal";
-import FormSection from "@/shared/components/FormSection";
+import InputField from "@/shared/components/InputField";
 import SegmentedControl from "@/shared/components/SegmentedControl";
-import { Field, FieldError, FieldLabel, FieldLegend } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
-import { Separator } from "@/shared/components/ui/separator";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { getProveedores } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
-import { createCampaniaProveedor, getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
+import { createCampaniaProveedor, getCampaniaProveedoresByCampania, updateCampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.api";
 import type { TipoProveedorCampania } from "@/modules/campaigns/api/campania-proveedor.dto";
 import {
     getCampaniaProveedorDraftErrors,
     toCreateCampaniaProveedorInput,
+    toUpdateCampaniaProveedorInput,
     type CampaniaProveedorDraft,
-    type CampaniaProveedorDraftErrors,
 } from "@/modules/campaigns/api/campania-proveedor-form";
 import { createCampaniaProveedorSubmissionController } from "@/modules/campaigns/api/campania-proveedor-submission";
 import { fetchCampaignProviderOptions } from "@/modules/campaigns/api/campaign-provider-options";
@@ -30,67 +30,37 @@ interface CampaignLinkProviderModalProps {
     onSave?: () => void;
     /** Se llama cuando el resultado quedó incierto y conviene recargar la lista de la página */
     onRefresh?: () => void;
+    mode?: "create" | "edit";
+    initialData?: import("@/modules/campaigns/api/campania-proveedor.mapper").CampaniaProveedor | null;
 }
 
-type DraftField = Exclude<keyof CampaniaProveedorDraft, "proveedorId" | "tipoProveedor"> | "frutaConvencional" | "observacionesParticipacion";
+type DraftField = Exclude<keyof CampaniaProveedorDraft, "proveedorId" | "tipoProveedor"> | "observacionesParticipacion" | "precioEstimado" | "moneda" | "fincasParticipantes";
 type DraftValues = Record<Exclude<keyof CampaniaProveedorDraft, "proveedorId" | "tipoProveedor">, string> & {
-    frutaConvencional: string;
     observacionesParticipacion: string;
+    precioEstimado: string;
+    moneda: string;
+    fincasParticipantes: number[];
 };
 
 const EMPTY_DRAFT: DraftValues = {
     cantidadProveedor: "",
     mtdCeratitis: "",
-    departamento: "",
-    provincia: "",
-    distrito: "",
-    latitud: "",
-    longitud: "",
-    densidadPlantacion: "",
-    distanciamiento: "",
-    frecuenciaRiego: "",
-    haTotalFinca: "",
-    haCultivo: "",
-    nombreAplicacion: "",
-    aplicacionesAlAno: "",
-    frutaConvencional: "",
     observacionesParticipacion: "",
+    precioEstimado: "",
+    moneda: "PEN",
+    fincasParticipantes: [],
 };
 
 const PROVIDER_TYPES = [
     { label: "Productor", value: "productor" },
     { label: "Acopiador", value: "acopio" },
 ];
-
-/** Campos de la finca que el backend exige solo para productores, en el orden en que se muestran */
-const FINCA_LOCATION: Array<{ field: DraftField; label: string; type?: "number"; step?: string; placeholder?: string; suffix?: string }> = [
-    { field: "departamento", label: "Departamento", placeholder: "Ej. Piura" },
-    { field: "provincia", label: "Provincia", placeholder: "Ej. Sullana" },
-    { field: "distrito", label: "Distrito", placeholder: "Ej. Tambogrande" },
-    { field: "latitud", label: "Latitud", type: "number", step: "0.0000001", placeholder: "Ej. -4.8392" },
-    { field: "longitud", label: "Longitud", type: "number", step: "0.0000001", placeholder: "Ej. -80.3129" },
-    { field: "haTotalFinca", label: "Hectáreas totales de finca", type: "number", step: "1", placeholder: "Ej. 20", suffix: "HA" },
-];
-
-const FINCA_CROP: Array<{ field: DraftField; label: string; type?: "number"; step?: string; placeholder?: string; suffix?: string }> = [
-    { field: "haCultivo", label: "Hectáreas de cultivo", type: "number", step: "1", placeholder: "Ej. 10", suffix: "HA" },
-];
-
-const AGRONOMIC_INFO: Array<{ field: DraftField; label: string; type?: "number"; step?: string; placeholder?: string }> = [
-    { field: "densidadPlantacion", label: "Densidad de plantación", type: "number", step: "0.001", placeholder: "Ej. 500" },
-    { field: "distanciamiento", label: "Distanciamiento", type: "number", step: "0.001", placeholder: "Ej. 8x8" },
-    { field: "frecuenciaRiego", label: "Frecuencia de riego", type: "number", step: "1", placeholder: "Ej. 15 días" },
-    { field: "nombreAplicacion", label: "Nombre de aplicación", placeholder: "Ej. Fertilizante NPK" },
-    { field: "aplicacionesAlAno", label: "Aplicaciones al año", type: "number", step: "1", placeholder: "Ej. 3" },
-];
-
-
 /** Vincula un proveedor por vez: se valida, se guarda y el backend confirma antes de mostrar éxito. */
-export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChange, onSave, onRefresh }: CampaignLinkProviderModalProps) {
+export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChange, onSave, onRefresh, mode = "create", initialData }: CampaignLinkProviderModalProps) {
     const [providerType, setProviderType] = useState<TipoProveedorCampania>("productor");
     const [selectedProvider, setSelectedProvider] = useState("");
     const [draft, setDraft] = useState<DraftValues>(EMPTY_DRAFT);
-    const [errors, setErrors] = useState<CampaniaProveedorDraftErrors & { proveedorId?: string }>({});
+    const [errors, setErrors] = useState<Partial<Record<keyof DraftValues, string>> & { proveedorId?: string }>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [proveedores, setProveedores] = useState<Proveedor[]>([]);
     const [linkedIds, setLinkedIds] = useState<Set<number>>(new Set());
@@ -121,10 +91,23 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
     useEffect(() => {
         if (!open) return;
         let active = true;
+        
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setProviderType("productor");
-        setSelectedProvider("");
-        setDraft(EMPTY_DRAFT);
+        if (mode === "edit" && initialData) {
+            setProviderType(initialData.tipoProveedor);
+            setSelectedProvider(String(initialData.proveedorId));
+            setDraft({
+                ...EMPTY_DRAFT,
+                cantidadProveedor: initialData.cantidadProveedor ? String(initialData.cantidadProveedor) : "",
+                mtdCeratitis: initialData.mtdCeratitis !== undefined && initialData.mtdCeratitis !== null ? String(initialData.mtdCeratitis) : "",
+                // TODO(api): Load new fields when they are available from backend
+            });
+        } else {
+            setProviderType("productor");
+            setSelectedProvider("");
+            setDraft(EMPTY_DRAFT);
+        }
+
         setErrors({});
         setFormError(null);
         setIsLoadingProviders(true);
@@ -176,7 +159,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
         onOpenChange(nextOpen);
     };
 
-    const updateDraft = (field: DraftField, value: string) => {
+    const updateDraft = <K extends keyof DraftValues>(field: K, value: DraftValues[K]) => {
         setDraft((current) => ({ ...current, [field]: value }));
         setErrors((current) => ({ ...current, [field]: undefined }));
         setFormError(null);
@@ -185,12 +168,12 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
     const handleSubmit = async () => {
         if (isLocked || !campaniaId) return;
         const proveedor = proveedores.find((provider) => String(provider.proveedorId) === selectedProvider);
-        const candidate: CampaniaProveedorDraft = { proveedorId: proveedor?.proveedorId ?? 0, tipoProveedor: providerType, ...draft };
+        const candidate: CampaniaProveedorDraft = { proveedorId: proveedor?.proveedorId ?? (mode === "edit" && initialData ? initialData.proveedorId : 0), tipoProveedor: providerType, ...draft };
         const draftErrors: typeof errors = getCampaniaProveedorDraftErrors(candidate);
-        if (!proveedor) draftErrors.proveedorId = "Selecciona un proveedor.";
-        if (Object.keys(draftErrors).length > 0 || !proveedor) {
+        if (!proveedor && mode === "create") draftErrors.proveedorId = "Selecciona un proveedor.";
+        if (Object.keys(draftErrors).length > 0 || (!proveedor && mode === "create")) {
             setErrors(draftErrors);
-            setFormError("Revisa los campos marcados antes de vincular.");
+            setFormError("Revisa los campos marcados antes de guardar.");
             return;
         }
 
@@ -198,6 +181,12 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
         setErrors({});
         setFormError(null);
         try {
+            if (mode === "edit" && initialData) {
+                await updateCampaniaProveedor(initialData.cxpId, toUpdateCampaniaProveedorInput(candidate));
+                onSave?.();
+                return;
+            }
+
             const result = await controller.submit(campaniaId, [candidate]);
             if (result.status === "complete") {
                 onSave?.();
@@ -210,6 +199,8 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
             }
             onRefresh?.();
             setFormError("No se pudo vincular el proveedor. Revisa los datos e inténtalo nuevamente.");
+        } catch (error) {
+            setFormError("Ocurrió un error inesperado al procesar la solicitud.");
         } finally {
             setIsSaving(false);
         }
@@ -219,48 +210,31 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
         .filter((provider) => !linkedIds.has(provider.proveedorId))
         .map((provider) => ({ value: String(provider.proveedorId), label: `${provider.nombres} ${provider.apellido}` }));
 
-    const renderField = ({ field, label, type, step, placeholder, suffix }: { field: DraftField; label: string; type?: "number"; step?: string; placeholder?: string; suffix?: string }) => {
-        const message = errors[field];
-        const isCoordinate = field === "latitud" || field === "longitud";
-        return (
-            <Field key={field} data-invalid={message ? true : undefined}>
-                <FieldLabel htmlFor={`link-provider-${field}`}>
-                    {label} {field !== "frutaConvencional" && field !== "observacionesParticipacion" && <span aria-hidden="true" className="text-destructive">*</span>}
-                </FieldLabel>
-                <div className="relative">
-                    <Input
-                        id={`link-provider-${field}`}
-                        type={type ?? "text"}
-                        inputMode={type === "number" ? "decimal" : undefined}
-                        step={step}
-                        min={type === "number" && !isCoordinate ? 0 : undefined}
-                        placeholder={placeholder}
-                        value={draft[field]}
-                        onChange={(event) => updateDraft(field, event.target.value)}
-                        disabled={isLocked}
-                        className={suffix ? "pr-12" : undefined}
-                        aria-required={field !== "frutaConvencional" && field !== "observacionesParticipacion" ? "true" : undefined}
-                        aria-invalid={message ? true : undefined}
-                        aria-describedby={message ? `link-provider-${field}-error` : undefined}
-                    />
-                    {suffix && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-brand-surface text-brand text-[11px] font-bold px-2 py-1 rounded-md">
-                            {suffix}
-                        </div>
-                    )}
-                </div>
-                {message && <FieldError id={`link-provider-${field}-error`}>{message}</FieldError>}
-            </Field>
-        );
-    };
+    type DraftStringField = Exclude<DraftField, "fincasParticipantes">;
+    const renderField = ({ field, label, step, placeholder, suffix }: { field: DraftStringField; label: string; step?: string; placeholder?: string; suffix?: string }) => (
+        <InputField
+            key={field}
+            id={`link-provider-${field}`}
+            label={label}
+            value={draft[field]}
+            onChange={(value) => updateDraft(field, value)}
+            error={errors[field]}
+            placeholder={placeholder}
+            step={step}
+            min={0}
+            unit={suffix}
+            required
+            disabled={isLocked}
+        />
+    );
 
     return (
         <AppModal
             open={open}
             onOpenChange={handleOpenChange}
             icon={<Link2 size={22} strokeWidth={2} />}
-            title="Vincular Proveedor"
-            description="Asocia un productor o acopiador a esta campaña. Los campos con * son obligatorios."
+            title={mode === "edit" ? "Editar Vínculo de Proveedor" : "Vincular Proveedor"}
+            description={mode === "edit" ? "Modifica los datos del proveedor vinculado a esta campaña." : "Asocia un productor o acopiador a esta campaña. Los campos con * son obligatorios."}
             className="sm:max-w-[800px]"
             footer={
                 <>
@@ -268,91 +242,137 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
                     <Button size="xl" onClick={handleSubmit} disabled={isLocked || isLoadingProviders || !campaniaId} aria-busy={isSaving}>
-                        <Link2 size={20} strokeWidth={2.5} /> {isSaving ? "Vinculando..." : "Vincular proveedor"}
+                        <Link2 size={20} strokeWidth={2.5} /> {isSaving ? "Guardando..." : mode === "edit" ? "Guardar cambios" : "Vincular proveedor"}
                     </Button>
                 </>
             }
         >
             <div className="flex flex-col gap-6">
                 
-                <FormSection icon={<UserRound size={16} strokeWidth={2.5} />} title="Proveedor y Participación">
-                    <Field data-invalid={errors.proveedorId ? true : undefined}>
-                        <FieldLabel>Seleccionar Proveedor: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                        <Combobox
-                            options={providerOptions}
-                            value={selectedProvider}
-                            onChange={(value) => { setSelectedProvider(value); setErrors((current) => ({ ...current, proveedorId: undefined })); }}
-                            placeholder={isLoadingProviders ? "Cargando proveedores..." : "Buscar proveedor, fruta o variedad..."}
-                            emptyMessage="No hay proveedores disponibles para vincular"
-                            disabled={isLoadingProviders || isLocked}
-                        />
-                        {errors.proveedorId && <FieldError>{errors.proveedorId}</FieldError>}
-                    </Field>
+                <Field data-invalid={errors.proveedorId ? true : undefined}>
+                    <FieldLabel>Seleccionar Proveedor: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                    <Combobox
+                        options={mode === "edit" && initialData && initialData.proveedor ? [{ value: String(initialData.proveedorId), label: `${initialData.proveedor.nombres} ${initialData.proveedor.apellido}` }] : providerOptions}
+                        value={selectedProvider}
+                        onChange={(value) => { setSelectedProvider(value); setErrors((current) => ({ ...current, proveedorId: undefined })); }}
+                        placeholder={isLoadingProviders ? "Cargando proveedores..." : "Buscar proveedor, fruta o variedad..."}
+                        emptyMessage="No hay proveedores disponibles para vincular"
+                        disabled={isLoadingProviders || isLocked || mode === "edit"}
+                    />
+                    {errors.proveedorId && <FieldError>{errors.proveedorId}</FieldError>}
+                </Field>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                        <Field>
-                            <FieldLabel>Tipo de Proveedor:</FieldLabel>
-                            <SegmentedControl
-                                options={PROVIDER_TYPES}
-                                value={providerType}
-                                onChange={(value) => {
-                                    setProviderType(value as TipoProveedorCampania);
-                                    setErrors({});
-                                    setFormError(null);
-                                }}
-                            />
-                        </Field>
-                        {renderField({ field: "cantidadProveedor", label: "Cantidad Estimada (kg)", type: "number", step: "0.001", placeholder: "Ej. 2500", suffix: "KG" })}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                        {renderField({ field: "frutaConvencional", label: "Fruta Convencional Estimada", placeholder: "Ej. 1000", suffix: "KG" })}
-                        {renderField({ field: "mtdCeratitis", label: "MTD Ceratitis", type: "number", step: "0.001", placeholder: "Ej. 0.05" })}
-                    </div>
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                     <Field>
-                        <FieldLabel>Observaciones de Participación</FieldLabel>
-                        <Textarea 
-                            className="min-h-24 resize-none" 
-                            placeholder="Escribe aquí las observaciones..."
-                            value={draft.observacionesParticipacion}
-                            onChange={(e) => updateDraft("observacionesParticipacion", e.target.value)}
+                        <FieldLabel>Tipo de Proveedor:</FieldLabel>
+                        <SegmentedControl
+                            options={PROVIDER_TYPES}
+                            value={providerType}
+                            onChange={(value) => {
+                                setProviderType(value as TipoProveedorCampania);
+                                setErrors({});
+                                setFormError(null);
+                            }}
+                        />
+                    </Field>
+                    {renderField({ field: "cantidadProveedor", label: "Cantidad del proveedor estimada", step: "0.001", placeholder: "Ej. 2500", suffix: "KG" })}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                    {renderField({ field: "mtdCeratitis", label: "MTD Ceratitis", step: "0.001", placeholder: "Ej. 0.05" })}
+                    {renderField({ field: "precioEstimado", label: "Precio estimado o acordado", step: "0.01", placeholder: "Ej. 1.50" })}
+                    <Field>
+                        <FieldLabel>Moneda <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                        <Combobox
+                            options={[{ label: "PEN", value: "PEN" }, { label: "USD", value: "USD" }]}
+                            value={draft.moneda}
+                            onChange={(value) => updateDraft("moneda", value)}
                             disabled={isLocked}
                         />
                     </Field>
-                </FormSection>
-
-                <Separator className="-mx-5 sm:-mx-6 w-auto" />
-                
-                <FormSection icon={<MapPin size={16} strokeWidth={2.5} />} title="Ubicación y datos de finca">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-                        {FINCA_LOCATION.slice(0, 3).map(renderField)}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-                        {FINCA_LOCATION.slice(3, 5).map(renderField)}
-                        {FINCA_LOCATION.slice(5).map(renderField)}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-                        {FINCA_CROP.map(renderField)}
-                    </div>
-                </FormSection>
-
-                <Separator className="-mx-5 sm:-mx-6 w-auto" />
-                
-                <FormSection icon={<Sprout size={16} strokeWidth={2.5} />} title="Información agronómica">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-                        {AGRONOMIC_INFO.slice(0, 3).map(renderField)}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                        {AGRONOMIC_INFO.slice(3).map(renderField)}
-                    </div>
-                </FormSection>
-
-                <div className={`transition-all duration-300 overflow-hidden ${formError ? "opacity-100 max-h-20" : "opacity-0 max-h-0"}`}>
-                    <FieldError className="flex items-center gap-2 text-[13px] font-medium">
-                        <AlertCircle size={14} className="shrink-0" /> {formError}
-                    </FieldError>
                 </div>
+
+                <Field>
+                    <FieldLabel>Observaciones de Participación</FieldLabel>
+                    <Textarea 
+                        className="min-h-24 resize-none" 
+                        placeholder="Escribe aquí las observaciones..."
+                        value={draft.observacionesParticipacion}
+                        onChange={(e) => updateDraft("observacionesParticipacion", e.target.value)}
+                        disabled={isLocked}
+                    />
+                </Field>
+
+                <Field>
+                    <div className="mb-1">
+                        <FieldLabel>Fincas participantes</FieldLabel>
+                        <p className="text-[13px] text-muted-foreground mt-0.5">Selecciona una o varias fincas registradas del proveedor para esta campaña.</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                        {/* Placeholder para la lista de fincas - por ahora mockeado visualmente */}
+                        {[
+                            {
+                                id: 1,
+                                nombre: "Fundo Tambogrande",
+                                ubicacion: "Piura · Piura · Tambogrande",
+                                detalle: "12 ha totales · 8 ha de cultivo"
+                            },
+                            {
+                                id: 2,
+                                nombre: "Fundo San José de los Milagros Extendidos del Valle Norte",
+                                ubicacion: "Lambayeque · Chiclayo · San José de los Milagros Sector 4",
+                                detalle: "150.5 ha totales · 120 ha de cultivo orgánico certificado"
+                            }
+                        ].map((finca) => {
+                            const isFincaSelected = draft.fincasParticipantes.includes(finca.id);
+                            return (
+                                <label 
+                                    key={finca.id}
+                                    className={cn(
+                                        "flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all duration-200",
+                                        isFincaSelected 
+                                            ? "border-brand bg-card shadow-[0_4px_12px_-2px_var(--brand-gradient-glow)]" 
+                                            : "border-border bg-card hover:bg-accent/30 hover:border-border/80"
+                                    )}
+                                >
+                                    <Checkbox 
+                                        checked={isFincaSelected} 
+                                        onCheckedChange={(checked) => {
+                                            const newFincas = checked 
+                                                ? [...draft.fincasParticipantes, finca.id] 
+                                                : draft.fincasParticipantes.filter(id => id !== finca.id);
+                                            updateDraft("fincasParticipantes", newFincas);
+                                        }}
+                                        className="mt-0.5 shrink-0"
+                                        disabled={isLocked}
+                                    />
+                                    <div className="flex flex-col min-w-0">
+                                        <span 
+                                            className={cn("text-[14px] leading-tight mb-1.5 transition-colors line-clamp-2", isFincaSelected ? "text-transparent bg-clip-text font-bold" : "font-medium text-foreground")}
+                                            style={isFincaSelected ? { backgroundImage: "var(--brand-gradient)" } : undefined}
+                                            title={finca.nombre}
+                                        >
+                                            {finca.nombre}
+                                        </span>
+                                        <span className="text-[13px] text-muted-foreground leading-tight truncate" title={finca.ubicacion}>
+                                            {finca.ubicacion}
+                                        </span>
+                                        <span className="text-[13px] text-muted-foreground leading-tight truncate" title={finca.detalle}>
+                                            {finca.detalle}
+                                        </span>
+                                    </div>
+                                </label>
+                            );
+                        })}
+                    </div>
+                </Field>
+            </div>
+
+            <div className={`transition-all duration-300 overflow-hidden ${formError ? "opacity-100 max-h-20 mt-6" : "opacity-0 max-h-0 mt-0"}`}>
+                <FieldError className="flex items-center gap-2 text-[13px] font-medium">
+                    <AlertCircle size={14} className="shrink-0" /> {formError}
+                </FieldError>
             </div>
         </AppModal>
     );

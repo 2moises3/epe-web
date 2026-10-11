@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import SegmentedTabs, { type SegmentedTabItem } from "@/shared/components/SegmentedTabs";
-import FormSection from "@/shared/components/FormSection";
+import ModalSection from "@/shared/components/ModalSection";
 import RemovableChip from "@/shared/components/RemovableChip";
 import RowActions from "@/shared/components/RowActions";
 import StatusBadge from "@/shared/components/StatusBadge";
@@ -344,7 +344,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
             {loading && <p role="status" aria-live="polite" className="text-[13px] text-ink-muted">Cargando información relacionada…</p>}
 
             {activeTab === "frutas" && (
-                <FormSection icon={<Apple size={16} strokeWidth={2.5} />} title="Frutas que produce">
+                <ModalSection title="Frutas que produce">
                     {errors.fruits ? (
                         <SectionError message={errors.fruits} onRetry={() => void loadSubresources()} disabled={operationsBusy} />
                     ) : (
@@ -382,12 +382,11 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                             </div>
                         </>
                     )}
-                </FormSection>
+                </ModalSection>
             )}
 
             {activeTab === "examenes" && (
-                <FormSection
-                    icon={<FlaskConical size={16} strokeWidth={2.5} />}
+                <ModalSection
                     title="Exámenes de laboratorio"
                     aside={<Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startExamForm()}><Plus size={14} /> Registrar examen</Button>}
                 >
@@ -396,7 +395,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                     ) : exams.length === 0 && !loading ? (
                         <p className="text-[13px] text-ink-muted">No hay exámenes registrados.</p>
                     ) : (
-                        <div className="overflow-x-auto rounded-xl border border-border bg-white">
+                        <div className="overflow-x-auto rounded-xl border border-border bg-card">
                             <Table className="min-w-150">
                                 <TableHeader className={TABLE_HEAD_BG}>
                                     <TableRow className="border-b border-border hover:bg-transparent">
@@ -482,12 +481,11 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                             </div>
                         </div>
                     )}
-                </FormSection>
+                </ModalSection>
             )}
 
             {activeTab === "certificados" && (
-                <FormSection
-                    icon={<ShieldCheck size={16} strokeWidth={2.5} />}
+                <ModalSection
                     title="Certificados del proveedor"
                     aside={<Button variant="outline" size="sm" disabled={operationsBusy} onClick={() => startCertificateForm()}><Plus size={14} /> Registrar certificado</Button>}
                 >
@@ -498,7 +496,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                     ) : (
                         <ul className="flex flex-col gap-2">
                             {certificates.map((certificate) => (
-                                <li key={certificate.certificadoProveedorId} className="flex items-center gap-3 rounded-xl border border-border bg-white px-4 py-3">
+                                <li key={certificate.certificadoProveedorId} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
                                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-brand-border bg-brand-surface" style={{ color: "var(--brand-gradient-mid)" }}>
                                         <ShieldCheck size={18} strokeWidth={2} />
                                     </span>
@@ -543,7 +541,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                             </div>
                         </div>
                     )}
-                </FormSection>
+                </ModalSection>
             )}
 
             <ConfirmModal
