@@ -35,7 +35,6 @@ export default function ProviderFincaModal({ open, onOpenChange, providerName, r
     const bind = (field: FincaField) => ({
         id: `finca-${field}`,
         required: true,
-        required: true,
         value: values[field],
         error: errors[field],
         onChange: (next: string) => {

@@ -38,6 +38,8 @@ export function getBreadcrumbLevels(pathname: string): BreadcrumbLevel[] {
         }
     } else if (rootSegment === "proveedores" && segments[2] === "fincas") {
         levels.push({ label: "Fincas" });
+    } else if (rootSegment === "proveedores" && segments[2] === "certificados") {
+        levels.push({ label: "Certificados" });
     } else if (segments.length > 1) {
         levels.push({ label: "Detalle" });
     }

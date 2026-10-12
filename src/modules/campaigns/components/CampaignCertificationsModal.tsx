@@ -7,11 +7,10 @@ import FileDropzone from "@/shared/components/FileDropzone";
 import ModalSection from "@/shared/components/ModalSection";
 import RowActions from "@/shared/components/RowActions";
 import StatusBadge from "@/shared/components/StatusBadge";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import FormField from "@/shared/components/FormField";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import { DatePicker } from "@/shared/components/ui/date-picker";
 import { getUploadErrorMessage, uploadDocument } from "@/shared/api/uploadDocument";
 import {
     createCertificadoCampana,
@@ -210,9 +209,7 @@ export default function CampaignCertificationsModal({ open, campaniaId, onOpenCh
 
     // Si la certificación que se edita tiene un nombre fuera del catálogo, se agrega para poder mostrarlo
     const nameOptions = values.nombre && !CERTIFICATION_TYPES.includes(values.nombre) ? [values.nombre, ...CERTIFICATION_TYPES] : CERTIFICATION_TYPES;
-    const required = !isEdit ? <span aria-hidden="true" className="text-destructive">*</span> : null;
     const invalid = (field: keyof CampaignCertificateValues) => (fieldErrors[field] ? true : undefined);
-    const errorFor = (field: keyof CampaignCertificateValues) => (fieldErrors[field] ? <FieldError>{fieldErrors[field]}</FieldError> : null);
 
     return (
         <>
@@ -238,8 +235,7 @@ export default function CampaignCertificationsModal({ open, campaniaId, onOpenCh
                 <div className="flex flex-col gap-6">
                     <ModalSection title={isEdit ? "Editar certificación" : "Nueva certificación"}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <Field data-invalid={invalid("nombre")}>
-                                <FieldLabel>Certificación: {required}</FieldLabel>
+                            <FormField label="Certificación:" required={!isEdit} error={fieldErrors.nombre}>
                                 <Select value={values.nombre || null} onValueChange={(value) => updateField("nombre", (value as string | null) ?? "")} disabled={isSaving}>
                                     <SelectTrigger className="w-full" aria-invalid={invalid("nombre")}>
                                         <SelectValue placeholder="Seleccionar" />
@@ -250,42 +246,25 @@ export default function CampaignCertificationsModal({ open, campaniaId, onOpenCh
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errorFor("nombre")}
-                            </Field>
+                            </FormField>
 
-                            <Field data-invalid={invalid("fechaVencimiento")}>
-                                <FieldLabel>Fecha Vencimiento: {required}</FieldLabel>
-                                <DatePicker 
-                                    value={values.fechaVencimiento} 
-                                    disabled={isSaving} 
-                                    aria-invalid={invalid("fechaVencimiento")} 
-                                    onChange={(val) => updateField("fechaVencimiento", val)} 
-                                />
-                                {errorFor("fechaVencimiento")}
-                            </Field>
+                            <InputField id="certificate-fechaVencimiento" type="date" label="Fecha Vencimiento:" required={!isEdit} value={values.fechaVencimiento} error={fieldErrors.fechaVencimiento} disabled={isSaving} onChange={(val) => updateField("fechaVencimiento", val)} />
 
-                            <Field data-invalid={invalid("costo")}>
-                                <FieldLabel>Costo: {required}</FieldLabel>
-                                <div className="relative">
-                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-bold text-ink-muted">$</span>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        inputMode="decimal"
-                                        placeholder="0"
-                                        value={values.costo}
-                                        disabled={isSaving}
-                                        aria-invalid={invalid("costo")}
-                                        onChange={(event) => updateField("costo", event.target.value)}
-                                        className="pl-7"
-                                    />
-                                </div>
-                                {errorFor("costo")}
-                            </Field>
+                            <InputField
+                                id="certificate-costo"
+                                label="Costo:"
+                                required={!isEdit}
+                                leading="$"
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
+                                value={values.costo}
+                                disabled={isSaving}
+                                error={fieldErrors.costo}
+                                onChange={(value) => updateField("costo", value)}
+                            />
 
-                            <Field data-invalid={invalid("estado")}>
-                                <FieldLabel>Estado: {required}</FieldLabel>
+                            <FormField label="Estado:" required={!isEdit} error={fieldErrors.estado}>
                                 <Select items={STATUS_OPTIONS} value={values.estado || null} onValueChange={(value) => updateField("estado", (value as string | null) ?? "")} disabled={isSaving}>
                                     <SelectTrigger className="w-full" aria-invalid={invalid("estado")}>
                                         <SelectValue placeholder="Seleccionar" />
@@ -296,29 +275,26 @@ export default function CampaignCertificationsModal({ open, campaniaId, onOpenCh
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errorFor("estado")}
-                            </Field>
+                            </FormField>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                            <div className="flex flex-col gap-2">
+                            <FormField error={fieldErrors.reciboUrl}>
                                 <FileDropzone
                                     label="Recibo de pago"
                                     hint={isEdit ? "Opcional: reemplaza el archivo actual · PDF, imagen" : "PDF, imagen · Máx. 10 MB"}
                                     file={files.reciboUrl}
                                     onChange={(file) => updateFile("reciboUrl", file)}
                                 />
-                                {errorFor("reciboUrl")}
-                            </div>
-                            <div className="flex flex-col gap-2">
+                            </FormField>
+                            <FormField error={fieldErrors.documentoUrl}>
                                 <FileDropzone
                                     label="Documento de certificación"
                                     hint={isEdit ? "Opcional: reemplaza el archivo actual · PDF" : "PDF · Máx. 10 MB"}
                                     file={files.documentoUrl}
                                     onChange={(file) => updateFile("documentoUrl", file)}
                                 />
-                                {errorFor("documentoUrl")}
-                            </div>
+                            </FormField>
                         </div>
 
                         <div className={`transition-all duration-300 overflow-hidden ${message ? "opacity-100 max-h-16" : "opacity-0 max-h-0"}`}>

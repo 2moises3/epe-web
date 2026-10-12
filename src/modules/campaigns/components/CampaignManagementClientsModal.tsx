@@ -8,8 +8,7 @@ import ConfirmModal from "@/shared/components/ConfirmModal";
 import FileDropzone from "@/shared/components/FileDropzone";
 import ModalSection from "@/shared/components/ModalSection";
 import RowActions from "@/shared/components/RowActions";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 import { getUploadErrorMessage, uploadDocument } from "@/shared/api/uploadDocument";
 import { getCampana } from "@/modules/campaigns/api/campaign.api";
@@ -219,21 +218,19 @@ export default function CampaignManagementClientsModal({ open, campaniaId, onOpe
                     <div className="mb-5 rounded-2xl border border-brand-border bg-brand-surface/40 p-4">
                         <ModalSection title={`Editar vínculo con ${clientName(editing.client)}`} aside="Solo se guardan los campos que cambies">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                {EDIT_FIELDS.slice(0, 3).map(({ field, label, type }) => (
-                                    <Field key={field} data-invalid={fieldErrors[field] ? true : undefined}>
-                                        <FieldLabel htmlFor={`client-relation-${field}`}>{label}:</FieldLabel>
-                                        <Input
-                                            id={`client-relation-${field}`}
-                                            type={type}
-                                            min={type === "number" ? 0 : undefined}
-                                            step={type === "number" ? "0.001" : undefined}
-                                            value={editing.values[field]}
-                                            disabled={isSaving}
-                                            aria-invalid={fieldErrors[field] ? true : undefined}
-                                            onChange={(event) => updateField(field, event.target.value)}
-                                        />
-                                        {fieldErrors[field] && <FieldError>{fieldErrors[field]}</FieldError>}
-                                    </Field>
+                                {EDIT_FIELDS.map(({ field, label, type }) => (
+                                    <InputField
+                                        key={field}
+                                        id={`client-relation-${field}`}
+                                        label={`${label}:`}
+                                        type={type}
+                                        step={type === "number" ? "0.001" : undefined}
+                                        min={type === "number" ? 0 : undefined}
+                                        value={editing.values[field]}
+                                        disabled={isSaving}
+                                        error={fieldErrors[field]}
+                                        onChange={(value) => updateField(field, value)}
+                                    />
                                 ))}
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

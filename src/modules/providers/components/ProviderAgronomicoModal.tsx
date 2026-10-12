@@ -36,7 +36,6 @@ export default function ProviderAgronomicoModal({ open, onOpenChange, providerNa
     const bind = (field: DatosAgronomicosField) => ({
         id: `agronomico-${field}`,
         required: true,
-        required: true,
         value: values[field],
         error: errors[field],
         onChange: (next: string) => {

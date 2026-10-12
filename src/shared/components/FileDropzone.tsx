@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { FileText, Upload, Eye, X, Image as ImageIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FileText, Upload, Eye, X, Pencil, Image as ImageIcon } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import Hint from "@/shared/components/Hint";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,10 @@ export interface FileDropzoneProps {
     variant?: "default" | "horizontal";
     className?: string;
     disabled?: boolean;
+    /** Modo visualizador: muestra el archivo con su vista previa, sin poder quitarlo ni reemplazarlo */
+    readOnly?: boolean;
+    /** Con un archivo ya puesto, cambia "quitar" por "reemplazar": abre el selector y entrega el nuevo archivo por `onChange` */
+    replaceable?: boolean;
     hasColon?: boolean;
     optional?: boolean;
     required?: boolean;
@@ -39,6 +43,8 @@ export interface FileDropzoneProps {
  * Botón de adjuntar que, al elegir un archivo, se convierte en una tarjeta con nombre + peso
  * y dos acciones: ver una vista previa (PDF o imagen) y quitarlo para adjuntar otro.
  * Soporta variante "default" (vertical amplia) y "horizontal" (compacta h-11 para filas de formularios).
+ * Con `readOnly` sirve de visualizador: solo la tarjeta con el archivo y su vista previa.
+ * Con `replaceable` (edición) la tarjeta ofrece un lápiz para cambiar el archivo en vez de quitarlo.
  */
 export default function FileDropzone({
     label,
@@ -50,6 +56,8 @@ export default function FileDropzone({
     variant = "default",
     className,
     disabled = false,
+    readOnly = false,
+    replaceable = false,
     hasColon,
     optional,
     required,
@@ -57,6 +65,7 @@ export default function FileDropzone({
     const [previewOpen, setPreviewOpen] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const inputId = `file-dropzone-${label.replace(/\s+/g, "-").toLowerCase()}`;
+    const replaceInputRef = useRef<HTMLInputElement>(null);
 
     // El objeto URL solo tiene sentido mientras dure este archivo; se libera al cambiarlo o desmontar
     const objectUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
@@ -89,6 +98,51 @@ export default function FileDropzone({
         }
     };
 
+    /** Ojo (vista previa) y, según el modo, lápiz para reemplazar o X para quitar. `compact` es la variante horizontal. */
+    const renderActions = (compact: boolean) => {
+        const box = compact ? "h-7 w-7 rounded-md" : "h-9 w-9 rounded-lg";
+        const iconSize = compact ? 14 : 17;
+        return (
+            <>
+                <Hint label="Ver archivo">
+                    <button
+                        type="button"
+                        onClick={() => setPreviewOpen(true)}
+                        aria-label="Ver archivo"
+                        className={cn("flex items-center justify-center text-ink-muted transition-colors hover:bg-card hover:text-brand active:scale-95 cursor-pointer", box)}
+                    >
+                        <Eye size={iconSize} strokeWidth={2.5} />
+                    </button>
+                </Hint>
+                {replaceable && !readOnly && (
+                    <Hint label="Reemplazar archivo">
+                        <button
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => replaceInputRef.current?.click()}
+                            aria-label="Reemplazar archivo"
+                            className={cn("flex items-center justify-center text-ink-muted transition-colors hover:bg-card hover:text-brand active:scale-95 cursor-pointer disabled:pointer-events-none disabled:opacity-50", box)}
+                        >
+                            <Pencil size={iconSize} strokeWidth={2.5} />
+                        </button>
+                    </Hint>
+                )}
+                {!replaceable && !readOnly && (
+                    <Hint label="Quitar">
+                        <button
+                            type="button"
+                            onClick={() => onChange(null)}
+                            aria-label="Quitar archivo"
+                            className={cn("flex items-center justify-center text-ink-muted transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer", box)}
+                        >
+                            <X size={iconSize} strokeWidth={2.5} />
+                        </button>
+                    </Hint>
+                )}
+            </>
+        );
+    };
+
     const colonChar = hasColon !== undefined ? (hasColon ? ":" : "") : (required || optional ? "" : ":");
     const isHorizontal = variant === "horizontal";
     const FileIcon = file && isImage(file) ? ImageIcon : FileText;
@@ -101,7 +155,9 @@ export default function FileDropzone({
                 {optional && <span className="font-normal text-ink-muted/70 text-[11.5px] lowercase">(Opcional)</span>}
             </label>
 
-            {!file ? (
+            {!file && readOnly ? (
+                <div className="flex h-11 items-center rounded-lg border border-border/60 bg-card px-3 text-[13px] font-medium text-ink-muted">Sin documento adjunto</div>
+            ) : !file ? (
                 isHorizontal ? (
                     <label
                         htmlFor={inputId}
@@ -178,28 +234,7 @@ export default function FileDropzone({
                                 <span className="shrink-0 text-[11px] font-medium text-ink-muted">({formatFileSize(file.size)})</span>
                             </div>
                         </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                            <Hint label="Ver archivo">
-                                <button
-                                    type="button"
-                                    onClick={() => setPreviewOpen(true)}
-                                    aria-label="Ver archivo"
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-card hover:text-brand active:scale-95 cursor-pointer"
-                                >
-                                    <Eye size={14} strokeWidth={2.5} />
-                                </button>
-                            </Hint>
-                            <Hint label="Quitar">
-                                <button
-                                    type="button"
-                                    onClick={() => onChange(null)}
-                                    aria-label="Quitar archivo"
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer"
-                                >
-                                    <X size={14} strokeWidth={2.5} />
-                                </button>
-                            </Hint>
-                        </div>
+                        <div className="flex shrink-0 items-center gap-1">{renderActions(true)}</div>
                     </div>
                 ) : (
                     <div className="flex items-center gap-3 rounded-lg border border-brand-border bg-brand-surface/40 p-3">
@@ -213,30 +248,25 @@ export default function FileDropzone({
                             <span className="truncate text-[13.5px] font-bold text-ink">{file.name}</span>
                             <span className="text-[12px] font-medium text-ink-muted">{formatFileSize(file.size)}</span>
                         </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                            <Hint label="Ver archivo">
-                                <button
-                                    type="button"
-                                    onClick={() => setPreviewOpen(true)}
-                                    aria-label="Ver archivo"
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-card hover:text-brand active:scale-95 cursor-pointer"
-                                >
-                                    <Eye size={17} strokeWidth={2.5} />
-                                </button>
-                            </Hint>
-                            <Hint label="Quitar">
-                                <button
-                                    type="button"
-                                    onClick={() => onChange(null)}
-                                    aria-label="Quitar archivo"
-                                    className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer"
-                                >
-                                    <X size={17} strokeWidth={2.5} />
-                                </button>
-                            </Hint>
-                        </div>
+                        <div className="flex shrink-0 items-center gap-1">{renderActions(false)}</div>
                     </div>
                 )
+            )}
+
+            {replaceable && file && (
+                <input
+                    ref={replaceInputRef}
+                    id={inputId}
+                    type="file"
+                    accept={accept}
+                    disabled={disabled}
+                    className="sr-only"
+                    onChange={(event) => {
+                        const next = event.target.files?.[0];
+                        if (next) onChange(next);
+                        event.target.value = "";
+                    }}
+                />
             )}
 
             {file && objectUrl && (

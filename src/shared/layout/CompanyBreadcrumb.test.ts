@@ -27,6 +27,13 @@ describe("getBreadcrumbLevels", () => {
         ]);
     });
 
+    it("names the certificates management view of a provider", () => {
+        expect(getBreadcrumbLevels("/proveedores/3/certificados")).toEqual([
+            { label: "Proveedores", href: "/proveedores" },
+            { label: "Certificados" },
+        ]);
+    });
+
     it("hides itself on non-operational routes", () => {
         expect(getBreadcrumbLevels("/modules")).toEqual([]);
     });

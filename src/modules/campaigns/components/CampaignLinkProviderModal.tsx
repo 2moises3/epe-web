@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Link2, AlertCircle } from "lucide-react";
+import { X, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AppModal from "@/shared/components/AppModal";
 import InputField from "@/shared/components/InputField";
 import SegmentedControl from "@/shared/components/SegmentedControl";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
 import { Checkbox } from "@/shared/components/ui/checkbox";
@@ -249,8 +249,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
         >
             <div className="flex flex-col gap-6">
                 
-                <Field data-invalid={errors.proveedorId ? true : undefined}>
-                    <FieldLabel>Seleccionar Proveedor: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                <FormField label="Seleccionar Proveedor:" required error={errors.proveedorId}>
                     <Combobox
                         options={mode === "edit" && initialData && initialData.proveedor ? [{ value: String(initialData.proveedorId), label: `${initialData.proveedor.nombres} ${initialData.proveedor.apellido}` }] : providerOptions}
                         value={selectedProvider}
@@ -259,12 +258,10 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                         emptyMessage="No hay proveedores disponibles para vincular"
                         disabled={isLoadingProviders || isLocked || mode === "edit"}
                     />
-                    {errors.proveedorId && <FieldError>{errors.proveedorId}</FieldError>}
-                </Field>
+                </FormField>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                    <Field>
-                        <FieldLabel>Tipo de Proveedor:</FieldLabel>
+                    <FormField label="Tipo de Proveedor:">
                         <SegmentedControl
                             options={PROVIDER_TYPES}
                             value={providerType}
@@ -274,26 +271,24 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                                 setFormError(null);
                             }}
                         />
-                    </Field>
+                    </FormField>
                     {renderField({ field: "cantidadProveedor", label: "Cantidad del proveedor estimada", step: "0.001", placeholder: "Ej. 2500", suffix: "KG" })}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                     {renderField({ field: "mtdCeratitis", label: "MTD Ceratitis", step: "0.001", placeholder: "Ej. 0.05" })}
                     {renderField({ field: "precioEstimado", label: "Precio estimado o acordado", step: "0.01", placeholder: "Ej. 1.50" })}
-                    <Field>
-                        <FieldLabel>Moneda <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                    <FormField label="Moneda" required>
                         <Combobox
                             options={[{ label: "PEN", value: "PEN" }, { label: "USD", value: "USD" }]}
                             value={draft.moneda}
                             onChange={(value) => updateDraft("moneda", value)}
                             disabled={isLocked}
                         />
-                    </Field>
+                    </FormField>
                 </div>
 
-                <Field>
-                    <FieldLabel>Observaciones de Participación</FieldLabel>
+                <FormField label="Observaciones de Participación">
                     <Textarea 
                         className="min-h-24 resize-none" 
                         placeholder="Escribe aquí las observaciones..."
@@ -301,13 +296,10 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                         onChange={(e) => updateDraft("observacionesParticipacion", e.target.value)}
                         disabled={isLocked}
                     />
-                </Field>
+                </FormField>
 
-                <Field>
-                    <div className="mb-1">
-                        <FieldLabel>Fincas participantes</FieldLabel>
-                        <p className="text-[13px] text-muted-foreground mt-0.5">Selecciona una o varias fincas registradas del proveedor para esta campaña.</p>
-                    </div>
+                <FormField label="Fincas participantes">
+                    <p className="-mt-1 text-[13px] text-muted-foreground">Selecciona una o varias fincas registradas del proveedor para esta campaña.</p>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                         {/* Placeholder para la lista de fincas - por ahora mockeado visualmente */}
@@ -366,14 +358,11 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                             );
                         })}
                     </div>
-                </Field>
+                </FormField>
             </div>
 
-            <div className={`transition-all duration-300 overflow-hidden ${formError ? "opacity-100 max-h-20 mt-6" : "opacity-0 max-h-0 mt-0"}`}>
-                <FieldError className="flex items-center gap-2 text-[13px] font-medium">
-                    <AlertCircle size={14} className="shrink-0" /> {formError}
-                </FieldError>
-            </div>
+            {/* Error general del formulario (no de un campo); solo se dibuja si existe */}
+            {formError && <FormField error={formError} className="mt-6" />}
         </AppModal>
     );
 }

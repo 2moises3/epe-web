@@ -10,6 +10,7 @@ import CampaignProviderDetailsPage from './modules/campaigns/pages/CampaignProvi
 import CampaignCarrierPaymentsPage from './modules/campaigns/pages/CampaignCarrierPaymentsPage'
 import ProvidersPage from './modules/providers/pages/ProvidersPage'
 import ProviderFincasPage from './modules/providers/pages/ProviderFincasPage'
+import ProviderCertificadosPage from './modules/providers/pages/ProviderCertificadosPage'
 import CommercialPlanningPage from './modules/commercial-planning/pages/CommercialPlanningPage'
 import CarriersPage from './modules/carriers/pages/CarriersPage'
 import CarrierDetailsPage from './modules/carriers/pages/CarrierDetailsPage'
@@ -82,6 +83,7 @@ function App() {
           <Route path="/campaigns/:id/carrier-payments" element={<CampaignCarrierPaymentsPage />} />
           <Route path="/proveedores" element={<ProvidersPage />} />
           <Route path="/proveedores/:id/fincas" element={<ProviderFincasPage />} />
+          <Route path="/proveedores/:id/certificados" element={<ProviderCertificadosPage />} />
           <Route path="/planificacion-comercial" element={<CommercialPlanningPage />} />
           <Route path="/transportistas" element={<CarriersPage />} />
           <Route path="/transportistas/:id" element={<CarrierDetailsPage />} />

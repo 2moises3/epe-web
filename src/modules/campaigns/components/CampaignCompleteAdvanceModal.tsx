@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Check, X, Wallet } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
+import { InfoField } from "@/shared/components/InfoField";
 import { Button } from "@/shared/components/ui/button";
 import FileDropzone from "@/shared/components/FileDropzone";
 import type { CarrierPayment } from "@/modules/campaigns/carrierPayments.data";
@@ -58,29 +59,18 @@ export default function CampaignCompleteAdvanceModal({ open, onOpenChange, payme
                     {payment?.codigo}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                    <Field>
-                        <FieldLabel>Pago Realizado:</FieldLabel>
-                        <div className="flex h-11 items-center rounded-lg border border-border bg-surface-page px-3.5 text-[14px] font-semibold text-ink">
-                            Adelanto · S/ {payment ? payment.cantidad.toLocaleString("es-PE") : 0}
-                        </div>
-                    </Field>
-                    <Field>
-                        <FieldLabel>Pago Pendiente:</FieldLabel>
-                        <div className="flex h-11 items-center rounded-lg border border-border bg-surface-page px-3.5 text-[14px] font-semibold text-ink">
-                            Pendiente · S/ {payment?.cantidadPendiente ? payment.cantidadPendiente.toLocaleString("es-PE") : 0}
-                        </div>
-                    </Field>
+                    <InfoField label="Pago Realizado" value={`Adelanto · S/ ${payment ? payment.cantidad.toLocaleString("es-PE") : 0}`} />
+                    <InfoField label="Pago Pendiente" value={`Pendiente · S/ ${payment?.cantidadPendiente ? payment.cantidadPendiente.toLocaleString("es-PE") : 0}`} />
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <FormField error={error ?? undefined}>
                     <FileDropzone
                         label="Boleta"
                         hint="PDF, imagen · Máx. 10 MB"
                         file={receipt}
                         onChange={(file) => { setReceipt(file); setError(null); }}
                     />
-                    {error && <FieldError>{error}</FieldError>}
-                </div>
+                </FormField>
             </div>
         </AppModal>
     );

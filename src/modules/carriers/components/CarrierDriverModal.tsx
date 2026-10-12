@@ -1,9 +1,7 @@
-import type { ComponentType } from "react";
 import { X, Save, UserRound, Phone, Mail } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm } from "@/shared/hooks/useModalForm";
-import { Field, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 import type { Carrier } from "@/modules/carriers/carriers.data";
 
@@ -23,33 +21,6 @@ interface CarrierDriverModalProps {
     /** "create" arranca vacío; "edit" arranca con `initialValues` y cambia los textos */
     mode?: "create" | "edit";
     initialValues?: Partial<DriverFormValues>;
-}
-
-interface IconFieldProps {
-    label: string;
-    icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
-    value: string;
-    onChange: (value: string) => void;
-    type?: string;
-    placeholder?: string;
-    className?: string;
-}
-
-/** Campo con un ícono al inicio del recuadro; se pinta de verde cuando tiene valor */
-function IconField({ label, icon: Icon, value, onChange, type, placeholder, className }: IconFieldProps) {
-    return (
-        <Field className={className}>
-            <FieldLabel>{label}</FieldLabel>
-            <div className="relative">
-                <Icon
-                    size={18}
-                    strokeWidth={2}
-                    className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${value ? "text-brand" : "text-ink-muted"}`}
-                />
-                <Input type={type} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} className="pl-10" />
-            </div>
-        </Field>
-    );
 }
 
 export default function CarrierDriverModal({ open, onOpenChange, onSuccess, carrier, mode = "create", initialValues }: CarrierDriverModalProps) {
@@ -78,25 +49,28 @@ export default function CarrierDriverModal({ open, onOpenChange, onSuccess, carr
             }
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                <IconField
+                <InputField
+                    id="driver-nombre"
                     className="sm:col-span-2"
                     label="Nombre completo"
-                    icon={UserRound}
+                    leading={<UserRound />}
                     placeholder="Nombres y apellidos"
                     value={values.nombre}
                     onChange={set("nombre")}
                 />
-                <IconField
+                <InputField
+                    id="driver-telefono"
                     label="Teléfono"
-                    icon={Phone}
+                    leading={<Phone />}
                     type="tel"
                     placeholder="987 654 321"
                     value={values.telefono}
                     onChange={set("telefono")}
                 />
-                <IconField
+                <InputField
+                    id="driver-correo"
                     label="Correo"
-                    icon={Mail}
+                    leading={<Mail />}
                     type="email"
                     placeholder="chofer@correo.com"
                     value={values.correo}

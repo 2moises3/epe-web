@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link2, MapPin } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
-import { Field, FieldLabel, FieldError } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
 import { Combobox } from "@/shared/components/ui/combobox";
 import { Button } from "@/shared/components/ui/button";
 
@@ -66,8 +66,12 @@ export default function CampaignFincaModal({ open, onOpenChange, onSave, linkedI
             className="sm:max-w-150"
         >
             <form onSubmit={handleSubmit} className="flex flex-col gap-5 mt-2">
-                <Field>
-                    <FieldLabel>Fincas disponibles <span className="text-brand">*</span></FieldLabel>
+                <FormField
+                    label="Fincas disponibles"
+                    required
+                    error={error}
+                    hint={options.length === 0 && !isSubmitting ? "Este proveedor no tiene más fincas disponibles para vincular." : undefined}
+                >
                     <Combobox
                         options={options}
                         value={selectedId}
@@ -79,11 +83,7 @@ export default function CampaignFincaModal({ open, onOpenChange, onSave, linkedI
                         emptyMessage="No se encontraron fincas."
                         disabled={isSubmitting || options.length === 0}
                     />
-                    {options.length === 0 && !isSubmitting && (
-                        <p className="text-xs text-ink-muted mt-1">Este proveedor no tiene más fincas disponibles para vincular.</p>
-                    )}
-                    {error && <FieldError>{error}</FieldError>}
-                </Field>
+                </FormField>
 
                 <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-border">
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>

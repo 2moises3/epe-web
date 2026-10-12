@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+    addCertificado,
     addFinca,
     getProviderLocalData,
     resetProviderLocalData,
     saveDatosAgronomicos,
+    updateCertificado,
 } from "@/modules/providers/providerLocalData.store";
 import type { Finca } from "@/modules/providers/providerFinca.utils";
 import type { DatosAgronomicos } from "@/modules/providers/providerAgronomico.utils";
@@ -56,5 +58,17 @@ describe("providerLocalData.store", () => {
     it("no mezcla datos entre proveedores", () => {
         saveDatosAgronomicos(1, agronomicos("Plan 1"));
         expect(getProviderLocalData().agronomicos[2]).toBeUndefined();
+    });
+
+    it("registra certificados con el más reciente primero y conserva el documento al editar sin uno nuevo", () => {
+        addCertificado(1, { nombre: "SENASA", fechaRevisionSenasa: "2025-04-18" }, new File(["a"], "a.pdf"));
+        addCertificado(1, { nombre: "GlobalGAP", fechaRevisionSenasa: "2025-05-01" }, new File(["b"], "b.pdf"));
+        const [recent] = getProviderLocalData().certificados[1];
+        expect(recent.nombre).toBe("GlobalGAP");
+
+        updateCertificado(1, recent.certificadoId, { nombre: " GlobalGAP 2 ", fechaRevisionSenasa: "2025-06-01" });
+        const [edited, older] = getProviderLocalData().certificados[1];
+        expect(edited).toMatchObject({ nombre: "GlobalGAP 2", fechaRevisionSenasa: "2025-06-01", documento: expect.objectContaining({ name: "b.pdf" }) });
+        expect(older.documento.name).toBe("a.pdf");
     });
 });

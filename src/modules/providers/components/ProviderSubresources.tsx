@@ -3,7 +3,8 @@ import { Apple, FlaskConical, ShieldCheck, Plus, Pencil, Trash2, Save, X, Rotate
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
+import InputField from "@/shared/components/InputField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
@@ -58,38 +59,6 @@ type PendingDelete =
 /** El backend envía fechas ISO completas: para el input y la tabla solo sirve la parte de fecha */
 const dateInputValue = (value: string) => value.slice(0, 10);
 const displayDate = (value: string) => dateInputValue(value).split("-").reverse().join("/");
-
-function RequiredField({ id, label, value, error, disabled, type = "text", maxLength, onChange }: {
-    id: string;
-    label: string;
-    value: string;
-    error?: string;
-    disabled: boolean;
-    type?: string;
-    maxLength?: number;
-    onChange: (value: string) => void;
-}) {
-    const errorId = `${id}-error`;
-    return (
-        <Field data-invalid={error ? true : undefined}>
-            <FieldLabel htmlFor={id}>{label} <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-            <Input
-                id={id}
-                type={type}
-                value={value}
-                maxLength={maxLength}
-                placeholder={type === "url" ? "https://..." : undefined}
-                required
-                aria-required="true"
-                aria-invalid={error ? true : undefined}
-                aria-describedby={error ? errorId : undefined}
-                disabled={disabled}
-                onChange={(event) => onChange(event.target.value)}
-            />
-            {error && <FieldError id={errorId}>{error}</FieldError>}
-        </Field>
-    );
-}
 
 function SectionError({ message, onRetry, disabled }: { message: string; onRetry: () => void; disabled: boolean }) {
     return (
@@ -365,8 +334,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                                     </div>
                                 )}
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                                <Field className="flex-1">
-                                    <FieldLabel htmlFor="provider-fruit-select">Fruta para asociar:</FieldLabel>
+                                <FormField id="provider-fruit-select" label="Fruta para asociar:" className="flex-1">
                                     <Select items={fruitItems} value={selectedFruitId || null} onValueChange={(value) => setSelectedFruitId((value as string | null) ?? "")} disabled={operationsBusy || availableFruits.length === 0}>
                                         <SelectTrigger id="provider-fruit-select" className="w-full">
                                             <SelectValue placeholder={availableFruits.length === 0 ? "Ya tiene todas las frutas del catálogo" : "Seleccionar fruta"} />
@@ -375,7 +343,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                                             {fruitItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
-                                </Field>
+                                </FormField>
                                 <Button size="xl" disabled={!selectedFruitId || operationsBusy} aria-busy={isMutating} onClick={() => void addFruit()}>
                                     <Plus size={18} strokeWidth={2.5} /> Asociar fruta
                                 </Button>
@@ -435,10 +403,9 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                         <div className="flex flex-col gap-4 rounded-2xl border border-brand-border bg-brand-surface/40 p-4">
                             <p className="text-[13px] font-bold text-ink">{editingExamId === null ? "Nuevo examen" : "Editar examen"}</p>
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <RequiredField id="provider-exam-date" label="Fecha" value={examValues.fecha} error={examErrors.fecha} disabled={operationsBusy} type="date" onChange={(fecha) => updateExamField("fecha", fecha)} />
-                                <RequiredField id="provider-exam-type" label="Tipo de examen" value={examValues.tipoExamen} error={examErrors.tipoExamen} disabled={operationsBusy} maxLength={150} onChange={(tipoExamen) => updateExamField("tipoExamen", tipoExamen)} />
-                                <Field data-invalid={examErrors.resultado ? true : undefined}>
-                                    <FieldLabel htmlFor="provider-exam-result">Resultado <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                                <InputField required id="provider-exam-date" label="Fecha" value={examValues.fecha} error={examErrors.fecha} disabled={operationsBusy} type="date" onChange={(fecha) => updateExamField("fecha", fecha)} />
+                                <InputField required id="provider-exam-type" label="Tipo de examen" value={examValues.tipoExamen} error={examErrors.tipoExamen} disabled={operationsBusy} maxLength={150} onChange={(tipoExamen) => updateExamField("tipoExamen", tipoExamen)} />
+                                <FormField id="provider-exam-result" label="Resultado" required error={examErrors.resultado}>
                                     <Select
                                         items={[{ value: "positivo", label: "Positivo" }, { value: "negativo", label: "Negativo" }]}
                                         value={examValues.resultado || null}
@@ -453,14 +420,12 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                                             <SelectItem value="negativo">Negativo</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    {examErrors.resultado && <FieldError id="provider-exam-result-error">{examErrors.resultado}</FieldError>}
-                                </Field>
-                                <RequiredField id="provider-exam-origin" label="Origen" value={examValues.origen} error={examErrors.origen} disabled={operationsBusy} maxLength={255} onChange={(origen) => updateExamField("origen", origen)} />
+                                </FormField>
+                                <InputField required id="provider-exam-origin" label="Origen" value={examValues.origen} error={examErrors.origen} disabled={operationsBusy} maxLength={255} onChange={(origen) => updateExamField("origen", origen)} />
                                 <div className="sm:col-span-2">
-                                    <RequiredField id="provider-exam-document" label="Documento del examen (URL)" value={examValues.documentoUrl} error={examErrors.documentoUrl} disabled={operationsBusy} type="url" onChange={(documentoUrl) => updateExamField("documentoUrl", documentoUrl)} />
+                                    <InputField required id="provider-exam-document" label="Documento del examen (URL)" value={examValues.documentoUrl} error={examErrors.documentoUrl} disabled={operationsBusy} type="url" placeholder="https://..." onChange={(documentoUrl) => updateExamField("documentoUrl", documentoUrl)} />
                                 </div>
-                                <Field data-invalid={examErrors.observacion ? true : undefined} className="sm:col-span-2">
-                                    <FieldLabel htmlFor="provider-exam-observation">Observación <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                                <FormField id="provider-exam-observation" label="Observación" required error={examErrors.observacion} className="sm:col-span-2">
                                     <Textarea
                                         id="provider-exam-observation"
                                         className="min-h-24 resize-none rounded-xl"
@@ -472,8 +437,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                                         disabled={operationsBusy}
                                         onChange={(event) => updateExamField("observacion", event.target.value)}
                                     />
-                                    {examErrors.observacion && <FieldError id="provider-exam-observation-error">{examErrors.observacion}</FieldError>}
-                                </Field>
+                                </FormField>
                             </div>
                             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                                 <Button variant="outline" disabled={isMutating} onClick={() => setFormTarget(null)}><X size={18} strokeWidth={2.5} /> Cancelar</Button>
@@ -522,17 +486,22 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                         <div className="flex flex-col gap-4 rounded-2xl border border-brand-border bg-brand-surface/40 p-4">
                             <p className="text-[13px] font-bold text-ink">{editingCertificateId === null ? "Nuevo certificado" : "Editar certificado"}</p>
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <RequiredField id="provider-certificate-name" label="Nombre" value={certificateValues.nombre} error={certificateErrors.nombre} disabled={operationsBusy} maxLength={255} onChange={(nombre) => updateCertificateField("nombre", nombre)} />
-                                <RequiredField id="provider-certificate-date" label="Fecha de revisión SENASA" value={certificateValues.fechaRevisionSenasa} error={certificateErrors.fechaRevisionSenasa} disabled={operationsBusy} type="date" onChange={(fechaRevisionSenasa) => updateCertificateField("fechaRevisionSenasa", fechaRevisionSenasa)} />
-                                <Field data-invalid={certificateFileError ? true : undefined} className="sm:col-span-2">
-                                    <FieldLabel htmlFor="provider-certificate-document">Archivo del certificado <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                                    <Input id="provider-certificate-document" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required aria-required="true" aria-invalid={certificateFileError ? true : undefined} aria-describedby={certificateFileError ? "provider-certificate-document-error" : "provider-certificate-document-help"} disabled={operationsBusy} onChange={(event) => {
+                                <InputField required id="provider-certificate-name" label="Nombre" value={certificateValues.nombre} error={certificateErrors.nombre} disabled={operationsBusy} maxLength={255} onChange={(nombre) => updateCertificateField("nombre", nombre)} />
+                                <InputField required id="provider-certificate-date" label="Fecha de revisión SENASA" value={certificateValues.fechaRevisionSenasa} error={certificateErrors.fechaRevisionSenasa} disabled={operationsBusy} type="date" onChange={(fechaRevisionSenasa) => updateCertificateField("fechaRevisionSenasa", fechaRevisionSenasa)} />
+                                <FormField
+                                    id="provider-certificate-document"
+                                    label="Archivo del certificado"
+                                    required
+                                    error={certificateFileError ?? undefined}
+                                    hint="PDF, JPEG, PNG o WebP; máximo 10 MB. Al editar, el nuevo archivo reemplaza el documento del certificado."
+                                    className="sm:col-span-2"
+                                >
+                                    <Input id="provider-certificate-document" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required aria-required="true" aria-invalid={certificateFileError ? true : undefined} aria-describedby={certificateFileError ? "provider-certificate-document-error" : undefined} disabled={operationsBusy} onChange={(event) => {
                                         const selected = event.target.files?.[0] ?? null;
                                         setCertificateFile(selected);
                                         setCertificateFileError(selected ? validateCertificadoProveedorFile(selected) ?? null : "Selecciona el archivo del certificado.");
                                     }} />
-                                    {certificateFileError ? <FieldError id="provider-certificate-document-error">{certificateFileError}</FieldError> : <p id="provider-certificate-document-help" className="text-xs text-ink-muted">PDF, JPEG, PNG o WebP; máximo 10 MB. Al editar, el nuevo archivo reemplaza el documento del certificado.</p>}
-                                </Field>
+                                </FormField>
                             </div>
                             {certificateStage && <p role="status" aria-live="polite" className="text-sm text-ink-muted">{certificateStage}</p>}
                             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

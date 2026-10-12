@@ -4,8 +4,8 @@ import { X, Save, FlaskConical } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm, useResetOnToggle } from "@/shared/hooks/useModalForm";
 import FileDropzone from "@/shared/components/FileDropzone";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import FormField from "@/shared/components/FormField";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Combobox } from "@/shared/components/ui/combobox";
@@ -22,8 +22,6 @@ interface CampaignExamModalProps {
     isViewOnly?: boolean;
     onSave?: (values: ExamValues) => void;
 }
-
-const REQUIRED = <span aria-hidden="true" className="text-destructive">*</span>;
 
 export default function CampaignExamModal({ open, onOpenChange, initialValues, isViewOnly, onSave }: CampaignExamModalProps) {
     const [values, , set] = useModalForm<ExamValues>(open, initialValues || EMPTY_EXAM);
@@ -73,21 +71,9 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
             <div className="flex flex-col gap-6">
                 {/* Row 1: Origen | Tipo de examen */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <Field data-invalid={errors.origen ? true : undefined}>
-                        <FieldLabel htmlFor="exam-origin">Origen {REQUIRED}</FieldLabel>
-                        <Input
-                            id="exam-origin"
-                            placeholder="Ej. Campo A"
-                            value={values.origen}
-                            onChange={(event) => update("origen", event.target.value)}
-                            aria-invalid={errors.origen ? true : undefined}
-                            readOnly={isViewOnly}
-                        />
-                        {errors.origen && <FieldError>{errors.origen}</FieldError>}
-                    </Field>
+                    <InputField id="exam-origin" label="Origen" required placeholder="Ej. Campo A" value={values.origen} onChange={(value) => update("origen", value)} error={errors.origen} readOnly={isViewOnly} />
 
-                    <Field data-invalid={errors.tipoExamen ? true : undefined}>
-                        <FieldLabel>Tipo de examen {REQUIRED}</FieldLabel>
+                    <FormField label="Tipo de examen" required error={errors.tipoExamen}>
                         <div className={isViewOnly ? "pointer-events-none" : ""}>
                             <Combobox
                                 options={EXAM_TYPES}
@@ -96,27 +82,14 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
                                 placeholder="Buscar..."
                             />
                         </div>
-                        {errors.tipoExamen && <FieldError>{errors.tipoExamen}</FieldError>}
-                    </Field>
+                    </FormField>
                 </div>
 
                 {/* Row 2: Identificación | Resultado */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <Field data-invalid={errors.identificacionMuestra ? true : undefined}>
-                        <FieldLabel htmlFor="exam-sample">Identificación de muestra {REQUIRED}</FieldLabel>
-                        <Input
-                            id="exam-sample"
-                            placeholder="Ej. MUESTRA-001"
-                            value={values.identificacionMuestra}
-                            onChange={(event) => update("identificacionMuestra", event.target.value)}
-                            aria-invalid={errors.identificacionMuestra ? true : undefined}
-                            readOnly={isViewOnly}
-                        />
-                        {errors.identificacionMuestra && <FieldError>{errors.identificacionMuestra}</FieldError>}
-                    </Field>
+                    <InputField id="exam-sample" label="Identificación de muestra" required placeholder="Ej. MUESTRA-001" value={values.identificacionMuestra} onChange={(value) => update("identificacionMuestra", value)} error={errors.identificacionMuestra} readOnly={isViewOnly} />
 
-                    <Field data-invalid={errors.resultado ? true : undefined}>
-                        <FieldLabel htmlFor="exam-result">Resultado del examen {REQUIRED}</FieldLabel>
+                    <FormField id="exam-result" label="Resultado del examen" required error={errors.resultado}>
                         <div className={isViewOnly ? "pointer-events-none" : ""}>
                             <SegmentedControl
                                 options={[{ label: "Positivo", value: "positivo" }, { label: "Negativo", value: "negativo" }]}
@@ -124,40 +97,15 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
                                 onChange={(value) => update("resultado", value as ExamResult)}
                             />
                         </div>
-                        {errors.resultado && <FieldError>{errors.resultado}</FieldError>}
-                    </Field>
+                    </FormField>
                 </div>
 
                 {/* Row 3: Fecha del examen | Fecha de envío | Estado */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    <Field data-invalid={errors.fecha ? true : undefined}>
-                        <FieldLabel htmlFor="exam-date">Fecha del examen {REQUIRED}</FieldLabel>
-                        <Input
-                            id="exam-date"
-                            type="date"
-                            value={values.fecha}
-                            onChange={(event) => update("fecha", event.target.value)}
-                            aria-invalid={errors.fecha ? true : undefined}
-                            readOnly={isViewOnly}
-                        />
-                        {errors.fecha && <FieldError>{errors.fecha}</FieldError>}
-                    </Field>
+                    <InputField id="exam-date" type="date" label="Fecha del examen" required value={values.fecha} onChange={(value) => update("fecha", value)} error={errors.fecha} readOnly={isViewOnly} />
+                    <InputField id="exam-sample-date" type="date" label="Fecha de envío de la muestra" required value={values.fechaEnvioMuestra} onChange={(value) => update("fechaEnvioMuestra", value)} error={errors.fechaEnvioMuestra} readOnly={isViewOnly} />
 
-                    <Field data-invalid={errors.fechaEnvioMuestra ? true : undefined}>
-                        <FieldLabel htmlFor="exam-sample-date">Fecha de envío de la muestra {REQUIRED}</FieldLabel>
-                        <Input
-                            id="exam-sample-date"
-                            type="date"
-                            value={values.fechaEnvioMuestra}
-                            onChange={(event) => update("fechaEnvioMuestra", event.target.value)}
-                            aria-invalid={errors.fechaEnvioMuestra ? true : undefined}
-                            readOnly={isViewOnly}
-                        />
-                        {errors.fechaEnvioMuestra && <FieldError>{errors.fechaEnvioMuestra}</FieldError>}
-                    </Field>
-
-                    <Field data-invalid={errors.estadoEnvioResultado ? true : undefined}>
-                        <FieldLabel htmlFor="exam-status">Estado de envío/resultado {REQUIRED}</FieldLabel>
+                    <FormField id="exam-status" label="Estado de envío/resultado" required error={errors.estadoEnvioResultado}>
                         <div className={isViewOnly ? "pointer-events-none" : ""}>
                             <Select
                                 items={[{ value: "Pendiente", label: "Pendiente" }, { value: "En proceso", label: "En proceso" }, { value: "Entregado", label: "Entregado" }]}
@@ -174,15 +122,12 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
                                 </SelectContent>
                             </Select>
                         </div>
-                        {errors.estadoEnvioResultado && <FieldError>{errors.estadoEnvioResultado}</FieldError>}
-                    </Field>
+                    </FormField>
                 </div>
 
                 {/* Row 4: Observación | Archivo */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Observación */}
-                    <Field className="h-full">
-                        <FieldLabel htmlFor="exam-observation">Observación</FieldLabel>
+                    <FormField id="exam-observation" label="Observación" className="h-full">
                         <Textarea
                             id="exam-observation"
                             placeholder="Escribe alguna observación o detalle adicional..."
@@ -191,11 +136,9 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
                             className="resize-none h-full min-h-35.5"
                             readOnly={isViewOnly}
                         />
-                    </Field>
+                    </FormField>
 
-                    {/* Dropzone */}
-                    <Field data-invalid={errors.archivo ? true : undefined}>
-                        <FieldLabel>Archivo de examen {REQUIRED}</FieldLabel>
+                    <FormField label="Archivo de examen" required error={errors.archivo}>
                         {isViewOnly && !values.archivo ? (
                             <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-border bg-surface-elevated text-sm text-ink-muted">
                                 Sin archivo adjunto
@@ -211,8 +154,7 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
                                 />
                             </div>
                         )}
-                        {errors.archivo && <FieldError>{errors.archivo}</FieldError>}
-                    </Field>
+                    </FormField>
                 </div>
             </div>
         </AppModal>

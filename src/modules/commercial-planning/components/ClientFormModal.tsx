@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { X, UserPlus, Save, AlertCircle } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm } from "@/shared/hooks/useModalForm";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
 import InputField from "@/shared/components/InputField";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
@@ -123,8 +123,7 @@ export default function ClientFormModal({
                 <InputField id="client-ruc" label="RUC:" required value={values.ruc} onChange={set("ruc")} error={fieldError("ruc") || undefined} />
                 <InputField id="client-email" label="Correo corporativo:" type="email" required value={values.correoCorporativo} onChange={set("correoCorporativo")} error={fieldError("correoCorporativo") || undefined} />
                 <InputField id="client-location" label="Ubicación:" required value={values.ubicacion} onChange={set("ubicacion")} error={fieldError("ubicacion") || undefined} />
-                <Field data-invalid={Boolean(fieldError("tipoCliente"))}>
-                    <FieldLabel htmlFor="client-type">Tipo de cliente: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                <FormField id="client-type" label="Tipo de cliente:" required error={fieldError("tipoCliente") || undefined}>
                     <Select items={CLIENT_TYPES} value={values.tipoCliente || null} onValueChange={(value) => set("tipoCliente")((value ?? "") as ClienteNegocioInput["tipoCliente"])}>
                         <SelectTrigger id="client-type" className="w-full" aria-required="true" aria-invalid={Boolean(fieldError("tipoCliente"))} aria-describedby={fieldError("tipoCliente") ? "client-type-error" : undefined}>
                             <SelectValue placeholder="Seleccionar tipo" />
@@ -134,8 +133,7 @@ export default function ClientFormModal({
                             <SelectItem value="industria">Industria</SelectItem>
                         </SelectContent>
                     </Select>
-                    {fieldError("tipoCliente") && <FieldError id="client-type-error">{fieldError("tipoCliente")}</FieldError>}
-                </Field>
+                </FormField>
             </div>
         </AppModal>
     );

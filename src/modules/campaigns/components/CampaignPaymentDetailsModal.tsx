@@ -1,7 +1,6 @@
 import { format, parseISO } from "date-fns";
 import AppModal from "@/shared/components/AppModal";
 import { X, Receipt } from "lucide-react";
-import { Field, FieldLabel } from "@/shared/components/ui/field";
 import { Button } from "@/shared/components/ui/button";
 import { InfoField } from "@/shared/components/InfoField";
 import StatusBadge from "@/shared/components/StatusBadge";
@@ -41,12 +40,7 @@ export default function CampaignPaymentDetailsModal({ open, onOpenChange, paymen
                     value={`S/ ${payment.cantidad.toLocaleString("es-PE")}`}
                 />
 
-                <Field>
-                    <FieldLabel variant="compact" className="text-[10px] tracking-wide">Estado</FieldLabel>
-                    <div className="flex h-10 items-center rounded-lg border border-border/60 bg-card px-3">
-                        <StatusBadge status={payment.estado} />
-                    </div>
-                </Field>
+                <InfoField label="Estado" value={<StatusBadge status={payment.estado} />} />
 
                 {payment.estado === "Adelanto" && (
                     <InfoField

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
-import { X, Users, AlertCircle, FileSignature } from "lucide-react";
+import { X, Users, FileSignature } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import FileDropzone from "@/shared/components/FileDropzone";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
-import { DatePicker } from "@/shared/components/ui/date-picker";
+import FormField from "@/shared/components/FormField";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
 import { getUploadErrorMessage, uploadDocument } from "@/shared/api/uploadDocument";
@@ -172,20 +171,15 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave, ca
         .filter((cliente) => !linkedIds.has(cliente.clienteNegocioId))
         .map((cliente) => ({ value: String(cliente.clienteNegocioId), label: cliente.nombreEmpresa }));
 
-    const fieldProps = (field: keyof CampaignClientCreateValues) => ({
+    /** Props comunes de un campo de texto del formulario: id, valor, error y cambio enlazados al estado */
+    const bind = (field: keyof CampaignClientCreateValues) => ({
         id: `link-client-${field}`,
+        required: true,
         value: values[field],
-        onChange: (event: React.ChangeEvent<HTMLInputElement>) => update(field, event.target.value),
+        error: errors[field],
         disabled: isSaving,
-        "aria-required": true,
-        "aria-invalid": errors[field] ? true : undefined,
-        "aria-describedby": errors[field] ? `link-client-${field}-error` : undefined,
+        onChange: (next: string) => update(field, next),
     });
-
-    const errorFor = (field: keyof CampaignClientCreateValues) =>
-        errors[field] ? <FieldError id={`link-client-${field}-error`}>{errors[field]}</FieldError> : null;
-
-    const required = <span aria-hidden="true" className="text-destructive">*</span>;
 
     return (
         <AppModal
@@ -213,8 +207,7 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave, ca
                 {/* Cliente + Cantidad */}
                 <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_10rem] gap-4 items-start">
                     {isContractMode ? (
-                        <Field data-invalid={campaignError ? true : undefined}>
-                            <FieldLabel>Seleccionar Campaña: {required}</FieldLabel>
+                        <FormField label="Seleccionar Campaña:" required error={campaignError}>
                             <Combobox
                                 options={campaignOptions}
                                 value={selectedCampaignId}
@@ -223,11 +216,9 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave, ca
                                 emptyMessage="No hay campañas disponibles para este cliente"
                                 disabled={isLoading || isSaving}
                             />
-                            {campaignError && <FieldError>{campaignError}</FieldError>}
-                        </Field>
+                        </FormField>
                     ) : (
-                        <Field data-invalid={errors.clienteNegocioId ? true : undefined}>
-                            <FieldLabel>Seleccionar Cliente: {required}</FieldLabel>
+                        <FormField label="Seleccionar Cliente:" required error={errors.clienteNegocioId}>
                             <Combobox
                                 options={clientOptions}
                                 value={values.clienteNegocioId}
@@ -236,60 +227,38 @@ export default function CampaignLinkClientModal({ open, onOpenChange, onSave, ca
                                 emptyMessage="No hay clientes disponibles para vincular"
                                 disabled={isLoading || isSaving}
                             />
-                            {errorFor("clienteNegocioId")}
-                        </Field>
+                        </FormField>
                     )}
 
-                    <Field data-invalid={errors.cantidadKg ? true : undefined}>
-                        <FieldLabel htmlFor="link-client-cantidadKg">Cantidad kg: {required}</FieldLabel>
-                        <Input type="number" inputMode="decimal" min={0} step="0.001" placeholder="0" {...fieldProps("cantidadKg")} />
-                        {errorFor("cantidadKg")}
-                    </Field>
+                    <InputField {...bind("cantidadKg")} label="Cantidad kg:" step="0.001" min={0} placeholder="0" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field data-invalid={errors.kilosAcordados ? true : undefined}>
-                        <FieldLabel htmlFor="link-client-kilosAcordados">Kilos acordados: {required}</FieldLabel>
-                        <Input type="number" inputMode="decimal" min={0} step="0.001" placeholder="0" {...fieldProps("kilosAcordados")} />
-                        {errorFor("kilosAcordados")}
-                    </Field>
-                    <Field data-invalid={errors.fechaRegistro ? true : undefined}>
-                        <FieldLabel htmlFor="link-client-fechaRegistro">Fecha de registro: {required}</FieldLabel>
-                        <DatePicker 
-                            value={String(fieldProps("fechaRegistro").value || "")} 
-                            onChange={(val) => update("fechaRegistro", val)} 
-                            aria-invalid={fieldProps("fechaRegistro")["aria-invalid"]} 
-                        />
-                        {errorFor("fechaRegistro")}
-                    </Field>
+                    <InputField {...bind("kilosAcordados")} label="Kilos acordados:" step="0.001" min={0} placeholder="0" />
+                    <InputField id="link-client-fechaRegistro" type="date" label="Fecha de registro:" required value={String(values.fechaRegistro || "")} error={errors.fechaRegistro} onChange={(val) => update("fechaRegistro", val)} />
                 </div>
 
                 {/* Adjuntar */}
-                <div className="flex flex-col gap-2">
+                <FormField error={errors.documentoUrl}>
                     <FileDropzone
                         label={isContractMode ? "Contrato" : "Requerimientos"}
                         hint={isContractMode ? "PDF · Máx. 10 MB" : "PDF, Excel · Máx. 10 MB"}
                         file={files.documentoUrl}
                         onChange={(file) => updateFile("documentoUrl", file)}
                     />
-                    {errorFor("documentoUrl")}
-                </div>
+                </FormField>
 
-                <div className="flex flex-col gap-2">
+                <FormField error={errors.fichaTecnicaUrl}>
                     <FileDropzone
                         label="Ficha Técnica"
                         hint="PDF, Excel · Máx. 10 MB"
                         file={files.fichaTecnicaUrl}
                         onChange={(file) => updateFile("fichaTecnicaUrl", file)}
                     />
-                    {errorFor("fichaTecnicaUrl")}
-                </div>
+                </FormField>
 
-                <div className={`transition-all duration-300 overflow-hidden ${formError ? "opacity-100 max-h-20" : "opacity-0 max-h-0"}`}>
-                    <FieldError className="flex items-center gap-2 text-[13px] font-medium">
-                        <AlertCircle size={14} className="shrink-0" /> {formError}
-                    </FieldError>
-                </div>
+                {/* Error general del formulario (no de un campo); solo se dibuja si existe, para que no afecte el gap */}
+                {formError && <FormField error={formError} />}
             </div>
         </AppModal>
     );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Eye, Trash2, Truck, LandPlot, Sprout, UserRound, ListFilter, MapPin, Phone, TriangleAlert, RotateCw, SearchX } from "lucide-react";
+import { Pencil, Eye, Trash2, Truck, LandPlot, ShieldCheck, UserRound, ListFilter, MapPin, Phone, TriangleAlert, RotateCw, SearchX } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -20,10 +20,6 @@ import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type Ta
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ProviderFormModal from "@/modules/providers/components/ProviderFormModal";
 import ProviderViewModal from "@/modules/providers/components/ProviderViewModal";
-import ProviderAgronomicoModal from "@/modules/providers/components/ProviderAgronomicoModal";
-import ProviderSuccessModal, { type ProviderSuccessMode } from "@/modules/providers/components/ProviderSuccessModal";
-import { saveDatosAgronomicos, useProviderLocalData } from "@/modules/providers/providerLocalData.store";
-import type { DatosAgronomicos } from "@/modules/providers/providerAgronomico.utils";
 import type { ProveedorInput } from "@/modules/providers/api/proveedor.dto";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import type { createInFlightGuard } from "@/modules/providers/api/proveedor-submission";
@@ -53,21 +49,6 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
     const [editing, setEditing] = useState<{ open: boolean; provider: Proveedor | null }>({ open: false, provider: null });
     const [viewing, setViewing] = useState<{ open: boolean; providerId: number | null }>({ open: false, providerId: null });
     const [deleting, setDeleting] = useState<{ open: boolean; provider: Proveedor | null }>({ open: false, provider: null });
-    // `saved` se fija al abrir: así el modal no cambia de "agregar" a "actualizar" mientras se cierra tras guardar
-    const [registeringAgronomico, setRegisteringAgronomico] = useState<{ open: boolean; provider: Proveedor | null; saved?: DatosAgronomicos }>({ open: false, provider: null });
-    const [success, setSuccess] = useState<{ open: boolean; mode: ProviderSuccessMode }>({ open: false, mode: "agronomico" });
-    // Fincas y datos agronómicos viven en un almacén en memoria: ver providerLocalData.store.ts
-    const { agronomicos } = useProviderLocalData();
-
-    const handleSaveAgronomico = (datos: DatosAgronomicos) => {
-        const provider = registeringAgronomico.provider;
-        if (!provider) return;
-        const isUpdate = registeringAgronomico.saved !== undefined;
-        saveDatosAgronomicos(provider.proveedorId, datos);
-        setRegisteringAgronomico((current) => ({ ...current, open: false }));
-        setSuccess({ open: true, mode: isUpdate ? "agronomico-edit" : "agronomico" });
-    };
-
     /** Exporta los proveedores visibles a CSV y lo descarga */
     const handleExportCSV = () =>
         downloadCsv(
@@ -85,12 +66,7 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
         ],
         secondary: [
             { label: "Gestión de fincas", icon: <LandPlot size={18} strokeWidth={2.5} />, onClick: () => navigate(`/proveedores/${row.proveedorId}/fincas`) },
-            {
-                // Se agregan tras una visita; una vez guardados, la misma acción pasa a actualizarlos
-                label: agronomicos[row.proveedorId] ? "Actualizar datos agronómicos" : "Agregar datos agronómicos",
-                icon: <Sprout size={18} strokeWidth={2.5} />,
-                onClick: () => setRegisteringAgronomico({ open: true, provider: row, saved: agronomicos[row.proveedorId] }),
-            },
+            { label: "Gestión de certificados", icon: <ShieldCheck size={18} strokeWidth={2.5} />, onClick: () => navigate(`/proveedores/${row.proveedorId}/certificados`) },
         ],
     });
 
@@ -211,16 +187,6 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                 onOpenChange={(open) => setViewing((current) => ({ ...current, open }))}
                 providerId={viewing.providerId}
             />
-
-            <ProviderAgronomicoModal
-                open={registeringAgronomico.open}
-                onOpenChange={(open) => setRegisteringAgronomico((current) => ({ ...current, open }))}
-                providerName={registeringAgronomico.provider ? fullName(registeringAgronomico.provider) : ""}
-                savedData={registeringAgronomico.saved}
-                onSave={handleSaveAgronomico}
-            />
-
-            <ProviderSuccessModal open={success.open} onOpenChange={(open) => setSuccess((current) => ({ ...current, open }))} mode={success.mode} />
 
             <ConfirmModal
                 open={deleting.open}

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Check, X, Paperclip } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
+import { InfoField } from "@/shared/components/InfoField";
 import { Button } from "@/shared/components/ui/button";
 import FileDropzone from "@/shared/components/FileDropzone";
 import type { CarrierPayment } from "@/modules/campaigns/carrierPayments.data";
@@ -57,22 +58,16 @@ export default function CampaignAttachReceiptModal({ open, onOpenChange, payment
                 <span className="self-start rounded-full border border-border bg-surface-page px-3 py-1.5 text-[11px] font-mono font-semibold">
                     {payment?.codigo}
                 </span>
-                <Field>
-                    <FieldLabel>Pago Pendiente:</FieldLabel>
-                    <div className="flex h-11 items-center rounded-lg border border-border bg-surface-page px-3.5 text-[14px] font-semibold text-ink">
-                        Pendiente · S/ {payment ? payment.cantidad.toLocaleString("es-PE") : 0}
-                    </div>
-                </Field>
+                <InfoField label="Pago Pendiente" value={`Pendiente · S/ ${payment ? payment.cantidad.toLocaleString("es-PE") : 0}`} />
 
-                <div className="flex flex-col gap-2">
+                <FormField error={error ?? undefined}>
                     <FileDropzone
                         label="Boleta"
                         hint="PDF, imagen · Máx. 10 MB"
                         file={receipt}
                         onChange={(file) => { setReceipt(file); setError(null); }}
                     />
-                    {error && <FieldError>{error}</FieldError>}
-                </div>
+                </FormField>
             </div>
         </AppModal>
     );

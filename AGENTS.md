@@ -16,8 +16,12 @@ Todo lo transversal / no-dominio vive aquí:
   - **No envolver un componente de `ui/` en otro archivo solo para darle estilo o lógica.** Ese envoltorio duplica la API, obliga a mantener dos piezas y esconde el componente real. Si a un `Input` le falta algo, se le agrega a `ui/input.tsx` y se usa `<Input>` directo.
   - Un componente propio en `shared/components/` se justifica cuando compone **varias** piezas en un patrón nuevo (p. ej. `AppModal`, `RowActions`), no cuando reexporta una sola con clases encima.
   - Lo que sí queda fuera: lógica de negocio/dominio. Eso vive en el módulo.
-  - Campos de texto o número en modales y formularios: usar `InputField` (etiqueta + control + unidad + ayuda + error, ya enlazados). Lo que cambia de un campo a otro es una prop, no una copia local: `unit`, `required`/`optional`, `readOnly`, `hint`, `type`, `variant="compact"` (etiqueta chica en mayúsculas), `className` (columnas de la grilla), `inputClassName`. No armar a mano el trío `Field` + `FieldLabel` + `Input` ni crear wrappers locales tipo `UnitField` o `InterviewInput`. Si falta una variante, se agrega a `InputField` (o a `ui/input.tsx`), no se duplica.
-  - `Select` y `Combobox` son el mismo control para el usuario (el segundo solo agrega búsqueda): deben verse y sentirse igual (alto, letra, borde, foco, flecha sin fondo ni escalado al pasar el mouse). Su desplegable es propio, no el nativo del navegador: panel `rounded-xl` con borde y sombra, opciones de 14 px con aire, resaltado verde al pasar el mouse y la elegida en verde semi-negrita con su check; el estado seleccionado se estila con `aria-selected:` (el variante `data-selected:` de este proyecto solo coincide con `="true"`). Nunca forzar tamaño, letra o color con `className` en un uso local (`h-8.5`, `text-[12.5px]`, `!h-11`…): si un caso necesita otro aspecto, se agrega como variante al componente.
+  - Campos de formulario: nunca armar a mano el trío `Field` + `FieldLabel` + control + error, ni crear wrappers locales (`UnitField`, `IconField`, `AmountField`, `RequiredField`, `InterviewInput`…).
+    - Texto o número: `InputField`. Lo que cambia de un campo a otro es una prop: `unit` (insignia a la derecha), `leading` (ícono o prefijo como "S/" a la izquierda), `required`/`optional`, `readOnly`, `hint`, `type`, `inputMode`, `variant="compact"` (etiqueta chica en mayúsculas), `className` (columnas de la grilla), `inputClassName`.
+    - Selector, `Combobox`, fecha, área de texto o archivo: `FormField` (etiqueta + control + ayuda/error) con el control adentro. Sin etiqueta ni control, `<FormField error={…} />` muestra un error general del formulario.
+    - Valor de solo lectura (no editable): `InfoField`, no un `Input` deshabilitado ni una caja armada a mano.
+    - El error (con ícono y animación de entrada) y su espaciado salen siempre de `FormField`. Si falta una variante, se agrega a `InputField`/`FormField`/`ui/input.tsx`, no se duplica.
+    - Fuera de esto quedan solo los formularios de `modules/auth` (login), que tienen su propio diseño.
   - Unidad o sufijo dentro de un campo (KG, ha, m, /año…): `unit`, tanto en `InputField` como en `<Input unit="ha" />`. Es el único estilo (recuadro verde de marca a la derecha, como el de tipo `date`); no dibujar la unidad a mano con un `<span>` posicionado.
   - Subtítulos de sección dentro del cuerpo de un modal: usar siempre `ModalSection` (texto en mayúsculas verde + línea degradada que remata en trazos; `aside` para un contador, "Opcional" o una acción chica). Es el único subtítulo de modal: no crear `<h3>` sueltos ni variantes locales, y no repetir ícono en círculo por sección (ese patrón es de la cabecera de `AppModal`). Los subtítulos son a rasgos generales y la mayoría de modales no los necesita: un formulario que registra o vincula una sola cosa (campaña, cliente, examen, vínculo) va sin subtítulos aunque tenga muchos campos; no se parte un registro en "periodo", "fruta", etc. Solo se usan cuando el modal junta bloques de distinta naturaleza: un formulario y la lista de lo ya registrado, los datos de un registro y sus relaciones (contratos, exámenes), o bloques realmente independientes (identificación vs. ubicación de una finca).
 - `shared/layout/` — chrome de la app: `Sidebar.tsx`, `TopNavBar.tsx`, `DashboardLayout.tsx`.
@@ -26,6 +30,10 @@ Todo lo transversal / no-dominio vive aquí:
 
 - Solo **pnpm** (`pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm test`, `pnpm build`). La versión está fijada en `packageManager` de `package.json`.
 - La única referencia de dependencias es `pnpm-lock.yaml`. No generar ni versionar `package-lock.json` (ya está en `.gitignore`): un segundo lockfile desincroniza versiones entre quienes usan npm y pnpm, y el `Dockerfile` y el workflow de CI instalan con `--frozen-lockfile`.
+
+## Comprobación de tipos
+
+- El `tsconfig.json` de la raíz solo tiene referencias: `tsc -p .` **no comprueba nada**. Usar `pnpm build` (que corre `tsc -b`) o `npx tsc --noEmit -p tsconfig.app.json`.
 
 ## Convención de imports
 
