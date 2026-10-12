@@ -3,7 +3,7 @@ import { X, Link2, AlertCircle, UserRound, MapPin, Sprout } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import FormSection from "@/shared/components/FormSection";
 import SegmentedControl from "@/shared/components/SegmentedControl";
-import { Field, FieldError, FieldLabel, FieldLegend } from "@/shared/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
@@ -37,6 +37,7 @@ type DraftValues = Record<Exclude<keyof CampaniaProveedorDraft, "proveedorId" | 
     frutaConvencional: string;
     observacionesParticipacion: string;
 };
+type DraftErrors = CampaniaProveedorDraftErrors & Partial<Record<"proveedorId" | "frutaConvencional" | "observacionesParticipacion", string>>;
 
 const EMPTY_DRAFT: DraftValues = {
     cantidadProveedor: "",
@@ -90,7 +91,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
     const [providerType, setProviderType] = useState<TipoProveedorCampania>("productor");
     const [selectedProvider, setSelectedProvider] = useState("");
     const [draft, setDraft] = useState<DraftValues>(EMPTY_DRAFT);
-    const [errors, setErrors] = useState<CampaniaProveedorDraftErrors & { proveedorId?: string }>({});
+    const [errors, setErrors] = useState<DraftErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [proveedores, setProveedores] = useState<Proveedor[]>([]);
     const [linkedIds, setLinkedIds] = useState<Set<number>>(new Set());
