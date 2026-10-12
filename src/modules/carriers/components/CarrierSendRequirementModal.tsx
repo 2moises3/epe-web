@@ -5,7 +5,8 @@ import ModalSection from "@/shared/components/ModalSection";
 import FileDropzone from "@/shared/components/FileDropzone";
 import RemovableChip from "@/shared/components/RemovableChip";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
-import { FieldError, FieldDescription } from "@/shared/components/ui/field";
+import { FieldDescription } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -32,11 +33,13 @@ interface CarrierSendRequirementModalProps {
 export default function CarrierSendRequirementModal({ open, onOpenChange, onSuccess, selectedCarriers, onRemoveCarrier }: CarrierSendRequirementModalProps) {
     const [file, setFile] = useState<File | null>(null);
     const [fileError, setFileError] = useState("");
+    const [recipientsError, setRecipientsError] = useState("");
     const [detail, setDetail] = useState("");
 
     useResetOnToggle(open, () => {
         setFile(null);
         setFileError("");
+        setRecipientsError("");
         setDetail("");
     });
 
@@ -52,7 +55,16 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
 
     const count = selectedCarriers.length;
     const countLabel = `${count} ${count === 1 ? "empresa" : "empresas"}`;
-    const canSend = count > 0 && file !== null;
+
+    // Sin botón desactivado: al enviar, lo que falta se indica bajo su bloque
+    const handleSend = () => {
+        const noRecipients = count === 0;
+        const noFile = file === null;
+        setRecipientsError(noRecipients ? "Selecciona al menos una empresa en la tabla." : "");
+        setFileError(noFile ? "Adjunta el documento del requerimiento." : "");
+        if (noRecipients || noFile) return;
+        onSuccess?.();
+    };
 
     return (
         <AppModal
@@ -73,7 +85,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" disabled={!canSend} onClick={onSuccess}>
+                    <Button size="xl" onClick={handleSend}>
                         <Send size={20} strokeWidth={2.5} /> Enviar requerimiento
                     </Button>
                 </>
@@ -110,15 +122,17 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                             ))}
                         </div>
                     ) : (
-                        <div className="flex items-center gap-3 rounded-xl border border-dashed border-border p-4 text-[13px] font-medium text-ink-muted">
-                            <Building2 size={18} strokeWidth={2} className="shrink-0" />
-                            Selecciona al menos una empresa en la tabla para enviar el requerimiento.
-                        </div>
+                        <FormField error={recipientsError || undefined}>
+                            <div className="flex items-center gap-3 rounded-xl border border-dashed border-border p-4 text-[13px] font-medium text-ink-muted">
+                                <Building2 size={18} strokeWidth={2} className="shrink-0" />
+                                Selecciona al menos una empresa en la tabla para enviar el requerimiento.
+                            </div>
+                        </FormField>
                     )}
                 </ModalSection>
 
                 <ModalSection title="Documento del requerimiento" aside="Formatos permitidos: PDF, Word o Excel">
-                    <div className="flex flex-col gap-2">
+                    <FormField error={fileError || undefined}>
                         <FileDropzone
                             label="Documento del requerimiento"
                             hideLabel
@@ -127,8 +141,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                             file={file}
                             onChange={handleFileChange}
                         />
-                        <FieldError>{fileError}</FieldError>
-                    </div>
+                    </FormField>
                 </ModalSection>
 
                 <ModalSection title="Detalle del requerimiento" aside="Opcional">

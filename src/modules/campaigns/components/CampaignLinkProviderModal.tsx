@@ -91,9 +91,10 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
     useEffect(() => {
         if (!open) return;
         let active = true;
-        
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+
+        // El formulario se reinicia al abrir: es sincronizar el estado local con el vínculo que se va a editar.
         if (mode === "edit" && initialData) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setProviderType(initialData.tipoProveedor);
             setSelectedProvider(String(initialData.proveedorId));
             setDraft({
@@ -150,6 +151,9 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
 
         void Promise.all(requests).finally(() => { if (active) setIsLoadingProviders(false); });
         return () => { active = false; };
+        // Solo reinicia al abrir (o al cambiar de campaña): si dependiera de `mode`/`initialData`, cualquier render del
+        // padre con un objeto nuevo borraría lo que el usuario ya escribió.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, campaniaId, controller]);
 
     const isLocked = isSaving || unresolvedProviderId !== null;
@@ -199,7 +203,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
             }
             onRefresh?.();
             setFormError("No se pudo vincular el proveedor. Revisa los datos e inténtalo nuevamente.");
-        } catch (error) {
+        } catch {
             setFormError("Ocurrió un error inesperado al procesar la solicitud.");
         } finally {
             setIsSaving(false);

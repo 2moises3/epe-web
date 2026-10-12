@@ -1,263 +1,242 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { X, Users, FileSignature } from "lucide-react";
+import { CalendarRange, Link2, Save, X } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import ChipSelect from "@/shared/components/ChipSelect";
 import FileDropzone from "@/shared/components/FileDropzone";
 import FormField from "@/shared/components/FormField";
+import { InfoField } from "@/shared/components/InfoField";
 import InputField from "@/shared/components/InputField";
+import ModalSection from "@/shared/components/ModalSection";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
-import { getUploadErrorMessage, uploadDocument } from "@/shared/api/uploadDocument";
+import { Textarea } from "@/shared/components/ui/textarea";
 import { getClientesNegocio } from "@/modules/clients/api/cliente-negocio.api";
-import { getClienteNegocioContratos } from "@/modules/clients/api/cliente-negocio-contratos.api";
-import { getCampanas } from "@/modules/campaigns/api/campaign.api";
-import type { Campana } from "@/modules/campaigns/api/campaign.mapper";
+import { getCampanas, getFrutaDerivadas } from "@/modules/campaigns/api/campaign.api";
+import { getClientesNegocioCampana } from "@/modules/campaigns/api/cliente-negocio-campana.api";
 import type { ClienteNegocio } from "@/modules/clients/api/cliente-negocio.mapper";
-import { createClienteNegocioCampana, getClientesNegocioCampana } from "@/modules/campaigns/api/cliente-negocio-campana.api";
-import {
-    createCampaignMutationGuard,
-    toCampaignClientCreatePayload,
-    validateCampaignClientCreate,
-    type CampaignClientCreateErrors,
-    type CampaignClientCreateValues,
-} from "@/modules/campaigns/api/campaign-mutations.validation";
+import type { Campana } from "@/modules/campaigns/api/campaign.mapper";
+import type { FrutaDerivadaDto } from "@/modules/campaigns/api/campaign.dto";
 
 interface CampaignLinkClientModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    /** Se llama solo cuando el backend confirmó el vínculo */
+    /** Finaliza únicamente el borrador visual; la conexión de guardado queda pendiente del nuevo contrato. */
     onSave?: () => void;
-    /** Desde una campaña: la campaña queda fija y se elige el cliente */
     campaniaId?: number | null;
-    /** Desde un cliente ("Añadir contrato"): el cliente queda fijo y se elige la campaña */
+    campaign?: Campana | null;
     cliente?: ClienteNegocio | null;
 }
 
-const emptyValues = (clienteNegocioId = ""): CampaignClientCreateValues => ({
+interface ClientParticipationDraft {
+    clienteNegocioId: string;
+    cantidadKg: string;
+    fechaRegistro: string;
+    variedades: string[];
+    destinoSolicitado: string;
+    entregaDesde: string;
+    entregaHasta: string;
+    observaciones: string;
+}
+
+type DraftErrors = Partial<Record<keyof ClientParticipationDraft | "campaign" | "fichaTecnica", string>>;
+
+const emptyDraft = (clienteNegocioId = ""): ClientParticipationDraft => ({
     clienteNegocioId,
     cantidadKg: "",
-    kilosAcordados: "",
     fechaRegistro: format(new Date(), "yyyy-MM-dd"),
-    documentoUrl: "",
-    fichaTecnicaUrl: "",
+    variedades: [],
+    destinoSolicitado: "",
+    entregaDesde: "",
+    entregaHasta: "",
+    observaciones: "",
 });
 
-type DocumentField = "documentoUrl" | "fichaTecnicaUrl";
-type DocumentFiles = Record<DocumentField, File | null>;
-const NO_FILES: DocumentFiles = { documentoUrl: null, fichaTecnicaUrl: null };
-
-/** Marcador para validar el resto del formulario antes de subir: los archivos reales se validan aparte y se suben al guardar */
-const UPLOAD_PENDING_URL = "https://pending-upload.invalid";
-
-const CAMPAIGN_STATUS_LABEL: Record<string, string> = { planificacion: "Planificado", "en proceso": "En proceso", terminado: "Terminado" };
+const CAMPAIGN_STATUS_LABEL: Record<string, string> = {
+    planificacion: "Planificada",
+    "en proceso": "En proceso",
+    terminado: "Terminada",
+};
 
 /**
- * Vínculo cliente-campaña (contrato) con su requerimiento. Sirve desde la campaña (se elige el cliente)
- * o desde el cliente (se elige la campaña). Un vínculo por envío, con éxito solo tras confirmar el backend.
+ * Borrador visual de la futura participación comercial cliente-campaña.
+ * TODO(api): conectar el guardado cuando el backend incorpore variedades, destino y ventana de entrega.
  */
-export default function CampaignLinkClientModal({ open, onOpenChange, onSave, campaniaId = null, cliente = null }: CampaignLinkClientModalProps) {
-    const isContractMode = cliente !== null;
-    const [values, setValues] = useState<CampaignClientCreateValues>(emptyValues);
-    const [errors, setErrors] = useState<CampaignClientCreateErrors>({});
-    const [files, setFiles] = useState<DocumentFiles>(NO_FILES);
-    const [formError, setFormError] = useState<string | null>(null);
+export default function CampaignLinkClientModal({ open, onOpenChange, onSave, campaniaId = null, campaign = null, cliente = null }: CampaignLinkClientModalProps) {
+    const isClientContext = cliente !== null;
+    const [draft, setDraft] = useState<ClientParticipationDraft>(emptyDraft);
+    const [fichaTecnica, setFichaTecnica] = useState<File | null>(null);
+    const [errors, setErrors] = useState<DraftErrors>({});
+    const [formError, setFormError] = useState<string>();
     const [clientes, setClientes] = useState<ClienteNegocio[]>([]);
     const [campanas, setCampanas] = useState<Campana[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState("");
-    const [campaignError, setCampaignError] = useState<string | undefined>();
-    // Ids ya vinculados del otro lado: clientes de la campaña, o campañas del cliente
-    const [linkedIds, setLinkedIds] = useState<Set<number>>(new Set());
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const guard = useRef(createCampaignMutationGuard());
+    const [linkedClientIds, setLinkedClientIds] = useState<Set<number>>(new Set());
+    const [variedades, setVariedades] = useState<FrutaDerivadaDto[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const clienteId = cliente?.clienteNegocioId ?? null;
+    const selectedCampaign = campaign ?? campanas.find((item) => item.campaniaId === Number(selectedCampaignId)) ?? null;
 
-    // Cada apertura es una sesión nueva: formulario limpio y catálogo recién leído
     useEffect(() => {
         if (!open) return;
         let active = true;
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setValues(emptyValues(clienteId !== null ? String(clienteId) : ""));
-        setFiles(NO_FILES);
-        setSelectedCampaignId("");
-        setCampaignError(undefined);
+        setDraft(emptyDraft(cliente ? String(cliente.clienteNegocioId) : ""));
+        setFichaTecnica(null);
         setErrors({});
-        setFormError(null);
+        setFormError(undefined);
+        setSelectedCampaignId(campaniaId ? String(campaniaId) : "");
+        setVariedades([]);
         setIsLoading(true);
 
-        const request = clienteId !== null
-            ? Promise.all([getCampanas(), getClienteNegocioContratos(clienteId)]).then(([campaigns, contracts]) => {
-                if (!active) return;
-                setCampanas(campaigns.filter((campaign) => campaign.estado !== "terminado"));
-                setLinkedIds(new Set(contracts.contratos.map((contract) => contract.campaniaId)));
-            })
+        const request = isClientContext
+            ? getCampanas().then((items) => { if (active) setCampanas(items.filter((item) => item.estado !== "terminado")); })
             : Promise.all([
                 getClientesNegocio(),
                 campaniaId ? getClientesNegocioCampana(campaniaId) : Promise.resolve([]),
-            ]).then(([catalog, relations]) => {
+            ]).then(([catalog, linked]) => {
                 if (!active) return;
                 setClientes(catalog);
-                setLinkedIds(new Set(relations.map((relation) => relation.clienteNegocioId)));
+                setLinkedClientIds(new Set(linked.map((item) => item.clienteNegocioId)));
             });
 
         request
-            .catch(() => { if (active) setFormError("No se pudieron cargar los datos del formulario. Cierra y vuelve a abrirlo."); })
+            .catch(() => { if (active) setFormError("No se pudieron cargar los selectores del formulario."); })
             .finally(() => { if (active) setIsLoading(false); });
         return () => { active = false; };
-    }, [open, campaniaId, clienteId]);
+    }, [open, campaniaId, cliente, isClientContext]);
 
-    const update = (field: keyof CampaignClientCreateValues, value: string) => {
-        setValues((current) => ({ ...current, [field]: value }));
+    useEffect(() => {
+        if (!open || !selectedCampaign) return;
+        let active = true;
+        getFrutaDerivadas(selectedCampaign.frutaId)
+            .then((items) => { if (active) setVariedades(items); })
+            .catch(() => { if (active) setVariedades([]); });
+        return () => { active = false; };
+    }, [open, selectedCampaign]);
+
+    const clientOptions = useMemo(() => clientes
+        .filter((item) => !linkedClientIds.has(item.clienteNegocioId))
+        .map((item) => ({ value: String(item.clienteNegocioId), label: item.nombreEmpresa })), [clientes, linkedClientIds]);
+
+    const campaignOptions = useMemo(() => campanas.map((item) => ({
+        value: String(item.campaniaId),
+        label: `${item.nombre} · ${CAMPAIGN_STATUS_LABEL[item.estado] ?? item.estado}`,
+    })), [campanas]);
+
+    const update = <K extends keyof ClientParticipationDraft>(field: K, value: ClientParticipationDraft[K]) => {
+        setDraft((current) => ({ ...current, [field]: value }));
         setErrors((current) => ({ ...current, [field]: undefined }));
-        setFormError(null);
+        setFormError(undefined);
     };
 
-    const updateFile = (field: DocumentField, file: File | null) => {
-        setFiles((current) => ({ ...current, [field]: file }));
-        setErrors((current) => ({ ...current, [field]: undefined }));
-        setFormError(null);
+    const validate = (): DraftErrors => {
+        const next: DraftErrors = {};
+        if (!draft.clienteNegocioId) next.clienteNegocioId = "Selecciona un cliente.";
+        if (!selectedCampaign) next.campaign = "Selecciona una campaña antes de continuar.";
+        if (!draft.cantidadKg.trim() || Number(draft.cantidadKg) <= 0) next.cantidadKg = "Ingresa una cantidad mayor que cero.";
+        if (!fichaTecnica) next.fichaTecnica = "Adjunta la ficha técnica.";
+        if (draft.variedades.length === 0) next.variedades = "Selecciona al menos una variedad.";
+        if (!draft.destinoSolicitado.trim()) next.destinoSolicitado = "Ingresa el destino solicitado.";
+        if (!draft.entregaDesde) next.entregaDesde = "Selecciona la fecha inicial.";
+        if (!draft.entregaHasta) next.entregaHasta = "Selecciona la fecha final.";
+        if (draft.entregaDesde && draft.entregaHasta && draft.entregaHasta < draft.entregaDesde) next.entregaHasta = "Debe ser igual o posterior a la fecha inicial.";
+        return next;
     };
 
-    const handleOpenChange = (nextOpen: boolean) => {
-        if (!nextOpen && isSaving) return;
-        onOpenChange(nextOpen);
-    };
-
-    const targetCampaignId = isContractMode ? Number(selectedCampaignId) || null : campaniaId;
-
-    const handleSubmit = async () => {
-        if (isSaving) return;
-        const validation = validateCampaignClientCreate({ ...values, documentoUrl: UPLOAD_PENDING_URL, fichaTecnicaUrl: UPLOAD_PENDING_URL });
-        if (!files.documentoUrl) validation.documentoUrl = isContractMode ? "Adjunta el contrato." : "Adjunta el documento de requerimientos.";
-        if (!files.fichaTecnicaUrl) validation.fichaTecnicaUrl = "Adjunta la ficha técnica.";
-        const missingCampaign = targetCampaignId === null ? "Selecciona una campaña." : undefined;
-        setCampaignError(missingCampaign);
-        if (Object.keys(validation).length > 0 || missingCampaign || targetCampaignId === null || !files.documentoUrl || !files.fichaTecnicaUrl) {
-            setErrors(validation);
-            setFormError("Revisa los campos marcados antes de vincular.");
+    const handleSubmit = () => {
+        const nextErrors = validate();
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length > 0) {
+            setFormError("Revisa los campos marcados antes de guardar la participación.");
             return;
         }
-        if (!guard.current.acquire()) return;
-        setIsSaving(true);
-        setFormError(null);
-        try {
-            // El backend guarda enlaces: primero se suben los archivos y recién entonces se registra el vínculo
-            let urls: Pick<CampaignClientCreateValues, DocumentField>;
-            try {
-                urls = {
-                    documentoUrl: await uploadDocument(files.documentoUrl),
-                    fichaTecnicaUrl: await uploadDocument(files.fichaTecnicaUrl),
-                };
-            } catch (uploadError) {
-                setFormError(getUploadErrorMessage(uploadError));
-                return;
-            }
-            await createClienteNegocioCampana(targetCampaignId, toCampaignClientCreatePayload({ ...values, ...urls }));
-            onSave?.();
-        } catch {
-            setFormError("No se pudo vincular el cliente. Revisa los datos e inténtalo nuevamente.");
-        } finally {
-            guard.current.release();
-            setIsSaving(false);
-        }
+        // TODO(api): entregar este borrador y la ficha técnica al servicio cuando exista el nuevo contrato.
+        onSave?.();
+        onOpenChange(false);
     };
-
-    const campaignOptions = campanas
-        .filter((campaign) => !linkedIds.has(campaign.campaniaId))
-        .map((campaign) => ({ value: String(campaign.campaniaId), label: `${campaign.nombre} · ${CAMPAIGN_STATUS_LABEL[campaign.estado] ?? campaign.estado}` }));
-
-    const clientOptions = clientes
-        .filter((cliente) => !linkedIds.has(cliente.clienteNegocioId))
-        .map((cliente) => ({ value: String(cliente.clienteNegocioId), label: cliente.nombreEmpresa }));
-
-    /** Props comunes de un campo de texto del formulario: id, valor, error y cambio enlazados al estado */
-    const bind = (field: keyof CampaignClientCreateValues) => ({
-        id: `link-client-${field}`,
-        required: true,
-        value: values[field],
-        error: errors[field],
-        disabled: isSaving,
-        onChange: (next: string) => update(field, next),
-    });
 
     return (
         <AppModal
             open={open}
-            onOpenChange={handleOpenChange}
-            icon={isContractMode ? <FileSignature size={22} strokeWidth={2} /> : <Users size={22} strokeWidth={2} />}
-            title={isContractMode ? "Añadir Contrato" : "Vincular Cliente"}
-            description={isContractMode
-                ? `Vincula a ${cliente?.nombreEmpresa ?? "este cliente"} con una campaña y registra su contrato. Los campos con * son obligatorios.`
-                : "Registra el cliente y su requerimiento para esta campaña. Los campos con * son obligatorios."}
-            className="sm:max-w-175"
-            footer={
+            onOpenChange={onOpenChange}
+            icon={<Link2 size={22} strokeWidth={2.25} />}
+            title="Vincular Cliente"
+            description="Define la participación comercial del cliente dentro de esta campaña."
+            className="sm:max-w-215"
+            footer={(
                 <>
-                    <Button variant="outline" size="xl" onClick={() => handleOpenChange(false)} disabled={isSaving}>
-                        <X size={20} strokeWidth={2.5} /> Cancelar
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                        <X size={19} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" onClick={handleSubmit} disabled={isSaving || isLoading || (!isContractMode && !campaniaId)} aria-busy={isSaving}>
-                        {isContractMode ? <FileSignature size={20} strokeWidth={2.5} /> : <Users size={20} strokeWidth={2.5} />}
-                        {isSaving ? "Guardando..." : isContractMode ? "Añadir contrato" : "Vincular cliente"}
+                    <Button size="xl" onClick={handleSubmit} disabled={isLoading}>
+                        <Save size={19} strokeWidth={2.5} /> Guardar participación
                     </Button>
                 </>
-            }
+            )}
         >
-            <div className="flex flex-col gap-5">
-                {/* Cliente + Cantidad */}
-                <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_10rem] gap-4 items-start">
-                    {isContractMode ? (
-                        <FormField label="Seleccionar Campaña:" required error={campaignError}>
-                            <Combobox
-                                options={campaignOptions}
-                                value={selectedCampaignId}
-                                onChange={(value) => { setSelectedCampaignId(value); setCampaignError(undefined); setFormError(null); }}
-                                placeholder={isLoading ? "Cargando campañas..." : "Selecciona una campaña"}
-                                emptyMessage="No hay campañas disponibles para este cliente"
-                                disabled={isLoading || isSaving}
-                            />
-                        </FormField>
+            <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {isClientContext ? (
+                        <InfoField label="Cliente" value={cliente?.nombreEmpresa ?? "Cliente"} />
                     ) : (
-                        <FormField label="Seleccionar Cliente:" required error={errors.clienteNegocioId}>
+                        <FormField label="Seleccionar cliente" required error={errors.clienteNegocioId}>
                             <Combobox
                                 options={clientOptions}
-                                value={values.clienteNegocioId}
+                                value={draft.clienteNegocioId}
                                 onChange={(value) => update("clienteNegocioId", value)}
-                                placeholder={isLoading ? "Cargando clientes..." : "Selecciona un cliente"}
+                                placeholder={isLoading ? "Cargando clientes..." : "Buscar cliente..."}
                                 emptyMessage="No hay clientes disponibles para vincular"
-                                disabled={isLoading || isSaving}
+                                disabled={isLoading}
                             />
                         </FormField>
                     )}
 
-                    <InputField {...bind("cantidadKg")} label="Cantidad kg:" step="0.001" min={0} placeholder="0" />
+                    {isClientContext ? (
+                        <FormField label="Campaña" required error={errors.campaign}>
+                            <Combobox
+                                options={campaignOptions}
+                                value={selectedCampaignId}
+                                onChange={(value) => { setSelectedCampaignId(value); setDraft((current) => ({ ...current, variedades: [] })); setErrors((current) => ({ ...current, campaign: undefined, variedades: undefined })); setFormError(undefined); }}
+                                placeholder={isLoading ? "Cargando campañas..." : "Seleccionar campaña..."}
+                                emptyMessage="No hay campañas disponibles"
+                                disabled={isLoading}
+                            />
+                        </FormField>
+                    ) : null}
+
+                    <InputField id="client-participation-quantity" label="Cantidad" required unit="kg" min={0} step="0.001" placeholder="0.00" value={draft.cantidadKg} error={errors.cantidadKg} onChange={(value) => update("cantidadKg", value)} />
+
+                    <FormField error={errors.fichaTecnica} className="sm:col-span-2">
+                        <FileDropzone label="Ficha técnica" variant="horizontal" required hint="PDF, Excel o imagen · Máx. 10 MB" file={fichaTecnica} onChange={(file) => { setFichaTecnica(file); setErrors((current) => ({ ...current, fichaTecnica: undefined })); setFormError(undefined); }} />
+                    </FormField>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <InputField {...bind("kilosAcordados")} label="Kilos acordados:" step="0.001" min={0} placeholder="0" />
-                    <InputField id="link-client-fechaRegistro" type="date" label="Fecha de registro:" required value={String(values.fechaRegistro || "")} error={errors.fechaRegistro} onChange={(val) => update("fechaRegistro", val)} />
-                </div>
+                <ModalSection title="Requerimiento comercial" aside={draft.variedades.length > 0 ? `${draft.variedades.length} seleccionadas` : undefined}>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField label="Variedades requeridas" required error={errors.variedades} hint="Selecciona una o varias variedades de la fruta de esta campaña." className="sm:col-span-2">
+                            <ChipSelect
+                                ariaLabel="Variedades requeridas por el cliente"
+                                options={variedades.map((item) => ({ value: String(item.frutaDerivadaId), label: item.name }))}
+                                value={draft.variedades}
+                                onChange={(value) => update("variedades", value)}
+                                emptyMessage={selectedCampaign ? "Esta fruta todavía no tiene variedades registradas." : "Selecciona una campaña para ver sus variedades."}
+                            />
+                        </FormField>
+                        <InputField id="client-participation-destination" label="Destino solicitado" required placeholder="Ej. Países Bajos · Rotterdam" value={draft.destinoSolicitado} error={errors.destinoSolicitado} onChange={(value) => update("destinoSolicitado", value)} className="sm:col-span-2" />
+                    </div>
+                </ModalSection>
 
-                {/* Adjuntar */}
-                <FormField error={errors.documentoUrl}>
-                    <FileDropzone
-                        label={isContractMode ? "Contrato" : "Requerimientos"}
-                        hint={isContractMode ? "PDF · Máx. 10 MB" : "PDF, Excel · Máx. 10 MB"}
-                        file={files.documentoUrl}
-                        onChange={(file) => updateFile("documentoUrl", file)}
-                    />
-                </FormField>
+                <ModalSection title="Ventana de entrega" aside={<span className="inline-flex items-center gap-1.5"><CalendarRange size={14} /> Periodo solicitado</span>}>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <InputField id="client-participation-from" label="Desde" required type="date" value={draft.entregaDesde} error={errors.entregaDesde} onChange={(value) => update("entregaDesde", value)} />
+                        <InputField id="client-participation-to" label="Hasta" required type="date" value={draft.entregaHasta} error={errors.entregaHasta} onChange={(value) => update("entregaHasta", value)} />
+                        <FormField id="client-participation-notes" label="Observaciones" optional className="sm:col-span-2">
+                            <Textarea id="client-participation-notes" className="min-h-20 resize-none" placeholder="Añade indicaciones comerciales relevantes..." value={draft.observaciones} onChange={(event) => update("observaciones", event.target.value)} />
+                        </FormField>
+                    </div>
+                </ModalSection>
 
-                <FormField error={errors.fichaTecnicaUrl}>
-                    <FileDropzone
-                        label="Ficha Técnica"
-                        hint="PDF, Excel · Máx. 10 MB"
-                        file={files.fichaTecnicaUrl}
-                        onChange={(file) => updateFile("fichaTecnicaUrl", file)}
-                    />
-                </FormField>
-
-                {/* Error general del formulario (no de un campo); solo se dibuja si existe, para que no afecte el gap */}
                 {formError && <FormField error={formError} />}
             </div>
         </AppModal>

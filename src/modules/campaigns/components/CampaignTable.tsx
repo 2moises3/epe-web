@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import StatusBadge from "@/shared/components/StatusBadge";
 import TableCard from "@/shared/components/TableCard";
@@ -23,8 +22,6 @@ import { nextSort, type SortState } from "@/shared/utils/tableSort";
 import { downloadCsv } from "@/shared/utils/downloadCsv";
 import CampaignFormModal from "@/modules/campaigns/components/CampaignFormModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
-import CampaignLinkClientModal from "@/modules/campaigns/components/CampaignLinkClientModal";
-import CampaignCertificationsModal from "@/modules/campaigns/components/CampaignCertificationsModal";
 import type { Campana } from "@/modules/campaigns/api/campaign.mapper";
 import type { CampanaEstado } from "@/modules/campaigns/api/campaign.dto";
 import { getCampaignFruitIcon } from "@/modules/campaigns/campaignFruit";
@@ -74,12 +71,7 @@ interface CampaignTableProps {
 export default function CampaignTable({ data, isLoading, loadError, onRetry, onChanged, hasActiveFilters, onClearFilters }: CampaignTableProps) {
     const navigate = useNavigate();
     const [editingCampaignId, setEditingCampaignId] = useState<number | null>(null);
-    const [managingClientsCampaignId, setManagingClientsCampaignId] = useState<number | null>(null);
-    const [managingCertificationsCampaignId, setManagingCertificationsCampaignId] = useState<number | null>(null);
-    // Campaña a la que se acaban de vincular clientes: el éxito ofrece ir a su detalle, que es donde se listan
-    const [linkedCampaignId, setLinkedCampaignId] = useState<number | null>(null);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-    const [successModalMode, setSuccessModalMode] = useState<"edit" | "client" | "certification">("edit");
     const [sort, setSort] = useState<SortState<SortKey> | null>(null);
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<TableViewMode>("table");
@@ -130,9 +122,9 @@ export default function CampaignTable({ data, isLoading, loadError, onRetry, onC
             secondary.push({ label: "Ver proveedores", icon: <Briefcase size={16} strokeWidth={2.5} />, onClick: () => navigate(`/campaigns/${row.campaniaId}/providers`) });
         }
         if (row.estado === "planificacion") {
-            secondary.push({ label: "Vincular clientes", icon: <Contact size={16} strokeWidth={2.5} />, onClick: () => setManagingClientsCampaignId(row.campaniaId) });
+            secondary.push({ label: "Vincular clientes", icon: <Contact size={16} strokeWidth={2.5} />, onClick: () => navigate(`/campaigns/${row.campaniaId}/clients`) });
             // Las certificaciones solo tienen sentido mientras la campaña se está planificando
-            secondary.push({ label: "Gestionar certificaciones", icon: <ShieldCheck size={16} strokeWidth={2.5} />, onClick: () => setManagingCertificationsCampaignId(row.campaniaId) });
+            secondary.push({ label: "Gestionar certificaciones", icon: <ShieldCheck size={16} strokeWidth={2.5} />, onClick: () => navigate(`/campaigns/${row.campaniaId}/certifications`) });
         }
         // Los pagos al transportista solo aplican una vez que la campaña está en proceso
         if (row.estado === "en proceso") {
@@ -142,10 +134,7 @@ export default function CampaignTable({ data, isLoading, loadError, onRetry, onC
         return { primary, secondary };
     };
 
-    const showSuccess = (mode: "edit" | "client" | "certification") => {
-        setSuccessModalMode(mode);
-        setIsSuccessModalOpen(true);
-    };
+    const showSuccess = () => setIsSuccessModalOpen(true);
 
     const pageCount = Math.max(1, Math.ceil(sortedData.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
@@ -159,7 +148,7 @@ export default function CampaignTable({ data, isLoading, loadError, onRetry, onC
                 icon: <TriangleAlert size={28} strokeWidth={2} />,
                 title: "No se pudieron cargar las campañas",
                 description: loadError,
-                action: <Button variant="outline" onClick={onRetry}><RotateCw size={18} strokeWidth={2.5} /> Reintentar</Button>,
+                action: { label: "Reintentar", icon: <RotateCw size={18} strokeWidth={2.5} />, onClick: onRetry, tone: "secondary" as const },
             }
             : {
                 icon: <SearchX size={28} strokeWidth={2} />,
@@ -168,7 +157,7 @@ export default function CampaignTable({ data, isLoading, loadError, onRetry, onC
                     ? "Ninguna campaña coincide con los filtros aplicados. Prueba ajustándolos."
                     : "Cuando registres tu primera campaña de exportación aparecerá acá.",
                 action: hasActiveFilters
-                    ? <Button variant="outline" onClick={onClearFilters}><ListFilter size={18} strokeWidth={2.5} /> Limpiar filtros</Button>
+                    ? { label: "Limpiar filtros", icon: <ListFilter size={18} strokeWidth={2.5} />, onClick: onClearFilters, tone: "secondary" as const }
                     : undefined,
             };
 
@@ -303,42 +292,15 @@ export default function CampaignTable({ data, isLoading, loadError, onRetry, onC
                 campaniaId={editingCampaignId}
                 onSuccess={() => {
                     setEditingCampaignId(null);
-                    showSuccess("edit");
+                    showSuccess();
                     onChanged();
-                }}
-            />
-
-            <CampaignLinkClientModal
-                open={managingClientsCampaignId !== null}
-                campaniaId={managingClientsCampaignId}
-                onOpenChange={(open) => !open && setManagingClientsCampaignId(null)}
-                onSave={() => {
-                    setLinkedCampaignId(managingClientsCampaignId);
-                    setManagingClientsCampaignId(null);
-                    showSuccess("client");
-                }}
-            />
-
-            <CampaignCertificationsModal
-                key={managingCertificationsCampaignId ?? "closed"}
-                open={managingCertificationsCampaignId !== null}
-                campaniaId={managingCertificationsCampaignId}
-                onOpenChange={(open) => !open && setManagingCertificationsCampaignId(null)}
-                onSuccess={() => {
-                    setManagingCertificationsCampaignId(null);
-                    showSuccess("certification");
                 }}
             />
 
             <CampaignSuccessModal
                 open={isSuccessModalOpen}
                 onOpenChange={setIsSuccessModalOpen}
-                mode={successModalMode}
-                primaryAction={
-                    successModalMode === "client" && linkedCampaignId !== null
-                        ? { label: "Ir al listado", onClick: () => navigate(`/campaigns/${linkedCampaignId}`) }
-                        : undefined
-                }
+                mode="edit"
             />
         </>
     );

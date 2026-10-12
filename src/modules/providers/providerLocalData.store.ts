@@ -2,6 +2,8 @@ import { useSyncExternalStore } from "react";
 import type { Finca } from "@/modules/providers/providerFinca.utils";
 import type { DatosAgronomicos } from "@/modules/providers/providerAgronomico.utils";
 import type { CertificadoFormValues, CertificadoLocal } from "@/modules/providers/providerCertificado.utils";
+import type { ProduccionProveedor } from "@/modules/providers/providerProduccion.utils";
+import { createDemoProviderData } from "@/modules/providers/providerLocalData.demo";
 
 /**
  * Datos del proveedor que todavía no tienen servicio en el backend: sus fincas, sus datos agronómicos y
@@ -9,7 +11,7 @@ import type { CertificadoFormValues, CertificadoLocal } from "@/modules/provider
  *
  * TODO(api): se guardan en memoria por id de proveedor (se pierden al recargar la página) y viven acá, y no
  * dentro de un componente, para que sobrevivan al navegar entre la lista de proveedores y la gestión de
- * fincas. Cuando existan los servicios, este es el único archivo a reemplazar: `addFinca`,
+ * fincas. Cuando existan los servicios, este es el único archivo a reemplazar: `addFinca`, `updateFinca`, `removeFinca`,
  * `saveDatosAgronomicos`, `addCertificado` y `updateCertificado` pasan a llamar a la API, y `useProviderLocalData` a leer lo que ella devuelva.
  * Los modelos y validaciones están en `providerFinca.utils.ts`, `providerAgronomico.utils.ts` y
  * `providerCertificado.utils.ts`.
@@ -18,10 +20,24 @@ interface ProviderLocalData {
     fincas: Record<number, Finca[]>;
     agronomicos: Record<number, DatosAgronomicos>;
     certificados: Record<number, CertificadoLocal[]>;
+    /** Estado de sanidad y frutas del proveedor: de solo lectura, sin formulario que lo modifique todavía */
+    produccion: Record<number, ProduccionProveedor>;
 }
 
-let data: ProviderLocalData = { fincas: {}, agronomicos: {}, certificados: {} };
-let nextCertificadoId = 1;
+/**
+ * En desarrollo arranca con datos de demostración (`providerLocalData.demo.ts`) para revisar las vistas con
+ * información; en producción y en las pruebas arranca vacío, sin simular respuestas del backend.
+ */
+const useDemoData = import.meta.env.DEV && import.meta.env.MODE !== "test";
+const demo = useDemoData ? createDemoProviderData() : null;
+
+let data: ProviderLocalData = {
+    fincas: demo?.fincas ?? {},
+    agronomicos: {},
+    certificados: demo?.certificados ?? {},
+    produccion: demo?.produccion ?? {},
+};
+let nextCertificadoId = 1 + Math.max(0, ...Object.values(data.certificados).flat().map((item) => item.certificadoId));
 const listeners = new Set<() => void>();
 
 function update(next: ProviderLocalData) {
@@ -39,6 +55,20 @@ function subscribe(listener: () => void) {
 /** Agrega una finca al proveedor, al final de su lista. */
 export function addFinca(providerId: number, finca: Finca) {
     update({ ...data, fincas: { ...data.fincas, [providerId]: [...(data.fincas[providerId] ?? []), finca] } });
+}
+
+/** Reemplaza la finca que ocupa esa posición de la lista del proveedor. */
+export function updateFinca(providerId: number, index: number, finca: Finca) {
+    const current = data.fincas[providerId] ?? [];
+    if (index < 0 || index >= current.length) return;
+    update({ ...data, fincas: { ...data.fincas, [providerId]: current.map((item, position) => (position === index ? finca : item)) } });
+}
+
+/** Quita la finca que ocupa esa posición de la lista del proveedor. */
+export function removeFinca(providerId: number, index: number) {
+    const current = data.fincas[providerId] ?? [];
+    if (index < 0 || index >= current.length) return;
+    update({ ...data, fincas: { ...data.fincas, [providerId]: current.filter((_, position) => position !== index) } });
 }
 
 /** Guarda los datos agronómicos del proveedor: reemplaza los anteriores, si los había. */
@@ -72,7 +102,7 @@ export function updateCertificado(providerId: number, certificadoId: number, val
 /** Deja el almacén vacío. Solo lo usan las pruebas. */
 export function resetProviderLocalData() {
     nextCertificadoId = 1;
-    update({ fincas: {}, agronomicos: {}, certificados: {} });
+    update({ fincas: {}, agronomicos: {}, certificados: {}, produccion: {} });
 }
 
 /** Lectura puntual del estado actual, fuera de un componente. */

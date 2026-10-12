@@ -8,6 +8,10 @@ const ROOT_ROUTES: Record<string, string> = {
     proveedores: "Proveedores",
     "planificacion-comercial": "Planificación comercial",
     transportistas: "Transporte",
+    calidad: "Calidad",
+    "logistica-despacho": "Logística y Despacho",
+    "facturacion-cobros": "Facturación y Cobros",
+    "liquidacion-compra": "Liquidación de Compra",
 };
 
 export function getBreadcrumbLevels(pathname: string): BreadcrumbLevel[] {
@@ -24,9 +28,13 @@ export function getBreadcrumbLevels(pathname: string): BreadcrumbLevel[] {
     if (rootSegment === "campaigns" && segments.length > 2) {
         const campaignSection = segments[2] === "providers"
             ? "Proveedores"
+            : segments[2] === "clients"
+                ? "Clientes"
             : segments[2] === "carrier-payments"
                 ? "Pagos a transportistas"
-                : "Detalle";
+                : segments[2] === "certifications"
+                    ? "Certificaciones"
+                    : "Detalle";
 
         levels.push({ 
             label: campaignSection,
@@ -34,7 +42,11 @@ export function getBreadcrumbLevels(pathname: string): BreadcrumbLevel[] {
         });
 
         if (segments.length > 3) {
-            levels.push({ label: "Detalle" });
+            levels.push({
+                label: segments[4] === "interviews" ? "Entrevistas" : segments[4] === "contracts" ? "Contratos" : "Detalle",
+                href: segments[4] === "contracts" && segments.length > 5 ? `/${rootSegment}/${segments[1]}/${segments[2]}/${segments[3]}/contracts` : undefined,
+            });
+            if (segments[6] === "deliveries") levels.push({ label: "Entregas" });
         }
     } else if (rootSegment === "proveedores" && segments[2] === "fincas") {
         levels.push({ label: "Fincas" });

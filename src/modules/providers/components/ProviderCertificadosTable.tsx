@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { CalendarCheck, Eye, FileText, Pencil, Plus, ShieldCheck } from "lucide-react";
+import FilePreviewModal from "@/shared/components/FilePreviewModal";
+import Hint from "@/shared/components/Hint";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
-import { Button } from "@/shared/components/ui/button";
 import TableCard from "@/shared/components/TableCard";
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import { TABLE_HEAD_BG, TableRowAccent, TableRowLead } from "@/shared/components/DataTableRow";
@@ -15,22 +16,21 @@ interface ProviderCertificadosTableProps {
     certificates: CertificadoLocal[];
     /** Acción del estado vacío: abre el registro del primer certificado */
     onRegister: () => void;
-    onView: (certificate: CertificadoLocal) => void;
     onEdit: (certificate: CertificadoLocal) => void;
 }
 
 /** Lista de certificados de un proveedor, con el mismo marco, filas y tarjetas móviles que las demás tablas. */
-export default function ProviderCertificadosTable({ certificates, onRegister, onView, onEdit }: ProviderCertificadosTableProps) {
+export default function ProviderCertificadosTable({ certificates, onRegister, onEdit }: ProviderCertificadosTableProps) {
     const [page, setPage] = useState(1);
+    // El certificado se conserva al cerrar para que el visualizador no se vacíe durante su animación de salida
+    const [preview, setPreview] = useState<{ open: boolean; certificate: CertificadoLocal | null }>({ open: false, certificate: null });
+    const openDocument = (certificate: CertificadoLocal) => setPreview({ open: true, certificate });
 
     const pageCount = Math.max(1, Math.ceil(certificates.length / PAGE_SIZE));
     const currentPage = Math.min(page, pageCount);
     const visibleData = certificates.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-    const getRowActions = (certificate: CertificadoLocal): RowAction[] => [
-        { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => onView(certificate) },
-        { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => onEdit(certificate) },
-    ];
+    const editAction = (certificate: CertificadoLocal): RowAction => ({ label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => onEdit(certificate) });
 
     return (
         <TableCard
@@ -46,7 +46,7 @@ export default function ProviderCertificadosTable({ certificates, onRegister, on
             emptyIcon={<ShieldCheck size={28} strokeWidth={2} />}
             emptyTitle="Aún no hay certificados"
             emptyDescription="Este proveedor todavía no tiene certificados registrados. Haz clic en 'Registrar certificado' para comenzar."
-            emptyAction={<Button onClick={onRegister}><Plus size={18} strokeWidth={2.5} /> Registrar certificado</Button>}
+            emptyAction={{ label: "Registrar certificado", icon: <Plus size={18} strokeWidth={2.5} />, onClick: onRegister }}
             page={currentPage}
             pageCount={pageCount}
             onPageChange={setPage}
@@ -60,7 +60,14 @@ export default function ProviderCertificadosTable({ certificates, onRegister, on
                         icon={<ShieldCheck size={18} strokeWidth={2} />}
                         title={certificate.nombre}
                         subtitle={`Revisión SENASA · ${displayCertificadoDate(certificate.fechaRevisionSenasa)}`}
-                        actions={<RowActions primary={getRowActions(certificate)} />}
+                        actions={
+                            <RowActions
+                                primary={[
+                                    { label: "Ver documento", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => openDocument(certificate) },
+                                    editAction(certificate),
+                                ]}
+                            />
+                        }
                     >
                         <TableGridCardFields>
                             <TableGridCardField label="Documento" value={certificate.documento.name} />
@@ -76,7 +83,7 @@ export default function ProviderCertificadosTable({ certificates, onRegister, on
                             <TableHead className="text-ink font-semibold h-14 px-6">Certificado</TableHead>
                             <TableHead className="text-ink font-semibold h-14">Fecha de revisión SENASA</TableHead>
                             <TableHead className="text-ink font-semibold h-14">Documento</TableHead>
-                            <TableHead className="text-ink font-semibold h-14 text-right px-6 w-40">Acciones</TableHead>
+                            <TableHead className="text-ink font-semibold h-14 text-center px-6 w-40">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -94,18 +101,34 @@ export default function ProviderCertificadosTable({ certificates, onRegister, on
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2 text-ink-body font-medium">
+                                        <Hint label="Ver documento">
+                                            <button
+                                                type="button"
+                                                onClick={() => openDocument(certificate)}
+                                                aria-label={`Ver documento de ${certificate.nombre}`}
+                                                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md bg-brand-surface text-brand transition-colors hover:bg-brand hover:text-white active:scale-95"
+                                            >
+                                                <Eye size={15} strokeWidth={2.5} />
+                                            </button>
+                                        </Hint>
                                         <FileText size={16} className="shrink-0 text-ink-muted" />
                                         <span className="truncate">{certificate.documento.name}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="px-6">
-                                    <RowActions primary={getRowActions(certificate)} className="justify-end" />
+                                    <RowActions primary={[editAction(certificate)]} className="justify-center" />
                                 </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
             </div>
+
+            <FilePreviewModal
+                open={preview.open}
+                onOpenChange={(open) => setPreview((current) => ({ ...current, open }))}
+                file={preview.certificate?.documento ?? null}
+            />
         </TableCard>
     );
 }

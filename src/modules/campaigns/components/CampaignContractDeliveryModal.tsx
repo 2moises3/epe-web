@@ -1,0 +1,71 @@
+import { useEffect, useState } from "react";
+import { PackageCheck, Save, X } from "lucide-react";
+import AppModal from "@/shared/components/AppModal";
+import FormField from "@/shared/components/FormField";
+import InputField from "@/shared/components/InputField";
+import { Button } from "@/shared/components/ui/button";
+import { Textarea } from "@/shared/components/ui/textarea";
+import {
+    EMPTY_CONTRACT_DELIVERY,
+    deliveryToValues,
+    validateContractDelivery,
+    type CampaignContractDeliveryErrors,
+    type CampaignContractDeliveryLocal,
+    type CampaignContractDeliveryValues,
+} from "@/modules/campaigns/campaignContractDelivery.utils";
+
+interface Props {
+    open: boolean;
+    delivery: CampaignContractDeliveryLocal | null;
+    onOpenChange: (open: boolean) => void;
+    onSave: (values: CampaignContractDeliveryValues) => void;
+}
+
+export default function CampaignContractDeliveryModal({ open, delivery, onOpenChange, onSave }: Props) {
+    const [values, setValues] = useState(EMPTY_CONTRACT_DELIVERY);
+    const [errors, setErrors] = useState<CampaignContractDeliveryErrors>({});
+
+    useEffect(() => {
+        if (!open) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setValues(delivery ? deliveryToValues(delivery) : EMPTY_CONTRACT_DELIVERY);
+        setErrors({});
+    }, [open, delivery]);
+
+    const update = (field: keyof CampaignContractDeliveryValues, value: string) => {
+        setValues((current) => ({ ...current, [field]: value }));
+        setErrors((current) => ({ ...current, [field]: undefined }));
+    };
+
+    const save = () => {
+        const nextErrors = validateContractDelivery(values);
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length === 0) onSave(values);
+    };
+
+    return (
+        <AppModal
+            open={open}
+            onOpenChange={onOpenChange}
+            icon={<PackageCheck size={22} strokeWidth={2.25} />}
+            title={delivery ? "Editar Entrega" : "Registrar Entrega"}
+            description="Programa la cantidad y el destino correspondiente a este contrato."
+            className="sm:max-w-175"
+            footer={(
+                <>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}><X size={19} /> Cancelar</Button>
+                    <Button size="xl" onClick={save}><Save size={19} /> {delivery ? "Guardar cambios" : "Guardar entrega"}</Button>
+                </>
+            )}
+        >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <InputField id="delivery-date" type="date" label="Fecha" required value={values.fecha} error={errors.fecha} onChange={(value) => update("fecha", value)} />
+                <InputField id="delivery-kilos" label="Kilos programados" required unit="kg" min={0} step="0.001" placeholder="0.00" value={values.kilosProgramados} error={errors.kilosProgramados} onChange={(value) => update("kilosProgramados", value)} />
+                <InputField id="delivery-destination" label="Destino" required placeholder="Ej. Puerto del Callao" value={values.destino} error={errors.destino} onChange={(value) => update("destino", value)} />
+                <FormField id="delivery-notes" label="Observaciones" optional>
+                    <Textarea id="delivery-notes" className="min-h-20 resize-none" placeholder="Añade indicaciones para esta entrega..." value={values.observaciones} onChange={(event) => update("observaciones", event.target.value)} />
+                </FormField>
+            </div>
+        </AppModal>
+    );
+}

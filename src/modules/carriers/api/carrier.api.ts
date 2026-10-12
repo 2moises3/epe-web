@@ -43,6 +43,8 @@ export interface VehicleInput {
   ancho: number;
   altura: number;
   profundidad: number;
+  /** Dato propio del vehículo: ya no se deriva de las tres medidas */
+  volumen: number;
   pesoNeto: number;
   pesoBruto: number;
 }
@@ -103,7 +105,8 @@ export async function getCarrier(id: number): Promise<Carrier> {
 export async function createCarrier(input: CarrierInput): Promise<Carrier> {
   const { data } = await apiClient.post<CarrierDto>("/empresas-transporte-externo", {
     nombreCompleto: input.nombre,
-    ruc: input.ruc,
+    // El independiente (privado) puede no tener RUC: se omite en vez de mandarlo vacío
+    ...(input.ruc ? { ruc: input.ruc } : {}),
     correo: input.correo,
     numero: input.numero,
   });
@@ -129,7 +132,7 @@ function toVehiclePayload(carrierId: number, input: VehicleInput) {
   return {
     idEmpresaTransporteExterno: carrierId,
     placa: input.placa.trim().toUpperCase(),
-    volumen: Number((input.ancho * input.altura * input.profundidad).toFixed(3)),
+    volumen: input.volumen,
     ancho: input.ancho,
     altura: input.altura,
     profundidad: input.profundidad,
@@ -146,7 +149,7 @@ export async function createVehicle(carrierId: number, input: VehicleInput): Pro
 export async function updateVehicle(id: number, carrierId: number, input: VehicleInput): Promise<Vehicle> {
   const { data } = await apiClient.patch<VehicleDto>(`/vehiculos-externos/${id}`, {
     placa: input.placa.trim().toUpperCase(),
-    volumen: Number((input.ancho * input.altura * input.profundidad).toFixed(3)),
+    volumen: input.volumen,
     ancho: input.ancho,
     altura: input.altura,
     profundidad: input.profundidad,

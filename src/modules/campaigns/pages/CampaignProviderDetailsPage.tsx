@@ -22,9 +22,7 @@ import type { ExamenProveedorDto } from "@/modules/providers/api/provider-subres
 import { parseFecha } from "@/modules/campaigns/api/fecha.util";
 
 import type { ExamValues, LocalExam } from "@/modules/campaigns/campaignExam";
-import type { InterviewValues } from "@/modules/campaigns/campaignInterview";
 import CampaignExamModal from "@/modules/campaigns/components/CampaignExamModal";
-import CampaignInterviewModal from "@/modules/campaigns/components/CampaignInterviewModal";
 import CampaignFincaModal, { type FincaValues } from "@/modules/campaigns/components/CampaignFincaModal";
 
 // --- Mock Interfaces for Fincas ---
@@ -59,29 +57,13 @@ export default function CampaignProviderDetailsPage() {
     const [localFincas, setLocalFincas] = useState<LocalFinca[]>([
         { id: "finca-1", nombre: "Finca El Pedregal", hectareas: "15.5", zona: "Sullana Norte" }
     ]);
-    const [interview, setInterview] = useState<InterviewValues | null>({ 
-        densidadPlantacion: "1200",
-        distanciamiento: "3x3",
-        frecuenciaRiego: "15",
-        haTotalFinca: "20.5",
-        haCultivo: "18.0",
-        nombreAplicacion: "Fungicida Estándar",
-        aplicacionesAlAno: "4",
-        departamento: "Piura",
-        provincia: "Sullana",
-        distrito: "Sullana",
-        latitud: "-4.903",
-        longitud: "-80.685",
-    });
 
     // Modals state
     const [examModal, setExamModal] = useState<{ open: boolean; mode?: "create" | "edit" | "view"; examId?: string }>({ open: false });
-    const [interviewModal, setInterviewModal] = useState<{ open: boolean; mode?: "create" | "edit" | "view" }>({ open: false });
     const [fincaModalOpen, setFincaModalOpen] = useState(false);
 
     // Confirm Modals
     const [deleteExamId, setDeleteExamId] = useState<string | null>(null);
-    const [deleteInterviewConfirm, setDeleteInterviewConfirm] = useState(false);
     const [deleteFincaId, setDeleteFincaId] = useState<string | null>(null);
 
     const loadData = useCallback(async () => {
@@ -111,7 +93,9 @@ export default function CampaignProviderDetailsPage() {
         }
     }, [campaniaId, cxpId]);
 
+    // Carga inicial desde la API; el estado se actualiza al resolverse la petición.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void loadData();
     }, [loadData]);
 
@@ -180,14 +164,6 @@ export default function CampaignProviderDetailsPage() {
         setDeleteExamId(id);
     };
 
-    const handleSaveInterview = (values: InterviewValues) => {
-        setInterview(values);
-        setInterviewModal({ open: false });
-    };
-
-    const handleDeleteInterview = () => {
-        setDeleteInterviewConfirm(true);
-    };
 
     const combinedExams = [
         ...localExams,
@@ -254,7 +230,9 @@ export default function CampaignProviderDetailsPage() {
                 <SegmentedTabs
                     tabs={TABS}
                     value={activeTab}
-                    onChange={(val) => setActiveTab(val as "fincas" | "examen" | "entrevista")}
+                    onChange={(val) => val === "entrevista"
+                        ? navigate(`/campaigns/${campaniaId}/providers/${cxpId}/interviews`)
+                        : setActiveTab(val as "fincas" | "examen")}
                 />
             </div>
 
@@ -368,58 +346,6 @@ export default function CampaignProviderDetailsPage() {
                 </TableCard>
             )}
 
-            {/* Entrevistas Tab */}
-            {activeTab === "entrevista" && (
-                <TableCard
-                    title="Entrevistas"
-                    icon={<UserCheck size={24} strokeWidth={2.5} />}
-                    description="Datos agronómicos de la entrevista inicial."
-                    headerRight={
-                        !interview ? (
-                            <Button size="xl" onClick={() => setInterviewModal({ open: true, mode: "create" })}>
-                                <FilePlus size={18} strokeWidth={2.5} className="mr-2" /> Registrar Entrevista
-                            </Button>
-                        ) : null
-                    }
-                    isEmpty={!interview}
-                    emptyIcon={<UserCheck size={28} strokeWidth={2.5} />}
-                    emptyTitle="Sin entrevista"
-                    emptyDescription="Este productor aún no tiene registrada su entrevista agronómica."
-                    page={1}
-                    pageCount={1}
-                    onPageChange={() => {}}
-                >
-                    {interview && (
-                        <div className="overflow-hidden rounded-xl border border-border">
-                            <Table>
-                                <TableHeader className={TABLE_HEAD_BG}>
-                                    <TableRow className="border-b border-border hover:bg-transparent">
-                                        <TableHead className="text-ink font-semibold h-12 px-6">Cultivo</TableHead>
-                                        <TableHead className="text-ink font-semibold h-12">Densidad</TableHead>
-                                        <TableHead className="text-ink font-semibold h-12">Área</TableHead>
-                                        <TableHead className="text-ink font-semibold h-12 text-center px-6 w-36">Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow className="hover:bg-surface-page/60">
-                                        <TableCell className="h-14 px-6 font-medium text-ink">Plátano / Banano</TableCell>
-                                        <TableCell className="text-ink-body">{interview.densidadPlantacion} pl/ha</TableCell>
-                                        <TableCell className="text-ink-body">{interview.haCultivo} ha</TableCell>
-                                        <TableCell className="px-6">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button onClick={() => setInterviewModal({ open: true, mode: "view" })} className="p-2 text-ink-muted hover:text-brand transition-colors rounded-md hover:bg-brand/10"><Eye size={18} strokeWidth={2.5} /></button>
-                                                <button onClick={() => setInterviewModal({ open: true, mode: "edit" })} className="p-2 text-ink-muted hover:text-brand transition-colors rounded-md hover:bg-brand/10"><Pencil size={18} strokeWidth={2.5} /></button>
-                                                <button onClick={handleDeleteInterview} className="p-2 text-ink-muted hover:text-destructive transition-colors rounded-md hover:bg-destructive/10"><Trash2 size={18} strokeWidth={2.5} /></button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                </TableCard>
-            )}
-
             <CampaignExamModal
                 open={examModal.open}
                 onOpenChange={(open) => setExamModal(cur => ({ ...cur, open }))}
@@ -433,7 +359,7 @@ export default function CampaignProviderDetailsPage() {
                             tipoExamen: ex.tipoExamen,
                             origen: ex.origen,
                             identificacionMuestra: ex.identificacionMuestra,
-                            resultado: ex.resultado as any,
+                            resultado: ex.resultado as ExamValues["resultado"],
                             fechaEnvioMuestra: ex.fechaEnvioMuestra,
                             estadoEnvioResultado: ex.estadoEnvioResultado,
                             observacion: ex.observacion,
@@ -443,15 +369,6 @@ export default function CampaignProviderDetailsPage() {
                 }
                 isViewOnly={examModal.mode === "view"}
                 onSave={handleSaveExam}
-            />
-
-            <CampaignInterviewModal
-                open={interviewModal.open}
-                onOpenChange={(open) => setInterviewModal(cur => ({ ...cur, open }))}
-                providerName={name}
-                initialValues={interview ?? undefined}
-                isViewOnly={interviewModal.mode === "view"}
-                onSave={handleSaveInterview}
             />
 
             <CampaignFincaModal
@@ -476,19 +393,6 @@ export default function CampaignProviderDetailsPage() {
                         setLocalExams((current) => current.filter((e) => e.id !== deleteExamId));
                         setDeleteExamId(null);
                     }
-                }}
-            />
-
-            <ConfirmModal
-                open={deleteInterviewConfirm}
-                onOpenChange={setDeleteInterviewConfirm}
-                title="Eliminar entrevista"
-                description="¿Estás seguro de eliminar los datos de la entrevista agronómica? Esta acción no se puede deshacer."
-                confirmLabel="Eliminar"
-                tone="danger"
-                onConfirm={() => {
-                    setInterview(null);
-                    setDeleteInterviewConfirm(false);
                 }}
             />
 

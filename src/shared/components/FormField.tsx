@@ -32,7 +32,9 @@ export default function FormField({ id, label, required, optional, variant, erro
     return (
         <Field className={className} data-invalid={error ? true : undefined}>
             {label && (
-                <FieldLabel htmlFor={id} variant={variant} optional={optional}>
+                // `htmlFor` se conserva para el nombre accesible del control, pero un clic en el título no debe
+                // enfocar el input ni abrir el selector: solo el recuadro del campo responde.
+                <FieldLabel htmlFor={id} variant={variant} optional={optional} onClick={(event) => event.preventDefault()}>
                     {label} {required && !optional && <span aria-hidden="true" className="text-destructive">*</span>}
                 </FieldLabel>
             )}

@@ -17,12 +17,14 @@ function PopoverContent({
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
+  showArrow = false,
+  children,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
-  >) {
+  > & { showArrow?: boolean }) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -39,7 +41,19 @@ function PopoverContent({
             className
           )}
           {...props}
-        />
+        >
+          {showArrow && (
+            <PopoverPrimitive.Arrow
+              aria-hidden="true"
+              className="absolute flex data-[side=bottom]:-top-2 data-[side=top]:-bottom-2 data-[side=top]:rotate-180 data-[side=left]:-right-3 data-[side=left]:rotate-90 data-[side=right]:-left-3 data-[side=right]:-rotate-90 data-[uncentered]:hidden"
+            >
+              <svg width="20" height="9" viewBox="0 0 20 9" className="overflow-visible" fill="none">
+                <path d="M0 9 8.6 1.4a2 2 0 0 1 2.8 0L20 9" className="fill-popover stroke-border" strokeWidth="1" />
+              </svg>
+            </PopoverPrimitive.Arrow>
+          )}
+          {children}
+        </PopoverPrimitive.Popup>
       </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   )

@@ -1,28 +1,27 @@
-import { X, Save, Truck, Box } from "lucide-react";
+import { X, Save, Truck } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import FormField from "@/shared/components/FormField";
 import ModalSection from "@/shared/components/ModalSection";
 import { useModalForm } from "@/shared/hooks/useModalForm";
+import { useFormSubmit } from "@/shared/hooks/useFormSubmit";
 import InputField from "@/shared/components/InputField";
 import { Separator } from "@/shared/components/ui/separator";
 import { Button } from "@/shared/components/ui/button";
 import type { Carrier } from "@/modules/carriers/carriers.data";
+import {
+    EMPTY_VEHICLE,
+    VEHICLE_BACKEND_FIELDS,
+    validateVehicle,
+    type VehicleField,
+    type VehicleFormValues,
+} from "@/modules/carriers/carrierRecords.utils";
 
-export interface VehicleFormValues {
-    placa: string;
-    ancho: string;
-    altura: string;
-    profundidad: string;
-    pesoNeto: string;
-    pesoBruto: string;
-}
-
-const EMPTY_VEHICLE: VehicleFormValues = {
-    placa: "", ancho: "", altura: "", profundidad: "", pesoNeto: "", pesoBruto: "",
-};
+export type { VehicleFormValues };
 
 interface CarrierVehicleModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** Guarda el vehículo; si rechaza con un 400 del backend, sus mensajes salen bajo cada campo */
     onSuccess?: (values: VehicleFormValues) => void | Promise<void>;
     carrier: Carrier | null;
     /** "create" arranca vacío; "edit" arranca con `initialValues` y cambia los textos */
@@ -30,47 +29,68 @@ interface CarrierVehicleModalProps {
     initialValues?: Partial<VehicleFormValues>;
 }
 
-/** Volumen interno = ancho × altura × profundidad; vacío mientras falte alguna medida */
-function computeVolume({ ancho, altura, profundidad }: VehicleFormValues) {
-    const [w, h, d] = [ancho, altura, profundidad].map(Number);
-    if (!ancho || !altura || !profundidad || [w, h, d].some((n) => Number.isNaN(n))) return "";
-    return (w * h * d).toFixed(2);
-}
-
 export default function CarrierVehicleModal({ open, onOpenChange, onSuccess, carrier, mode = "create", initialValues }: CarrierVehicleModalProps) {
     const isEdit = mode === "edit";
     const [values, , set] = useModalForm<VehicleFormValues>(open, { ...EMPTY_VEHICLE, ...initialValues });
+    const { errors, saving, clearError, submit } = useFormSubmit<VehicleFormValues>({
+        open,
+        validate: validateVehicle,
+        onSubmit: async (next) => {
+            if (!onSuccess) {
+                onOpenChange(false);
+                return;
+            }
+            await onSuccess(next);
+        },
+        backendFields: VEHICLE_BACKEND_FIELDS,
+    });
 
     if (!carrier) return null;
+
+    const bind = (field: VehicleField) => ({
+        id: `vehicle-${field}`,
+        required: true,
+        value: values[field],
+        error: errors[field],
+        disabled: saving,
+        onChange: (next: string) => {
+            set(field)(next);
+            clearError(field);
+        },
+    });
 
     return (
         <AppModal
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={(next) => !(saving && !next) && onOpenChange(next)}
             icon={<Truck size={22} strokeWidth={2} />}
             title={isEdit ? "Editar Vehículo" : "Registrar Vehículo"}
             description={`Datos técnicos del vehículo de ${carrier.nombre}.`}
             className="sm:max-w-175"
             footer={
                 <>
-                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)} disabled={saving}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" disabled={!values.placa.trim()} onClick={() => (onSuccess ? void Promise.resolve(onSuccess(values)).catch(() => undefined) : onOpenChange(false))}>
-                        <Save size={20} strokeWidth={2.5} /> Guardar vehículo
+                    <Button size="xl" onClick={() => void submit(values)} disabled={saving} aria-busy={saving}>
+                        <Save size={20} strokeWidth={2.5} /> {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Guardar vehículo"}
                     </Button>
                 </>
             }
         >
             <div className="flex flex-col gap-6">
+                {Boolean(errors._form) && <FormField error={errors._form} />}
+
                 <ModalSection title="Identificación">
                     <InputField
-                        id="vehicle-placa"
+                        {...bind("placa")}
                         label="Placa"
                         placeholder="ABC-123"
                         maxLength={8}
-                        value={values.placa}
-                        onChange={(value) => set("placa")(value.toUpperCase())}
+                        onChange={(value) => {
+                            set("placa")(value.toUpperCase());
+                            clearError("placa");
+                        }}
                         inputClassName="uppercase"
                         className="sm:max-w-1/2"
                     />
@@ -80,28 +100,19 @@ export default function CarrierVehicleModal({ open, onOpenChange, onSuccess, car
 
                 <ModalSection title="Dimensiones de la carga">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-                        <InputField id="vehicle-ancho" label="Ancho" unit="m" step="any" min={0} placeholder="0.00" value={values.ancho} onChange={set("ancho")} />
-                        <InputField id="vehicle-altura" label="Altura" unit="m" step="any" min={0} placeholder="0.00" value={values.altura} onChange={set("altura")} />
-                        <InputField id="vehicle-profundidad" label="Profundidad" unit="m" step="any" min={0} placeholder="0.00" value={values.profundidad} onChange={set("profundidad")} />
+                        <InputField {...bind("ancho")} label="Ancho" unit="m" step="any" min={0} placeholder="0.00" />
+                        <InputField {...bind("altura")} label="Altura" unit="m" step="any" min={0} placeholder="0.00" />
+                        <InputField {...bind("profundidad")} label="Profundidad" unit="m" step="any" min={0} placeholder="0.00" />
                     </div>
-                    <InputField
-                        id="vehicle-volumen"
-                        label={<><Box size={14} strokeWidth={2.5} className="text-brand" /> Volumen</>}
-                        unit="m³"
-                        placeholder="0.00"
-                        value={computeVolume(values)}
-                        readOnly
-                        hint="Se calcula automáticamente con las tres medidas."
-                        className="sm:max-w-1/2"
-                    />
                 </ModalSection>
 
                 <Separator />
 
-                <ModalSection title="Capacidad de peso">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                        <InputField id="vehicle-peso-neto" label="Peso neto" unit="t" step="any" min={0} placeholder="0.00" value={values.pesoNeto} onChange={set("pesoNeto")} />
-                        <InputField id="vehicle-peso-bruto" label="Peso bruto" unit="t" step="any" min={0} placeholder="0.00" value={values.pesoBruto} onChange={set("pesoBruto")} />
+                <ModalSection title="Capacidad">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                        <InputField {...bind("volumen")} label="Volumen" unit="m³" step="any" min={0} placeholder="0.00" />
+                        <InputField {...bind("pesoNeto")} label="Peso neto" unit="t" step="any" min={0} placeholder="0.00" />
+                        <InputField {...bind("pesoBruto")} label="Peso bruto" unit="t" step="any" min={0} placeholder="0.00" />
                     </div>
                 </ModalSection>
             </div>

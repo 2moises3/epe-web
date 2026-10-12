@@ -72,10 +72,13 @@ export default function InputField({
         return (
             <FormField id={id} label={label} required={required} optional={optional} variant={variant} error={error} hint={hint} className={className}>
                 <DatePicker
+                    id={id}
                     value={value}
                     onChange={onChange}
                     disabled={disabled}
+                    aria-required={required ? true : undefined}
                     aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? `${id}-error` : undefined}
                 />
             </FormField>
         );

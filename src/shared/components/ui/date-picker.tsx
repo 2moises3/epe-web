@@ -21,7 +21,11 @@ type DatePickerProps = {
   className?: string
   disabled?: boolean
   name?: string
+  /** Id del botón: es lo que enlaza la etiqueta del campo (`FormField`) y el mensaje de error */
+  id?: string
   "aria-invalid"?: boolean | "true" | "false"
+  "aria-describedby"?: string
+  "aria-required"?: boolean
 }
 
 function DatePicker({
@@ -32,7 +36,10 @@ function DatePicker({
   className,
   disabled,
   name,
+  id,
   "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
+  "aria-required": ariaRequired,
 }: DatePickerProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue ?? "")
   const isControlled = value !== undefined
@@ -51,9 +58,12 @@ function DatePicker({
         disabled={disabled}
         render={
           <Button
+            id={id}
             type="button"
             variant="outline"
             aria-invalid={ariaInvalid}
+            aria-describedby={ariaDescribedBy}
+            aria-required={ariaRequired}
             className={cn(
               "h-11 w-full justify-start gap-2 rounded-lg px-2.5 shadow-none aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20",
               selected ? "text-ink font-medium" : "text-ink-muted font-normal",

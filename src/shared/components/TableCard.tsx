@@ -1,9 +1,50 @@
 import type { ReactNode } from "react";
 import { SearchX } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import { Button } from "@/shared/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/components/ui/empty";
 import TablePagination from "@/shared/components/TablePagination";
 import { cn } from "@/lib/utils";
+
+export interface TableEmptyAction {
+    label: string;
+    icon?: ReactNode;
+    onClick: () => void;
+    /** Registro/creación en verde; acciones de recuperación como limpiar filtros en neutro. */
+    tone?: "primary" | "secondary";
+}
+
+interface TableEmptyStateProps {
+    icon: ReactNode;
+    title: string;
+    description: string;
+    action?: TableEmptyAction;
+}
+
+/** Estado vacío común de las tablas, incluidas las tablas compactas dentro de un modal. */
+export function TableEmptyState({ icon, title, description, action }: TableEmptyStateProps) {
+    return (
+        <Empty className="rounded-xl border border-border bg-surface-page/25 py-12 sm:py-14">
+            <EmptyHeader>
+                <EmptyMedia variant="brand">{icon}</EmptyMedia>
+                <EmptyTitle>{title}</EmptyTitle>
+                <EmptyDescription>{description}</EmptyDescription>
+            </EmptyHeader>
+            {action && (
+                <EmptyContent>
+                    <Button
+                        size="lg"
+                        variant={action.tone === "secondary" ? "outline" : "default"}
+                        onClick={action.onClick}
+                        className="min-w-38 px-4 font-semibold"
+                    >
+                        {action.icon}{action.label}
+                    </Button>
+                </EmptyContent>
+            )}
+        </Empty>
+    );
+}
 
 interface TableCardProps {
     icon: ReactNode;
@@ -17,7 +58,7 @@ interface TableCardProps {
     emptyIcon?: ReactNode;
     emptyTitle: string;
     emptyDescription: string;
-    emptyAction?: ReactNode;
+    emptyAction?: TableEmptyAction;
     page: number;
     pageCount: number;
     onPageChange: (page: number) => void;
@@ -63,16 +104,7 @@ export default function TableCard({
 
                 {!isEmpty && children}
 
-                {isEmpty && (
-                    <Empty className="rounded-xl border border-border py-16">
-                        <EmptyHeader>
-                            <EmptyMedia variant="brand">{emptyIcon}</EmptyMedia>
-                            <EmptyTitle>{emptyTitle}</EmptyTitle>
-                            <EmptyDescription>{emptyDescription}</EmptyDescription>
-                        </EmptyHeader>
-                        {emptyAction && <EmptyContent>{emptyAction}</EmptyContent>}
-                    </Empty>
-                )}
+                {isEmpty && <TableEmptyState icon={emptyIcon} title={emptyTitle} description={emptyDescription} action={emptyAction} />}
 
                 <TablePagination page={page} pageCount={pageCount} onPageChange={onPageChange} />
             </CardContent>

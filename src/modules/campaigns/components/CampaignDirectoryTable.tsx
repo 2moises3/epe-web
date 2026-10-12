@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Search, UserRound } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
+import { TableEmptyState } from "@/shared/components/TableCard";
 
 interface DirectoryRow {
     id: string | number;
@@ -33,7 +34,13 @@ export default function CampaignDirectoryTable({ rows, columns, label }: { rows:
                     <tbody>{filtered.map(row => <tr key={row.id} className="border-b border-border/60 transition-colors hover:bg-brand-surface/40 motion-reduce:transition-none">{row.cells.map((cell, index) => <td key={columns[index]} className="px-2 py-4 align-middle">{cell}</td>)}</tr>)}</tbody>
                 </table>
             </div>
-            {!filtered.length && <p className="py-8 text-center text-xs">No se encontraron resultados. Prueba otra búsqueda o categoría.</p>}
+            {!filtered.length && (
+                <TableEmptyState
+                    icon={<Search size={28} strokeWidth={2} />}
+                    title="Sin resultados"
+                    description="No se encontraron resultados. Prueba otra búsqueda o categoría."
+                />
+            )}
             <p className="mt-5 text-[11px]" role="status">Mostrando {filtered.length} de {rows.length} {label}</p>
         </>
     );

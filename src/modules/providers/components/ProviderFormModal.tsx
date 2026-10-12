@@ -8,9 +8,10 @@ import { useModalForm, useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
-import type { ProveedorInput } from "@/modules/providers/api/proveedor.dto";
+import type { ProveedorFormValues, ProveedorInput, TipoDocumentoProveedor } from "@/modules/providers/api/proveedor.dto";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import type { ProveedorField, ProveedorFieldErrors } from "@/modules/providers/api/proveedor.validation";
+import { CATALOGO_FRUTAS } from "@/modules/providers/providerCatalogo";
 import { validateProveedorInput } from "@/modules/providers/api/proveedor.validation";
 import { createProviderFormSession } from "@/modules/providers/api/provider-lifecycle";
 import { createInFlightGuard, submitValidatedProveedor } from "@/modules/providers/api/proveedor-submission";
@@ -32,13 +33,6 @@ const SANIDAD_TYPES = [
     { value: "Sin registrar", label: "Sin registrar" },
     { value: "Registrado", label: "Registrado" },
     { value: "En proceso", label: "En proceso" },
-];
-
-const CATALOGO_FRUTAS = [
-    { id: "mango", nombre: "Mango", variedades: ["Kent", "Edward", "Haden", "Tommy Atkins"] },
-    { id: "uva", nombre: "Uva", variedades: ["Red Globe", "Crimson", "Autumn Royal", "Sweet Celebration"] },
-    { id: "arandano", nombre: "Arándano", variedades: ["Biloxi", "Ventura", "Emerald", "Rocio"] },
-    { id: "palta", nombre: "Palta", variedades: ["Hass", "Fuerte", "Zutano", "Ettinger"] },
 ];
 
 interface ProviderFormModalProps {
@@ -65,8 +59,8 @@ export default function ProviderFormModal({ open, onOpenChange, mode = "create",
         setSaveError(null);
     });
 
-    const updateField = (field: ProveedorField, value: any) => {
-        set(field)(value as never);
+    const updateField = <Field extends ProveedorField>(field: Field, value: ProveedorFormValues[Field]) => {
+        set(field)(value);
         setErrors((current) => ({ ...current, [field]: undefined }));
         setSaveError(null);
     };
@@ -247,7 +241,7 @@ export default function ProviderFormModal({ open, onOpenChange, mode = "create",
                     
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                         <FormField id="provider-tipoDocumento" label="Tipo de documento" required className="sm:col-span-3" error={errors.tipoDocumento}>
-                            <Select items={DOCUMENT_TYPES} value={(values.tipoDocumento as string) || null} onValueChange={(value) => updateField("tipoDocumento", value ?? "")} disabled={isSaving}>
+                            <Select items={DOCUMENT_TYPES} value={(values.tipoDocumento as string) || null} onValueChange={(value) => updateField("tipoDocumento", (value ?? "") as TipoDocumentoProveedor | "")} disabled={isSaving}>
                                 <SelectTrigger
                                     id="provider-tipoDocumento"
                                     className="w-full"

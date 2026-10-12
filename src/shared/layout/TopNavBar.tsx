@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, LogOut, Settings, User, ArrowLeft, LayoutGrid } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Settings, User, ArrowLeft } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -8,8 +8,8 @@ import {
 } from "@/shared/components/ui/dropdown-menu";
 import LogoEmpresaOnly from "@/assets/image/logo_empresa_only.webp";
 import { useState } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
-import { navigationItems } from "@/shared/layout/navigationItems";
+import { useNavigate, useLocation } from "react-router-dom";
+import ModuleLauncher from "@/shared/layout/ModuleLauncher";
 import Hint from "@/shared/components/Hint";
 import ConfirmModal from "@/shared/components/ConfirmModal";
 import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
@@ -75,30 +75,7 @@ export default function TopNavBar({ onLogout }: TopNavBarProps) {
             <CompanyBreadcrumb />
 
             <div className="flex items-center gap-3 sm:gap-6 ml-auto shrink-0">
-                {/* Menú rápido de Módulos (Mini-Sidebar) */}
-                <DropdownMenu>
-                    <Hint label="Módulos" side="bottom">
-                        <DropdownMenuTrigger className="text-ink-muted hover:text-brand transition-all outline-none focus-visible:ring-2 focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand/40 rounded-lg p-1 active:scale-95" aria-label="Módulos">
-                            <LayoutGrid size={22} strokeWidth={2} />
-                        </DropdownMenuTrigger>
-                    </Hint>
-                    <DropdownMenuContent align="end" sideOffset={12} className="w-75 p-3 rounded-xl grid grid-cols-2 gap-2">
-                        {navigationItems.map((item) => (
-                            <DropdownMenuItem
-                                key={item.title}
-                                className="p-0 outline-none"
-                                render={
-                                    <Link to={item.url} className="w-full group flex flex-col items-center justify-center p-3 gap-2 h-auto text-[13px] font-medium text-ink-body cursor-pointer rounded-xl hover:bg-brand-surface hover:text-brand transition-colors focus:bg-brand-surface text-center outline-none ring-0">
-                                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-ink-muted group-hover:bg-brand/15 group-hover:text-brand transition-colors">
-                                            <item.icon size={20} strokeWidth={1.5} />
-                                        </div>
-                                        <span className="leading-tight">{item.title}</span>
-                                    </Link>
-                                }
-                            />
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <ModuleLauncher />
 
                 <ThemeToggle />
 

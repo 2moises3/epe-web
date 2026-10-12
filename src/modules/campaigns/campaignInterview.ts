@@ -6,6 +6,7 @@
  * validar el diseño. Cuando exista el servicio basta con reemplazar el guardado local por la llamada.
  */
 export interface InterviewValues {
+    fincaNombre?: string;
     densidadPlantacion: string;
     distanciamiento: string;
     frecuenciaRiego: string;
@@ -38,6 +39,29 @@ export const EMPTY_INTERVIEW: InterviewValues = {
     longitud: "",
 };
 
+/** Datos agronómicos propios de una finca en una campaña, no del proveedor en general. */
+export type InterviewAgronomicField = "densidadPlantacion" | "distanciamiento" | "frecuenciaRiego" | "nombreAplicacion" | "aplicacionesAlAno";
+export type InterviewAgronomicValues = Pick<InterviewValues, InterviewAgronomicField>;
+export type InterviewAgronomicErrors = Partial<Record<InterviewAgronomicField, string>>;
+
+export const EMPTY_INTERVIEW_AGRONOMICS: InterviewAgronomicValues = {
+    densidadPlantacion: "",
+    distanciamiento: "",
+    frecuenciaRiego: "",
+    nombreAplicacion: "",
+    aplicacionesAlAno: "",
+};
+
+export function validateInterviewAgronomics(values: InterviewAgronomicValues): InterviewAgronomicErrors {
+    const errors: InterviewAgronomicErrors = {};
+    if (!isNonNegative(values.densidadPlantacion) || Number(values.densidadPlantacion) === 0) errors.densidadPlantacion = "Ingresa un número mayor a 0.";
+    if (!isNonNegative(values.distanciamiento) || Number(values.distanciamiento) === 0) errors.distanciamiento = "Ingresa un número mayor a 0.";
+    if (!isNonNegativeInteger(values.frecuenciaRiego)) errors.frecuenciaRiego = "Ingresa un entero desde 0.";
+    if (isBlank(values.nombreAplicacion)) errors.nombreAplicacion = "Ingresa el nombre de la aplicación.";
+    if (!isNonNegativeInteger(values.aplicacionesAlAno)) errors.aplicacionesAlAno = "Ingresa un entero desde 0.";
+    return errors;
+}
+
 const isBlank = (value: string) => value.trim() === "";
 const isNonNegative = (value: string) => !isBlank(value) && Number.isFinite(Number(value)) && Number(value) >= 0;
 const isNonNegativeInteger = (value: string) => isNonNegative(value) && Number.isInteger(Number(value));
@@ -46,6 +70,7 @@ const isInRange = (value: string, min: number, max: number) =>
 
 export function validateInterview(values: InterviewValues): InterviewErrors {
     const errors: InterviewErrors = {};
+    if (values.fincaNombre !== undefined && isBlank(values.fincaNombre)) errors.fincaNombre = "Indica el nombre de la finca.";
     if (!isNonNegative(values.densidadPlantacion)) errors.densidadPlantacion = "Número no válido.";
     if (!isNonNegative(values.distanciamiento)) errors.distanciamiento = "Número no válido.";
     if (!isNonNegativeInteger(values.frecuenciaRiego)) errors.frecuenciaRiego = "Entero no válido.";

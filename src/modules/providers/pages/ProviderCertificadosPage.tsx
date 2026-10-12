@@ -4,9 +4,9 @@ import { ArrowLeft, Plus, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import PageHeader from "@/shared/layout/PageHeader";
+import ProviderContextBanner from "@/modules/providers/components/ProviderContextBanner";
 import ProviderCertificadosTable from "@/modules/providers/components/ProviderCertificadosTable";
 import ProviderCertificadoModal from "@/modules/providers/components/ProviderCertificadoModal";
-import ProviderCertificadoViewModal from "@/modules/providers/components/ProviderCertificadoViewModal";
 import ProviderSuccessModal, { type ProviderSuccessMode } from "@/modules/providers/components/ProviderSuccessModal";
 import { getProveedor } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
@@ -74,7 +74,6 @@ function ProviderCertificadosView({ provider }: { provider: Proveedor }) {
     const providerCertificates = certificados[provider.proveedorId] ?? [];
     // Se conserva el certificado al cerrar para que el modal no se vacíe durante su animación de salida
     const [form, setForm] = useState<{ open: boolean; certificate: CertificadoLocal | null }>({ open: false, certificate: null });
-    const [viewing, setViewing] = useState<{ open: boolean; certificate: CertificadoLocal | null }>({ open: false, certificate: null });
     const [success, setSuccess] = useState<{ open: boolean; mode: ProviderSuccessMode }>({ open: false, mode: "certificado" });
 
     const handleSave = (values: CertificadoFormValues, file: File | null) => {
@@ -90,6 +89,12 @@ function ProviderCertificadosView({ provider }: { provider: Proveedor }) {
 
     return (
         <div className="px-4 py-5 sm:px-8 lg:px-14">
+            <ProviderContextBanner
+                provider={provider}
+                caption="Certificados · documentos del proveedor"
+                stats={[{ label: providerCertificates.length === 1 ? "certificado" : "certificados", value: String(providerCertificates.length) }]}
+            />
+
             <PageHeader
                 icon={<ShieldCheck size={24} strokeWidth={2.5} />}
                 title="Gestión de Certificados"
@@ -104,7 +109,6 @@ function ProviderCertificadosView({ provider }: { provider: Proveedor }) {
             <ProviderCertificadosTable
                 certificates={providerCertificates}
                 onRegister={() => setForm({ open: true, certificate: null })}
-                onView={(certificate) => setViewing({ open: true, certificate })}
                 onEdit={(certificate) => setForm({ open: true, certificate })}
             />
 
@@ -114,13 +118,6 @@ function ProviderCertificadosView({ provider }: { provider: Proveedor }) {
                 providerName={fullName(provider)}
                 certificate={form.certificate}
                 onSave={handleSave}
-            />
-
-            <ProviderCertificadoViewModal
-                open={viewing.open}
-                onOpenChange={(open) => setViewing((current) => ({ ...current, open }))}
-                providerName={fullName(provider)}
-                certificate={viewing.certificate}
             />
 
             <ProviderSuccessModal open={success.open} onOpenChange={(open) => setSuccess((current) => ({ ...current, open }))} mode={success.mode} />

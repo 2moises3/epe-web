@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import TableCard from "@/shared/components/TableCard";
 import ConfirmModal from "@/shared/components/ConfirmModal";
@@ -19,7 +18,6 @@ import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared
 import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type TableViewMode } from "@/shared/components/TableToolbar";
 import RowActions, { type RowAction } from "@/shared/components/RowActions";
 import ProviderFormModal from "@/modules/providers/components/ProviderFormModal";
-import ProviderViewModal from "@/modules/providers/components/ProviderViewModal";
 import type { ProveedorInput } from "@/modules/providers/api/proveedor.dto";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import type { createInFlightGuard } from "@/modules/providers/api/proveedor-submission";
@@ -47,7 +45,6 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
     const [viewMode, setViewMode] = useState<TableViewMode>("table");
     // Se conserva el proveedor al cerrar para que los modales no se vacíen durante su animación de salida
     const [editing, setEditing] = useState<{ open: boolean; provider: Proveedor | null }>({ open: false, provider: null });
-    const [viewing, setViewing] = useState<{ open: boolean; providerId: number | null }>({ open: false, providerId: null });
     const [deleting, setDeleting] = useState<{ open: boolean; provider: Proveedor | null }>({ open: false, provider: null });
     /** Exporta los proveedores visibles a CSV y lo descarga */
     const handleExportCSV = () =>
@@ -61,7 +58,7 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
     const getRowActions = (row: Proveedor): { primary: RowAction[]; secondary: RowAction[] } => ({
         primary: [
             { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditing({ open: true, provider: row }) },
-            { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => setViewing({ open: true, providerId: row.proveedorId }) },
+            { label: "Ver detalles", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => navigate(`/proveedores/${row.proveedorId}`) },
             { label: "Eliminar", icon: <Trash2 size={18} strokeWidth={2.5} />, variant: "destructive", onClick: () => setDeleting({ open: true, provider: row }) },
         ],
         secondary: [
@@ -82,7 +79,7 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                 icon: <TriangleAlert size={28} strokeWidth={2} />,
                 title: "No se pudieron cargar los proveedores",
                 description: loadError,
-                action: <Button variant="outline" onClick={onRetry}><RotateCw size={18} strokeWidth={2.5} /> Reintentar</Button>,
+                action: { label: "Reintentar", icon: <RotateCw size={18} strokeWidth={2.5} />, onClick: onRetry, tone: "secondary" as const },
             }
             : {
                 icon: <SearchX size={28} strokeWidth={2} />,
@@ -91,7 +88,7 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                     ? "No hay proveedores que coincidan con los filtros aplicados. Intenta con otros criterios de búsqueda."
                     : "Aún no hay proveedores registrados. Haz clic en 'Nuevo Proveedor' para comenzar.",
                 action: hasActiveFilters
-                    ? <Button variant="outline" onClick={onClearFilters}><ListFilter size={18} strokeWidth={2.5} /> Limpiar filtros</Button>
+                    ? { label: "Limpiar filtros", icon: <ListFilter size={18} strokeWidth={2.5} />, onClick: onClearFilters, tone: "secondary" as const }
                     : undefined,
             };
 
@@ -145,7 +142,7 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                                     <TableHead className="text-ink font-semibold h-14">Documento</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Zona</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Teléfono</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-56">Acciones</TableHead>
+                                    <TableHead className="text-ink font-semibold h-14 text-center px-6 w-56">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -163,7 +160,7 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                                             <div className="flex items-center gap-2 text-ink-body font-medium"><Phone size={16} className="text-ink-muted" />{row.telefono || "—"}</div>
                                         </TableCell>
                                         <TableCell className="px-6">
-                                            <RowActions {...getRowActions(row)} className="justify-end" />
+                                            <RowActions {...getRowActions(row)} className="justify-center" />
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -180,12 +177,6 @@ export default function ProvidersTable({ data, isLoading, loadError, onRetry, ha
                 provider={editing.provider}
                 mutationGuard={mutationGuard}
                 onSave={onSave}
-            />
-
-            <ProviderViewModal
-                open={viewing.open}
-                onOpenChange={(open) => setViewing((current) => ({ ...current, open }))}
-                providerId={viewing.providerId}
             />
 
             <ConfirmModal

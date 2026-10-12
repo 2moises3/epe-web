@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pencil, Trash2, Truck, ListFilter } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
-import { Button } from "@/shared/components/ui/button";
 import TableCard from "@/shared/components/TableCard";
 import { TABLE_HEAD_BG, TableRowLead } from "@/shared/components/DataTableRow";
 import TableGridCard, { TableGridCardFields, TableGridCardField } from "@/shared/components/TableGridCard";
@@ -77,19 +76,9 @@ export default function CarrierVehiclesTable({ data, hasActiveFilters, onClearFi
                     : "Esta empresa todavía no tiene vehículos registrados."
             }
             emptyAction={
-                hasActiveFilters ? (
-                    <Button
-                        onClick={onClearFilters}
-                        variant="outline"
-                        className="h-9 px-4 rounded-lg font-semibold border-border text-brand hover:text-brand-dark hover:bg-brand-surface shadow-none transition-colors"
-                    >
-                        <ListFilter size={20} strokeWidth={2.5} /> Limpiar filtros
-                    </Button>
-                ) : (
-                    <Button onClick={onAdd}>
-                        <Truck size={16} strokeWidth={2.5} /> Registrar vehículo
-                    </Button>
-                )
+                hasActiveFilters
+                    ? { label: "Limpiar filtros", icon: <ListFilter size={18} />, onClick: onClearFilters, tone: "secondary" }
+                    : { label: "Registrar vehículo", icon: <Truck size={18} />, onClick: onAdd }
             }
             page={currentPage}
             pageCount={pageCount}
@@ -120,7 +109,7 @@ export default function CarrierVehiclesTable({ data, hasActiveFilters, onClearFi
                             <TableHead className="text-ink font-semibold h-14 px-6">Placa</TableHead>
                             <TableHead className="text-ink font-semibold h-14">Dimensiones</TableHead>
                             <SortableHead label="Volumen / Pesos" sortKey="volumen" sort={sort} onToggle={toggleSort} />
-                            <TableHead className="text-ink font-semibold h-14 text-right px-6 w-36">Acciones</TableHead>
+                            <TableHead className="text-ink font-semibold h-14 text-center px-6 w-36">Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -143,7 +132,7 @@ export default function CarrierVehiclesTable({ data, hasActiveFilters, onClearFi
                                         </div>
                                     </TableCell>
                                     <TableCell className="px-6">
-                                        <RowActions {...getRowActions(row)} className="justify-end" />
+                                        <RowActions {...getRowActions(row)} className="justify-center" />
                                     </TableCell>
                                 </TableRow>
                             );

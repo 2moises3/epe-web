@@ -8,7 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/components/ui/table";
-import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import TableCard from "@/shared/components/TableCard";
 import ConfirmModal from "@/shared/components/ConfirmModal";
@@ -81,7 +80,7 @@ export default function ClientsTable({ data, isLoading, loadError, onRetry, hasA
                 icon: <TriangleAlert size={28} strokeWidth={2} />,
                 title: "No se pudieron cargar los clientes",
                 description: loadError,
-                action: <Button variant="outline" onClick={onRetry}><RotateCw size={18} strokeWidth={2.5} /> Reintentar</Button>,
+                action: { label: "Reintentar", icon: <RotateCw size={18} strokeWidth={2.5} />, onClick: onRetry, tone: "secondary" as const },
             }
             : {
                 icon: <SearchX size={28} strokeWidth={2} />,
@@ -90,7 +89,7 @@ export default function ClientsTable({ data, isLoading, loadError, onRetry, hasA
                     ? "Ningún cliente coincide con los filtros aplicados. Prueba ajustándolos."
                     : "Cuando registres tu primer cliente aparecerá acá.",
                 action: hasActiveFilters
-                    ? <Button variant="outline" onClick={onClearFilters}><ListFilter size={18} strokeWidth={2.5} /> Limpiar filtros</Button>
+                    ? { label: "Limpiar filtros", icon: <ListFilter size={18} strokeWidth={2.5} />, onClick: onClearFilters, tone: "secondary" as const }
                     : undefined,
             };
 
@@ -154,7 +153,7 @@ export default function ClientsTable({ data, isLoading, loadError, onRetry, hasA
                                     <TableHead className="text-ink font-semibold h-14">Teléfono</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">Correo</TableHead>
                                     <TableHead className="text-ink font-semibold h-14">RUC</TableHead>
-                                    <TableHead className="text-ink font-semibold h-14 text-right px-6 w-48">Acciones</TableHead>
+                                    <TableHead className="text-ink font-semibold h-14 text-center px-6 w-48">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -172,7 +171,7 @@ export default function ClientsTable({ data, isLoading, loadError, onRetry, hasA
                                         <TableCell className="text-ink-body font-medium">{row.correoCorporativo}</TableCell>
                                         <TableCell className="text-ink-body font-medium">{row.ruc}</TableCell>
                                         <TableCell className="px-6">
-                                            <RowActions {...getRowActions(row)} className="justify-end text-ink-muted" />
+                                            <RowActions {...getRowActions(row)} className="justify-center text-ink-muted" />
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -207,7 +206,6 @@ export default function ClientsTable({ data, isLoading, loadError, onRetry, hasA
                 cliente={contract.client}
                 onSave={() => {
                     setContract((current) => ({ ...current, open: false }));
-                    setSuccess({ open: true, mode: "contract" });
                 }}
             />
 

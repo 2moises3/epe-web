@@ -371,7 +371,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                                         <TableHead className="h-12 font-semibold text-ink">Resultado</TableHead>
                                         <TableHead className="h-12 font-semibold text-ink">Fecha</TableHead>
                                         <TableHead className="h-12 font-semibold text-ink">Origen</TableHead>
-                                        <TableHead className="h-12 px-4 text-right font-semibold text-ink">Acciones</TableHead>
+                                        <TableHead className="h-12 px-4 text-center font-semibold text-ink">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -387,7 +387,7 @@ export default function ProviderSubresources({ providerId, onMutatingChange }: P
                                             <TableCell className="font-medium text-ink-body">{displayDate(exam.fecha)}</TableCell>
                                             <TableCell className="font-medium text-ink-body">{exam.origen}</TableCell>
                                             <TableCell className="px-4">
-                                                <RowActions primary={[
+                                                <RowActions className="justify-center" primary={[
                                                     { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: operationsBusy ? undefined : () => startExamForm(exam) },
                                                     { label: "Eliminar", icon: <Trash2 size={18} strokeWidth={2.5} />, variant: "destructive", onClick: operationsBusy ? undefined : () => setPendingDelete({ open: true, target: { kind: "exam", exam } }) },
                                                 ]} />

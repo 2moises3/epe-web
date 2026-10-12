@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, LandPlot, Plus, UserRound } from "lucide-react";
+import { ArrowLeft, LandPlot, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import PageHeader from "@/shared/layout/PageHeader";
 import ProviderFincasTable from "@/modules/providers/components/ProviderFincasTable";
+import ConfirmModal from "@/shared/components/ConfirmModal";
+import ProviderContextBanner from "@/modules/providers/components/ProviderContextBanner";
 import ProviderFincaModal from "@/modules/providers/components/ProviderFincaModal";
-import ProviderSuccessModal from "@/modules/providers/components/ProviderSuccessModal";
+import ProviderFincaViewModal from "@/modules/providers/components/ProviderFincaViewModal";
+import ProviderSuccessModal, { type ProviderSuccessMode } from "@/modules/providers/components/ProviderSuccessModal";
 import { getProveedor } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
-import { addFinca, useProviderLocalData } from "@/modules/providers/providerLocalData.store";
+import { addFinca, removeFinca, updateFinca, useProviderLocalData } from "@/modules/providers/providerLocalData.store";
 import type { Finca } from "@/modules/providers/providerFinca.utils";
 
+const hectares = new Intl.NumberFormat("es-PE", { maximumFractionDigits: 2 });
 const fullName = (provider: Proveedor) => `${provider.nombres} ${provider.apellido}`;
 
 /** Gestión de las fincas de un proveedor: su lista y el registro de nuevas fincas. */
@@ -68,39 +72,88 @@ export default function ProviderFincasPage() {
 function ProviderFincasView({ provider }: { provider: Proveedor }) {
     const { fincas } = useProviderLocalData();
     const providerFincas = fincas[provider.proveedorId] ?? [];
-    const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-    const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+    // Se conserva la posición al cerrar para que los modales no se vacíen durante su animación de salida
+    const [form, setForm] = useState<{ open: boolean; index: number | null }>({ open: false, index: null });
+    const [viewing, setViewing] = useState<{ open: boolean; index: number | null }>({ open: false, index: null });
+    const [deleting, setDeleting] = useState<{ open: boolean; index: number | null }>({ open: false, index: null });
+    const [success, setSuccess] = useState<{ open: boolean; mode: ProviderSuccessMode }>({ open: false, mode: "finca" });
+
+    const at = (index: number | null) => (index === null ? null : providerFincas[index] ?? null);
+    const editing = at(form.index);
 
     const handleSave = (finca: Finca) => {
-        addFinca(provider.proveedorId, finca);
-        setIsRegisterOpen(false);
-        setIsSuccessOpen(true);
+        if (form.index === null) addFinca(provider.proveedorId, finca);
+        else updateFinca(provider.proveedorId, form.index, finca);
+        setForm((current) => ({ ...current, open: false }));
+        setSuccess({ open: true, mode: form.index === null ? "finca" : "finca-edit" });
     };
+
+    const handleDelete = () => {
+        if (deleting.index !== null) removeFinca(provider.proveedorId, deleting.index);
+        setDeleting((current) => ({ ...current, open: false }));
+    };
+
+    // Al editar, el nombre de la propia finca no cuenta como repetido
+    const otherFincas = providerFincas.filter((_, position) => position !== form.index);
 
     return (
         <div className="px-4 py-5 sm:px-8 lg:px-14">
+            <ProviderContextBanner
+                provider={provider}
+                caption="Fincas · cultivos y superficie"
+                stats={[
+                    { label: providerFincas.length === 1 ? "finca" : "fincas", value: String(providerFincas.length) },
+                    { label: "ha totales", value: hectares.format(providerFincas.reduce((sum, finca) => sum + finca.haTotal, 0)) },
+                    { label: "ha en cultivo", value: hectares.format(providerFincas.reduce((sum, finca) => sum + finca.haCultivo, 0)) },
+                ]}
+            />
+
             <PageHeader
                 icon={<LandPlot size={24} strokeWidth={2.5} />}
                 title="Gestión de Fincas"
                 description={`Fincas registradas de ${fullName(provider)}.`}
                 action={
-                    <Button size="xl" onClick={() => setIsRegisterOpen(true)}>
+                    <Button size="xl" onClick={() => setForm({ open: true, index: null })}>
                         <Plus size={20} strokeWidth={2.5} /> Registrar finca
                     </Button>
                 }
             />
 
-            <ProviderFincasTable fincas={providerFincas} onRegister={() => setIsRegisterOpen(true)} />
+            <ProviderFincasTable
+                fincas={providerFincas}
+                onRegister={() => setForm({ open: true, index: null })}
+                onView={(_, index) => setViewing({ open: true, index })}
+                onEdit={(_, index) => setForm({ open: true, index })}
+                onDelete={(_, index) => setDeleting({ open: true, index })}
+            />
 
             <ProviderFincaModal
-                open={isRegisterOpen}
-                onOpenChange={setIsRegisterOpen}
+                open={form.open}
+                onOpenChange={(open) => setForm((current) => ({ ...current, open }))}
                 providerName={fullName(provider)}
-                registeredFincas={providerFincas}
+                registeredFincas={otherFincas}
+                finca={editing}
                 onSave={handleSave}
             />
 
-            <ProviderSuccessModal open={isSuccessOpen} onOpenChange={setIsSuccessOpen} mode="finca" />
+            <ProviderFincaViewModal
+                open={viewing.open}
+                onOpenChange={(open) => setViewing((current) => ({ ...current, open }))}
+                providerName={fullName(provider)}
+                finca={at(viewing.index)}
+            />
+
+            <ConfirmModal
+                open={deleting.open}
+                onOpenChange={(open) => setDeleting((current) => ({ ...current, open }))}
+                icon={<Trash2 size={28} strokeWidth={2.25} />}
+                title="¿Eliminar finca?"
+                description={<>Se eliminará la finca <strong className="font-bold text-ink">{at(deleting.index)?.nombre ?? ""}</strong> de este proveedor. Esta acción no se puede deshacer.</>}
+                confirmLabel="Sí, eliminar"
+                onConfirm={handleDelete}
+            />
+
+            <ProviderSuccessModal open={success.open} onOpenChange={(open) => setSuccess((current) => ({ ...current, open }))} mode={success.mode} />
         </div>
     );
 }

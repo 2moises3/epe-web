@@ -26,6 +26,36 @@ export function InfoField({ label, value, suffix, className }: InfoFieldProps) {
     );
 }
 
+interface SummaryBarItem {
+    label: string;
+    value: ReactNode;
+    /** Resalta la cifra que importa (p. ej. el saldo pendiente): "brand" en verde, "highlight" en ámbar */
+    tone?: "brand" | "highlight";
+}
+
+interface SummaryBarProps {
+    items: SummaryBarItem[];
+    className?: string;
+}
+
+/**
+ * Resumen de contexto de un modal ("costo · pagado · saldo"): una sola franja informativa con las cifras
+ * separadas por líneas. A propósito no usa cajas de campo, para que no se confunda con algo que se llena;
+ * para valores de solo lectura dentro de un formulario o detalle está `InfoField`.
+ */
+export function SummaryBar({ items, className }: SummaryBarProps) {
+    return (
+        <dl className={cn("grid divide-x divide-border/70 rounded-xl border border-brand-border/60 bg-brand-surface/40 py-3", className)} style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+            {items.map(({ label, value, tone }) => (
+                <div key={label} className="flex min-w-0 flex-col items-center gap-0.5 px-2 text-center">
+                    <dt className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{label}</dt>
+                    <dd className={cn("max-w-full truncate text-[15px] font-bold tabular-nums", tone === "brand" ? "text-brand" : tone === "highlight" ? "text-status-highlight" : "text-ink")}>{value}</dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
 interface InfoSectionProps {
     icon: LucideIcon;
     title: string;

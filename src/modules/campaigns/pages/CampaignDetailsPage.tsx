@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Leaf, Sprout } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import { getCampana, getFrutaDerivadas } from "@/modules/campaigns/api/campaign.api";
-import { getCertificadosCampana } from "@/modules/campaigns/api/certificado-campana.api";
 import { getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
 import { getClientesNegocioCampana } from "@/modules/campaigns/api/cliente-negocio-campana.api";
 import type { Campana } from "@/modules/campaigns/api/campaign.mapper";
-import type { CertificadoCampana } from "@/modules/campaigns/api/certificado-campana.mapper";
 import type { FrutaDerivadaDto } from "@/modules/campaigns/api/campaign.dto";
 import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
 import type { ClienteNegocioCampana } from "@/modules/campaigns/api/cliente-negocio-campana.mapper";
 
 import { getCampaignTiming } from "@/modules/campaigns/campaignDetails.utils";
+import { useCampaignCertificates } from "@/modules/campaigns/campaignCertificates.store";
+import { getVigenciaAutomatica, type CertificadoCampanaLocal } from "@/modules/campaigns/campaignCertificate.utils";
 import type { Campaign } from "@/modules/campaigns/campaigns.data";
 import type { CampaignGrower, CampaignClient, CampaignCertification } from "@/modules/campaigns/campaignDetails.data";
 
@@ -26,7 +26,6 @@ import CampaignClientsSummary from "@/modules/campaigns/components/CampaignClien
 import CampaignCertificationsList from "@/modules/campaigns/components/CampaignCertificationsList";
 import CampaignBrandBanner from "@/modules/campaigns/components/CampaignBrandBanner";
 import CampaignManagementProvidersModal from "@/modules/campaigns/components/CampaignManagementProvidersModal";
-import CampaignManagementClientsModal from "@/modules/campaigns/components/CampaignManagementClientsModal";
 import "@/modules/campaigns/campaignDetails.css";
 
 // Adaptadores: llevan los datos de la API a la forma que reciben las tarjetas del diseño
@@ -74,19 +73,21 @@ function toClientSummaries(clientes: ClienteNegocioCampana[]): CampaignClient[] 
     }));
 }
 
-function toCertificationItems(certificados: CertificadoCampana[]): CampaignCertification[] {
+// Las certificaciones salen del almacén local de la gestión de certificaciones (ver campaignCertificates.store.ts)
+function toCertificationItems(certificados: CertificadoCampanaLocal[]): CampaignCertification[] {
     return certificados.map((certificado) => ({
-        id: certificado.certificadoId,
+        id: certificado.id,
         name: certificado.nombre,
-        files: [certificado.documentoUrl],
-        expires: format(certificado.fechaVencimiento, "dd/MM/yyyy"),
+        files: [certificado.documento?.name, certificado.cotizacion?.name].filter((name): name is string => Boolean(name)),
+        expires: certificado.validoHasta ? certificado.validoHasta.split("-").reverse().join("/") : "",
+        // El mismo estado que la tabla de gestión: incluye "Por iniciar" y "Sin fechas completas"
+        status: getVigenciaAutomatica(certificado.validoDesde, certificado.validoHasta),
         icon: "leaf",
     }));
 }
 
 interface CampaignDetailsData {
     campana: Campana;
-    certificados: CertificadoCampana[];
     proveedores: CampaniaProveedor[];
     clientes: ClienteNegocioCampana[];
     derivadas: FrutaDerivadaDto[];
@@ -119,20 +120,21 @@ function CampaignNotFound({ message }: { message: string }) {
 
 function CampaignDetailsView({ campaniaId }: { campaniaId: number }) {
     const [state, setState] = useState<LoadState>({ status: "loading" });
-    const [openModal, setOpenModal] = useState<"providers" | "clients" | null>(null);
+    const [openModal, setOpenModal] = useState<"providers" | null>(null);
+    const navigate = useNavigate();
+    const certificados = useCampaignCertificates(campaniaId);
 
     useEffect(() => {
         let active = true;
         Promise.all([
             getCampana(campaniaId),
-            getCertificadosCampana(campaniaId),
             // Proveedores y clientes son secciones secundarias: si fallan, la campaña igual se muestra
             getCampaniaProveedoresByCampania(campaniaId).catch(() => []),
             getClientesNegocioCampana(campaniaId).catch(() => []),
         ])
-            .then(async ([campana, certificados, proveedores, clientes]) => {
+            .then(async ([campana, proveedores, clientes]) => {
                 const derivadas = campana.frutaId ? await getFrutaDerivadas(campana.frutaId).catch(() => []) : [];
-                if (active) setState({ status: "success", data: { campana, certificados, proveedores, clientes, derivadas } });
+                if (active) setState({ status: "success", data: { campana, proveedores, clientes, derivadas } });
             })
             .catch(() => { if (active) setState({ status: "error" }); });
         return () => { active = false; };
@@ -148,7 +150,7 @@ function CampaignDetailsView({ campaniaId }: { campaniaId: number }) {
     }
     if (state.status === "error") return <CampaignNotFound message="No se pudo cargar la campaña" />;
 
-    const { campana, certificados, proveedores, clientes, derivadas } = state.data;
+    const { campana, proveedores, clientes, derivadas } = state.data;
     const campaign = { ...toOverviewCampaign(campana), variedades: derivadas.map((derivada) => derivada.name) };
     const timing = getCampaignTiming(campaign.inicio, campaign.fin);
 
@@ -171,16 +173,15 @@ function CampaignDetailsView({ campaniaId }: { campaniaId: number }) {
                         <CampaignHarvestCard harvested={0} estimated={null} />
                         <div className="campaign-contacts-grid">
                             <CampaignProvidersSummary providers={toProviderSummaries(proveedores)} campaignName={campana.nombre} onViewAll={() => setOpenModal("providers")} />
-                            <CampaignClientsSummary clients={toClientSummaries(clientes)} campaignName={campana.nombre} onViewAll={() => setOpenModal("clients")} />
+                            <CampaignClientsSummary clients={toClientSummaries(clientes)} campaignName={campana.nombre} onViewAll={() => navigate(`/campaigns/${campaniaId}/clients`)} />
                         </div>
                     </div>
                     <div className="campaign-side-column">
-                        <CampaignCertificationsList certifications={toCertificationItems(certificados)} />
+                        <CampaignCertificationsList certifications={toCertificationItems(certificados)} onManage={() => navigate(`/campaigns/${campaniaId}/certifications`)} />
                         <CampaignBrandBanner />
                     </div>
                 </div>
                 <CampaignManagementProvidersModal open={openModal === "providers"} onOpenChange={(open) => setOpenModal(open ? "providers" : null)} campaniaId={campaniaId} />
-                <CampaignManagementClientsModal open={openModal === "clients"} onOpenChange={(open) => setOpenModal(open ? "clients" : null)} campaniaId={campaniaId} />
             </div>
         </div>
     );

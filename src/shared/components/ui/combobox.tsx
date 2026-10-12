@@ -37,30 +37,26 @@ function Combobox({
     className = "",
     disabled = false
 }: ComboboxProps) {
-    const [searchQuery, setSearchQuery] = React.useState("");
+    // El texto del campo se deriva en vez de sincronizarse con un efecto: si el usuario está escribiendo se muestra
+    // lo escrito (solo mientras el valor seleccionado sea el mismo con el que escribió); si no, la etiqueta del valor.
+    const [typed, setTyped] = React.useState<{ text: string; forValue: string } | null>(null);
 
-    React.useEffect(() => {
-        if (value) {
-            const selected = options.find(opt => opt.value === value);
-            if (selected && selected.label !== searchQuery) {
-                setSearchQuery(selected.label);
-            }
-        } else if (searchQuery && !options.some(opt => opt.label === searchQuery)) {
-            // Keep searchQuery if it's being typed, unless value was cleared externally
-        }
-    }, [value, options]); // intentionally omitted searchQuery to prevent loops
+    const selectedLabel = options.find(opt => opt.value === value)?.label ?? "";
+    const searchQuery = typed && typed.forValue === value ? typed.text : selectedLabel;
+    const isTyping = typed !== null && typed.forValue === value;
 
     const filteredOptions = React.useMemo(() => {
-        if (!searchQuery) return options;
+        // Sin escribir se ven todas las opciones, aunque ya haya una seleccionada
+        if (!isTyping || !searchQuery) return options;
         const lowerQuery = searchQuery.toLowerCase();
         return options.filter(opt => opt.label.toLowerCase().includes(lowerQuery));
-    }, [options, searchQuery]);
+    }, [options, searchQuery, isTyping]);
 
     const handleInputValueChange = (newVal: string) => {
         // Al elegir una opción el primitivo intenta poner su ID en el campo (no sabe cuál es el texto).
-        // Se ignora: la etiqueta la pone el efecto de arriba cuando el padre deja ese valor seleccionado.
+        // Se ignora: la etiqueta sale de la opción seleccionada.
         if (options.some(opt => opt.value === newVal)) return;
-        setSearchQuery(newVal);
+        setTyped({ text: newVal, forValue: value });
     };
 
     return (
@@ -68,10 +64,9 @@ function Combobox({
             value={value}
             onValueChange={(val: string | null) => {
                 onChange(val ?? "");
-                // El texto del campo se limpia aquí y el efecto de arriba pone la etiqueta solo si el padre dejó
-                // el valor seleccionado: un selector de "agregar y limpiar" (valor siempre vacío) no se queda
-                // mostrando la opción que ya agregó.
-                setSearchQuery("");
+                // Se descarta lo escrito: el campo pasa a mostrar la etiqueta del valor que deje el padre. Un
+                // selector de "agregar y limpiar" (valor siempre vacío) no se queda mostrando la opción agregada.
+                setTyped(null);
             }}
             inputValue={searchQuery}
             onInputValueChange={handleInputValueChange}

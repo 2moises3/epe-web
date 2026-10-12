@@ -7,6 +7,13 @@ const STATUS_TONES: Record<string, StatusTone> = {
     planificado: "brand",
     aprobado: "brand",
     activo: "brand",
+    registrado: "brand",
+    // Certificaciones de campaña: trámite y pago
+    "en trámite": "warning",
+    observado: "highlight",
+    certificado: "brand",
+    parcial: "warning",
+    pagado: "brand",
     vigente: "brand",
     "por aprobar": "highlight",
     "por vencer": "highlight",

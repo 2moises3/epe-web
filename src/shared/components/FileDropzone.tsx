@@ -1,22 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { FileText, Upload, Eye, X, Pencil, Image as ImageIcon } from "lucide-react";
-import AppModal from "@/shared/components/AppModal";
+import FilePreviewModal from "@/shared/components/FilePreviewModal";
+import { formatFileSize, isImage, type FileSource, type StoredFile } from "@/shared/utils/fileSource";
 import Hint from "@/shared/components/Hint";
 import { cn } from "@/lib/utils";
 import { BRAND_ACTIVE_SURFACE } from "@/shared/styles/brandGradients";
-function formatFileSize(bytes: number) {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function isPdf(file: File) {
-    return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-}
-
-function isImage(file: File) {
-    return file.type.startsWith("image/");
-}
+export type { StoredFile };
 
 export interface FileDropzoneProps {
     label: string;
@@ -24,7 +13,8 @@ export interface FileDropzoneProps {
     hideLabel?: boolean;
     hint?: string;
     accept?: string;
-    file: File | null;
+    /** Archivo recién elegido o referencia a un archivo ya guardado por el backend. */
+    file: FileSource | null;
     onChange: (file: File | null) => void;
     /** Variante de visualización: "default" (caja vertical centrada) o "horizontal" (barra compacta h-11 alineada con inputs) */
     variant?: "default" | "horizontal";
@@ -66,14 +56,6 @@ export default function FileDropzone({
     const [isDragging, setIsDragging] = useState(false);
     const inputId = `file-dropzone-${label.replace(/\s+/g, "-").toLowerCase()}`;
     const replaceInputRef = useRef<HTMLInputElement>(null);
-
-    // El objeto URL solo tiene sentido mientras dure este archivo; se libera al cambiarlo o desmontar
-    const objectUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-    useEffect(() => {
-        return () => {
-            if (objectUrl) URL.revokeObjectURL(objectUrl);
-        };
-    }, [objectUrl]);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -231,7 +213,7 @@ export default function FileDropzone({
                             </span>
                             <div className="flex min-w-0 flex-1 items-center gap-2">
                                 <span className="truncate text-[13px] font-bold text-ink">{file.name}</span>
-                                <span className="shrink-0 text-[11px] font-medium text-ink-muted">({formatFileSize(file.size)})</span>
+                                {file.size !== undefined && <span className="shrink-0 text-[11px] font-medium text-ink-muted">({formatFileSize(file.size)})</span>}
                             </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-1">{renderActions(true)}</div>
@@ -246,7 +228,7 @@ export default function FileDropzone({
                         </span>
                         <div className="flex min-w-0 flex-1 flex-col">
                             <span className="truncate text-[13.5px] font-bold text-ink">{file.name}</span>
-                            <span className="text-[12px] font-medium text-ink-muted">{formatFileSize(file.size)}</span>
+                            {file.size !== undefined && <span className="text-[12px] font-medium text-ink-muted">{formatFileSize(file.size)}</span>}
                         </div>
                         <div className="flex shrink-0 items-center gap-1">{renderActions(false)}</div>
                     </div>
@@ -269,28 +251,7 @@ export default function FileDropzone({
                 />
             )}
 
-            {file && objectUrl && (
-                <AppModal
-                    open={previewOpen}
-                    onOpenChange={setPreviewOpen}
-                    icon={<Eye size={22} strokeWidth={2} />}
-                    title="Vista Previa"
-                    description={`${file.name} (${formatFileSize(file.size)})`}
-                    className="sm:max-w-190"
-                >
-                    <div className={cn("w-full overflow-hidden rounded-xl border border-border bg-surface-page", !isPdf(file) && !isImage(file) && "flex min-h-[40vh] items-center justify-center p-6")}>
-                        {isPdf(file) ? (
-                            <iframe src={objectUrl} title={file.name} className="h-[70vh] w-full" />
-                        ) : isImage(file) ? (
-                            <div className="flex max-h-[70vh] w-full items-center justify-center bg-muted p-4">
-                                <img src={objectUrl} alt={file.name} className="max-h-full max-w-full rounded shadow-sm" />
-                            </div>
-                        ) : (
-                            <p className="text-[13.5px] font-medium">Vista previa no disponible para este tipo de archivo.</p>
-                        )}
-                    </div>
-                </AppModal>
-            )}
+            <FilePreviewModal open={previewOpen} onOpenChange={setPreviewOpen} file={file} />
         </div>
     );
 }

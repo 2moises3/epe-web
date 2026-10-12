@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Eye, Users, FilePlus, Tractor, Truck, SearchX, ListFilter, Link, TriangleAlert, RotateCw, UserPlus, UserCheck, Pencil } from "lucide-react";
+import { Eye, Users, FilePlus, Tractor, Truck, SearchX, ListFilter, Link, TriangleAlert, RotateCw, UserRoundCheck, Pencil } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import FilterBar, { FilterSearch } from "@/shared/components/FilterBar";
@@ -23,9 +23,7 @@ import PageHeader from "@/shared/layout/PageHeader";
 import CampaignLinkProviderModal from "@/modules/campaigns/components/CampaignLinkProviderModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
 import CampaignExamModal from "@/modules/campaigns/components/CampaignExamModal";
-import CampaignInterviewModal from "@/modules/campaigns/components/CampaignInterviewModal";
 import type { ExamValues } from "@/modules/campaigns/campaignExam";
-import type { InterviewValues } from "@/modules/campaigns/campaignInterview";
 
 import { getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
 import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
@@ -44,7 +42,7 @@ const TYPE_LABEL: Record<TipoProveedorCampania, string> = {
     acopio: "Acopiador",
 };
 
-type SuccessMode = "provider" | "exam" | "interview";
+type SuccessMode = "provider" | "exam";
 /** Relación sobre la que está abierto un modal; se conserva al cerrar para no vaciar el modal durante su animación de salida */
 type RelationModal = { open: boolean; relation: CampaniaProveedor | null };
 const CLOSED: RelationModal = { open: false, relation: null };
@@ -63,14 +61,10 @@ export default function CampaignProvidersPage() {
     const [loadError, setLoadError] = useState<string | null>(isValidCampaign ? null : "La campaña no es válida.");
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
     const [examModal, setExamModal] = useState<RelationModal>(CLOSED);
-    const [interviewModal, setInterviewModal] = useState<RelationModal>(CLOSED);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [successMode, setSuccessMode] = useState<SuccessMode>("provider");
 
-    // TODO(api): no hay servicio para entrevistas ni para subir el archivo del examen; se guardan en memoria
-    // (se pierden al recargar) para que el flujo funcione. Ver campaignInterview.ts y campaignExam.ts.
-
-    const [interviews, setInterviews] = useState<Record<number, InterviewValues>>({});
+    // TODO(api): el archivo del examen aún no tiene servicio de carga; ver campaignExam.ts.
 
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<TableViewMode>("table");
@@ -135,14 +129,6 @@ export default function CampaignProvidersPage() {
         showSuccess("exam");
     };
 
-    const handleSaveInterview = (values: InterviewValues) => {
-        const relation = interviewModal.relation;
-        if (!relation) return;
-        setInterviews((current) => ({ ...current, [relation.cxpId]: values }));
-        setInterviewModal((current) => ({ ...current, open: false }));
-        showSuccess("interview");
-    };
-
     const [editModal, setEditModal] = useState<RelationModal>(CLOSED);
 
     const navigate = useNavigate();
@@ -157,9 +143,7 @@ export default function CampaignProvidersPage() {
             { label: "Registrar examen", icon: <FilePlus size={16} strokeWidth={2.5} />, onClick: () => setExamModal({ open: true, relation: row }) },
             ...(row.tipoProveedor === "productor"
                 ? [
-                    interviews[row.cxpId]
-                        ? { label: "Ver entrevista", icon: <UserCheck size={16} strokeWidth={2.5} />, onClick: () => setInterviewModal({ open: true, relation: row }) }
-                        : { label: "Registrar entrevista", icon: <UserPlus size={16} strokeWidth={2.5} />, onClick: () => setInterviewModal({ open: true, relation: row }) },
+                    { label: "Gestionar entrevistas", icon: <UserRoundCheck size={16} strokeWidth={2.5} />, onClick: () => navigate(`/campaigns/${campaniaId}/providers/${row.cxpId}/interviews`) },
                 ]
                 : []),
         ],
@@ -177,7 +161,7 @@ export default function CampaignProvidersPage() {
                 icon: <TriangleAlert size={28} strokeWidth={2} />,
                 title: "No se pudieron cargar los proveedores",
                 description: loadError,
-                action: isValidCampaign ? <Button variant="outline" onClick={retry}><RotateCw size={18} strokeWidth={2.5} /> Reintentar</Button> : undefined,
+                action: isValidCampaign ? { label: "Reintentar", icon: <RotateCw size={18} strokeWidth={2.5} />, onClick: retry, tone: "secondary" as const } : undefined,
             }
             : {
                 icon: <SearchX size={28} strokeWidth={2} />,
@@ -186,7 +170,7 @@ export default function CampaignProvidersPage() {
                     ? "Ningún proveedor coincide con los filtros aplicados. Prueba ajustándolos."
                     : "Cuando vincules un proveedor a esta campaña aparecerá acá.",
                 action: hasActiveFilters
-                    ? <Button variant="outline" onClick={clearFilters}><ListFilter size={18} strokeWidth={2.5} /> Limpiar filtros</Button>
+                    ? { label: "Limpiar filtros", icon: <ListFilter size={18} strokeWidth={2.5} />, onClick: clearFilters, tone: "secondary" as const }
                     : undefined,
             };
 
@@ -324,13 +308,6 @@ export default function CampaignProvidersPage() {
                 onSave={handleSaveExam}
             />
 
-            <CampaignInterviewModal
-                open={interviewModal.open}
-                onOpenChange={(open) => setInterviewModal((current) => ({ ...current, open }))}
-                providerName={interviewModal.relation ? providerName(interviewModal.relation) : undefined}
-                initialValues={interviewModal.relation ? interviews[interviewModal.relation.cxpId] : undefined}
-                onSave={handleSaveInterview}
-            />
             <CampaignSuccessModal
                 open={isSuccessModalOpen}
                 onOpenChange={setIsSuccessModalOpen}

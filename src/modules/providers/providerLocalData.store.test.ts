@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
     addCertificado,
     addFinca,
+    removeFinca,
+    updateFinca,
     getProviderLocalData,
     resetProviderLocalData,
     saveDatosAgronomicos,
@@ -58,6 +60,24 @@ describe("providerLocalData.store", () => {
     it("no mezcla datos entre proveedores", () => {
         saveDatosAgronomicos(1, agronomicos("Plan 1"));
         expect(getProviderLocalData().agronomicos[2]).toBeUndefined();
+    });
+
+    it("edita y quita fincas por posición, sin tocar las demás ni otros proveedores", () => {
+        addFinca(1, finca("Fundo A"));
+        addFinca(1, finca("Fundo B"));
+        addFinca(2, finca("Fundo C"));
+
+        updateFinca(1, 0, { ...finca("Fundo A2"), haTotal: 99 });
+        expect(getProviderLocalData().fincas[1].map((item) => item.nombre)).toEqual(["Fundo A2", "Fundo B"]);
+        expect(getProviderLocalData().fincas[1][0].haTotal).toBe(99);
+
+        removeFinca(1, 0);
+        expect(getProviderLocalData().fincas[1].map((item) => item.nombre)).toEqual(["Fundo B"]);
+        expect(getProviderLocalData().fincas[2]).toHaveLength(1);
+
+        removeFinca(1, 7);
+        updateFinca(1, -1, finca("Nada"));
+        expect(getProviderLocalData().fincas[1]).toHaveLength(1);
     });
 
     it("registra certificados con el más reciente primero y conserva el documento al editar sin uno nuevo", () => {

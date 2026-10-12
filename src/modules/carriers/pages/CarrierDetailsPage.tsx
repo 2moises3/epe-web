@@ -15,6 +15,9 @@ import CarrierDriverModal from "@/modules/carriers/components/CarrierDriverModal
 import CarrierSuccessModal, { type CarrierSuccessMode } from "@/modules/carriers/components/CarrierSuccessModal";
 import { createDriver, createVehicle, deleteDriver, deleteVehicle, getCarrier, updateDriver, updateVehicle } from "@/modules/carriers/api/carrier.api";
 import type { Carrier, Driver, Vehicle } from "@/modules/carriers/carriers.data";
+import { useCarrierExtras } from "@/modules/carriers/carrierExtras.store";
+import { toCarrierProfile } from "@/modules/carriers/carrierProfile.utils";
+import { toDriverInput, toVehicleInput, type DriverFormValues, type VehicleFormValues } from "@/modules/carriers/carrierRecords.utils";
 
 type DetailTab = "vehiculos" | "choferes";
 const normalize = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -75,6 +78,8 @@ function CarrierDetailsView({ carrier, onRefresh }: { carrier: Carrier; onRefres
     const [vehicleModal, setVehicleModal] = useState<{ open: boolean; editing: Vehicle | null }>({ open: false, editing: null });
     const [driverModal, setDriverModal] = useState<{ open: boolean; editing: Driver | null }>({ open: false, editing: null });
     const [success, setSuccess] = useState<{ open: boolean; mode: CarrierSuccessMode }>({ open: false, mode: "vehicle-created" });
+    const extras = useCarrierExtras();
+    const profile = useMemo(() => toCarrierProfile(carrier, extras[carrier.id]), [carrier, extras]);
     const carrierVehicles = carrier.vehiculos;
     const carrierDrivers = carrier.choferes;
     const showSuccess = (mode: CarrierSuccessMode) => setSuccess({ open: true, mode });
@@ -97,35 +102,23 @@ function CarrierDetailsView({ carrier, onRefresh }: { carrier: Carrier; onRefres
     const clearFilters = () => setSearch("");
     const changeTab = (value: string) => { setActiveTab(value as DetailTab); clearFilters(); };
 
-    async function saveVehicle(values: { placa: string; ancho: string; altura: string; profundidad: string; pesoNeto: string; pesoBruto: string }) {
-        try {
-            const input = {
-                placa: values.placa,
-                ancho: Number(values.ancho), altura: Number(values.altura), profundidad: Number(values.profundidad),
-                pesoNeto: Number(values.pesoNeto), pesoBruto: Number(values.pesoBruto),
-            };
-            if (vehicleModal.editing) await updateVehicle(vehicleModal.editing.id, carrier.id, input);
-            else await createVehicle(carrier.id, input);
-            await onRefresh();
-            setVehicleModal({ open: false, editing: null });
-            showSuccess(vehicleModal.editing ? "vehicle-updated" : "vehicle-created");
-        } catch {
-            setError("No se pudo guardar el vehículo. Revisa placa, medidas y pesos.");
-            throw new Error("No se pudo guardar el vehículo.");
-        }
+    // Si el backend rechaza el guardado, el error llega al modal y se muestra bajo cada campo
+    async function saveVehicle(values: VehicleFormValues) {
+        const input = toVehicleInput(values);
+        if (vehicleModal.editing) await updateVehicle(vehicleModal.editing.id, carrier.id, input);
+        else await createVehicle(carrier.id, input);
+        await onRefresh();
+        setVehicleModal({ open: false, editing: null });
+        showSuccess(vehicleModal.editing ? "vehicle-updated" : "vehicle-created");
     }
 
-    async function saveDriver(values: { nombre: string; telefono: string; correo: string }) {
-        try {
-            if (driverModal.editing) await updateDriver(driverModal.editing.id, values);
-            else await createDriver(carrier.id, values);
-            await onRefresh();
-            setDriverModal({ open: false, editing: null });
-            showSuccess(driverModal.editing ? "driver-updated" : "driver-created");
-        } catch {
-            setError("No se pudo guardar el chofer. Revisa sus datos y la empresa asociada.");
-            throw new Error("No se pudo guardar el chofer.");
-        }
+    async function saveDriver(values: DriverFormValues) {
+        const input = toDriverInput(values);
+        if (driverModal.editing) await updateDriver(driverModal.editing.id, input);
+        else await createDriver(carrier.id, input);
+        await onRefresh();
+        setDriverModal({ open: false, editing: null });
+        showSuccess(driverModal.editing ? "driver-updated" : "driver-created");
     }
 
     async function removeVehicle(id: number) {
@@ -142,7 +135,7 @@ function CarrierDetailsView({ carrier, onRefresh }: { carrier: Carrier; onRefres
             <PageHeader
                 icon={<Building2 size={24} strokeWidth={2.5} />}
                 title="Detalle de Transporte"
-                description="Datos de la empresa, sus vehículos y sus choferes."
+                description="Datos del transportista, sus vehículos y sus choferes."
                 action={isVehicles ? (
                     <Button size="xl" onClick={() => setVehicleModal({ open: true, editing: null })}><Truck size={20} strokeWidth={2.5} /> Registrar vehículo</Button>
                 ) : (
@@ -156,7 +149,7 @@ function CarrierDetailsView({ carrier, onRefresh }: { carrier: Carrier; onRefres
                 </Alert>
             )}
             <div className="mb-8 flex flex-col gap-6">
-                <CarrierInfoCard carrier={carrier} vehicleCount={carrierVehicles.length} driverCount={carrierDrivers.length} />
+                <CarrierInfoCard carrier={profile} vehicleCount={carrierVehicles.length} driverCount={carrierDrivers.length} />
                 <SegmentedTabs tabs={tabs} value={activeTab} onChange={changeTab} />
             </div>
             <FilterBar onClear={clearFilters} canClear={hasActiveFilters} className="mb-8">
@@ -173,7 +166,8 @@ function CarrierDetailsView({ carrier, onRefresh }: { carrier: Carrier; onRefres
                 onSuccess={saveVehicle} mode={vehicleModal.editing ? "edit" : "create"}
                 initialValues={vehicleModal.editing ? {
                     placa: vehicleModal.editing.placa, ancho: String(vehicleModal.editing.ancho), altura: String(vehicleModal.editing.altura),
-                    profundidad: String(vehicleModal.editing.profundidad), pesoNeto: String(vehicleModal.editing.pesoNeto), pesoBruto: String(vehicleModal.editing.pesoBruto),
+                    profundidad: String(vehicleModal.editing.profundidad), volumen: String(vehicleModal.editing.volumen),
+                    pesoNeto: String(vehicleModal.editing.pesoNeto), pesoBruto: String(vehicleModal.editing.pesoBruto),
                 } : undefined} />
             <CarrierDriverModal open={driverModal.open} onOpenChange={(open) => setDriverModal((current) => ({ ...current, open }))} carrier={carrier}
                 onSuccess={saveDriver} mode={driverModal.editing ? "edit" : "create"}
