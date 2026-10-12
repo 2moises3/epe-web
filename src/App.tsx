@@ -26,7 +26,21 @@ import BillingPage from '@/modules/billing/pages/BillingPage'
 import PurchaseSettlementPage from '@/modules/purchase-settlement/pages/PurchaseSettlementPage'
 import DashboardLayout from '@/shared/layout/DashboardLayout'
 import OfflinePage from '@/shared/components/OfflinePage'
+import WelcomeSplash from '@/shared/components/WelcomeSplash'
+import { unlockSplashAudio } from '@/shared/components/welcomeSplashSound'
+import { navigationItems } from '@/shared/layout/navigationItems'
+import { useImagesReady } from '@/shared/hooks/useImagesReady'
+import HeroModulesImg from '@/assets/hero_modules.webp'
+import HeroPhraseImg from '@/assets/hero_phrase.webp'
 import { clearSession, getSession, saveSession } from '@/shared/offline/session'
+
+// Imágenes de la portada de módulos: se precargan durante la bienvenida para que aparezca ya pintada
+const MODULES_IMAGES = [
+  HeroModulesImg,
+  HeroPhraseImg,
+  '/image/fondo_modules.webp',
+  ...navigationItems.map((item) => item.image),
+]
 
 // Persistent layout wrapper for authenticated routes
 const ProtectedLayout = ({ isAuthenticated, onLogout }: { isAuthenticated: boolean, onLogout: () => void }) => {
@@ -44,6 +58,9 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
   const [justReconnected, setJustReconnected] = useState(false)
+  // La bienvenida solo se muestra tras un inicio de sesión real, no al recargar con la sesión guardada
+  const [showWelcome, setShowWelcome] = useState(false)
+  const modulesImagesReady = useImagesReady(MODULES_IMAGES, showWelcome)
 
   useEffect(() => {
     void getSession().then((session) => setIsAuthenticated(Boolean(session?.authenticated))).catch(() => setIsAuthenticated(false))
@@ -65,6 +82,9 @@ function App() {
   }, [])
 
   const handleLogin = () => {
+    // Se llama desde el clic de "Confirmar": es el gesto que el navegador exige para dejar sonar la intro
+    unlockSplashAudio()
+    setShowWelcome(true)
     setIsAuthenticated(true)
     void saveSession({ authenticated: true, savedAt: Date.now() })
   }
@@ -113,6 +133,7 @@ function App() {
         <Route path="*" element={<Navigate to="/modules" />} />
       </Routes>
       {justReconnected && <div className="online-transition" role="status">Conexión restaurada</div>}
+      {showWelcome && <WelcomeSplash ready={modulesImagesReady} onFinished={() => setShowWelcome(false)} />}
     </BrowserRouter>
   )
 }
