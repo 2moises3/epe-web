@@ -6,11 +6,24 @@ import UsersModulesPage from './modules/users/pages/UsersModulesPage'
 import CampaignsPage from './modules/campaigns/pages/CampaignsPage'
 import CampaignDetailsPage from './modules/campaigns/pages/CampaignDetailsPage'
 import CampaignProvidersPage from './modules/campaigns/pages/CampaignProvidersPage'
+import CampaignClientsPage from '@/modules/campaigns/pages/CampaignClientsPage'
+import CampaignClientContractsPage from '@/modules/campaigns/pages/CampaignClientContractsPage'
+import CampaignContractDeliveriesPage from '@/modules/campaigns/pages/CampaignContractDeliveriesPage'
+import CampaignProviderDetailsPage from './modules/campaigns/pages/CampaignProviderDetailsPage'
+import CampaignInterviewsPage from './modules/campaigns/pages/CampaignInterviewsPage'
+import CampaignCertificationsPage from './modules/campaigns/pages/CampaignCertificationsPage'
 import CampaignCarrierPaymentsPage from './modules/campaigns/pages/CampaignCarrierPaymentsPage'
 import ProvidersPage from './modules/providers/pages/ProvidersPage'
+import ProviderFincasPage from './modules/providers/pages/ProviderFincasPage'
+import ProviderDetailsPage from './modules/providers/pages/ProviderDetailsPage'
+import ProviderCertificadosPage from './modules/providers/pages/ProviderCertificadosPage'
 import CommercialPlanningPage from './modules/commercial-planning/pages/CommercialPlanningPage'
 import CarriersPage from './modules/carriers/pages/CarriersPage'
 import CarrierDetailsPage from './modules/carriers/pages/CarrierDetailsPage'
+import QualityPage from '@/modules/quality/pages/QualityPage'
+import LogisticsPage from '@/modules/logistics/pages/LogisticsPage'
+import BillingPage from '@/modules/billing/pages/BillingPage'
+import PurchaseSettlementPage from '@/modules/purchase-settlement/pages/PurchaseSettlementPage'
 import DashboardLayout from '@/shared/layout/DashboardLayout'
 import OfflinePage from '@/shared/components/OfflinePage'
 import { clearSession, getSession, saveSession } from '@/shared/offline/session'
@@ -76,11 +89,24 @@ function App() {
           <Route path="/campaigns" element={<CampaignsPage />} />
           <Route path="/campaigns/:id" element={<CampaignDetailsPage />} />
           <Route path="/campaigns/:id/providers" element={<CampaignProvidersPage />} />
+          <Route path="/campaigns/:id/clients" element={<CampaignClientsPage />} />
+          <Route path="/campaigns/:id/clients/:clientLinkId/contracts" element={<CampaignClientContractsPage />} />
+          <Route path="/campaigns/:id/clients/:clientLinkId/contracts/:contractId/deliveries" element={<CampaignContractDeliveriesPage />} />
+          <Route path="/campaigns/:id/providers/:cxpId" element={<CampaignProviderDetailsPage />} />
+          <Route path="/campaigns/:id/providers/:cxpId/interviews" element={<CampaignInterviewsPage />} />
+          <Route path="/campaigns/:id/certifications" element={<CampaignCertificationsPage />} />
           <Route path="/campaigns/:id/carrier-payments" element={<CampaignCarrierPaymentsPage />} />
           <Route path="/proveedores" element={<ProvidersPage />} />
+          <Route path="/proveedores/:id" element={<ProviderDetailsPage />} />
+          <Route path="/proveedores/:id/fincas" element={<ProviderFincasPage />} />
+          <Route path="/proveedores/:id/certificados" element={<ProviderCertificadosPage />} />
           <Route path="/planificacion-comercial" element={<CommercialPlanningPage />} />
           <Route path="/transportistas" element={<CarriersPage />} />
           <Route path="/transportistas/:id" element={<CarrierDetailsPage />} />
+          <Route path="/calidad" element={<QualityPage />} />
+          <Route path="/logistica-despacho" element={<LogisticsPage />} />
+          <Route path="/facturacion-cobros" element={<BillingPage />} />
+          <Route path="/liquidacion-compra" element={<PurchaseSettlementPage />} />
         </Route>
         
         <Route path="/" element={<Navigate to="/modules" />} />

@@ -12,6 +12,8 @@ import { Spinner } from "@/shared/components/ui/spinner";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import { createCarrier, deleteCarrier, getCarriers, updateCarrier, createVehicle, createDriver } from "@/modules/carriers/api/carrier.api";
 import type { Carrier } from "@/modules/carriers/carriers.data";
+import { removeCarrierExtras, setCarrierExtras, useCarrierExtras } from "@/modules/carriers/carrierExtras.store";
+import { splitCarrierValues, toCarrierProfile, type CarrierFormValues } from "@/modules/carriers/carrierProfile.utils";
 
 export default function CarriersPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -22,13 +24,16 @@ export default function CarriersPage() {
     const [success, setSuccess] = useState<{ open: boolean; mode: CarrierSuccessMode }>({ open: false, mode: "carrier-created" });
     const [search, setSearch] = useState("");
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const extras = useCarrierExtras();
+    // La API devuelve la empresa; el tipo, MTC, CGN y ubicación viven aparte hasta que el backend los modele
+    const profiles = useMemo(() => carriers.map((carrier) => toCarrierProfile(carrier, extras[carrier.id])), [carriers, extras]);
 
     const loadCarriers = useCallback(async () => {
         try {
             setError(null);
             setCarriers(await getCarriers());
         } catch {
-            setError("No se pudieron cargar las empresas desde la API del backend.");
+            setError("No se pudieron cargar los transportistas desde la API del backend.");
         } finally {
             setIsLoading(false);
         }
@@ -42,41 +47,38 @@ export default function CarriersPage() {
 
     const filteredData = useMemo(() => {
         const searchLower = search.trim().toLowerCase();
-        return carriers.filter((item) => item.nombre.toLowerCase().includes(searchLower));
-    }, [carriers, search]);
+        return profiles.filter((item) => [item.nombre, item.ruc, item.mtc, item.documento].some((field) => field.toLowerCase().includes(searchLower)));
+    }, [profiles, search]);
 
-    const selectedCarriers = useMemo(() => carriers.filter((item) => selectedIds.has(item.id)), [carriers, selectedIds]);
+    const selectedCarriers = useMemo(() => profiles.filter((item) => selectedIds.has(item.id)), [profiles, selectedIds]);
 
     const showSuccess = (mode: CarrierSuccessMode) => setSuccess({ open: true, mode });
 
-    const handleCreateCarrier = async (values: { nombre: string; numero: string; correo: string; ruc: string }) => {
-        try {
-            await createCarrier(values);
-            await loadCarriers();
-            setIsCreateModalOpen(false);
-            showSuccess("carrier-created");
-        } catch {
-            setError("No se pudo guardar la empresa. Verifica RUC, correo y conexión con el backend.");
-        }
+    const handleCreateCarrier = async (values: CarrierFormValues) => {
+        // Si el backend rechaza el alta, el error llega al modal y se muestra bajo cada campo
+        const { input, extras: carrierExtras } = splitCarrierValues(values);
+        const created = await createCarrier(input);
+        setCarrierExtras(created.id, carrierExtras);
+        await loadCarriers();
+        setIsCreateModalOpen(false);
+        showSuccess("carrier-created");
     };
 
-    const handleUpdateCarrier = async (id: number, values: { nombre: string; numero: string; correo: string; ruc: string }) => {
-        try {
-            await updateCarrier(id, values);
-            await loadCarriers();
-        } catch {
-            setError("No se pudo actualizar la empresa.");
-            throw new Error("No se pudo actualizar la empresa.");
-        }
+    const handleUpdateCarrier = async (id: number, values: CarrierFormValues) => {
+        const { input, extras: carrierExtras } = splitCarrierValues(values);
+        await updateCarrier(id, input);
+        setCarrierExtras(id, carrierExtras);
+        await loadCarriers();
     };
 
     const handleDeleteCarrier = async (id: number) => {
         try {
             await deleteCarrier(id);
+            removeCarrierExtras(id);
             await loadCarriers();
             setSelectedIds((current) => { const next = new Set(current); next.delete(id); return next; });
         } catch {
-            setError("El backend no pudo eliminar la empresa; puede tener vehículos o choferes asociados.");
+            setError("El backend no pudo eliminar al transportista; puede tener vehículos o choferes asociados.");
         }
     };
 
@@ -103,7 +105,7 @@ export default function CarriersPage() {
             <PageHeader
                 icon={<Truck size={24} strokeWidth={2.5} />}
                 title="Gestión de Transporte"
-                description={`${carriers.length} empresas de transporte registradas${selectedIds.size > 0 ? ` · ${selectedIds.size} seleccionados` : ""}`}
+                description={`${carriers.length} ${carriers.length === 1 ? "transportista registrado" : "transportistas registrados"}${selectedIds.size > 0 ? ` · ${selectedIds.size} seleccionados` : ""}`}
                 action={
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 [&>button]:w-full sm:[&>button]:w-auto">
                         <Button
@@ -121,7 +123,7 @@ export default function CarriersPage() {
                             size="xl"
                             onClick={() => setIsCreateModalOpen(true)}
                         >
-                            <Building2 size={20} strokeWidth={2.5} /> Agregar empresa de transporte
+                            <Building2 size={20} strokeWidth={2.5} /> Registrar transportista
                         </Button>
                     </div>
                 }
@@ -134,9 +136,9 @@ export default function CarriersPage() {
                 </Alert>
             )}
             {isLoading ? (
-                <div role="status" className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-white p-10 text-ink-muted">
+                <div role="status" className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-10 text-ink-muted">
                     <Spinner className="size-7 text-brand" />
-                    <p className="text-[14px] font-medium">Cargando empresas de transporte...</p>
+                    <p className="text-[14px] font-medium">Cargando transportistas...</p>
                 </div>
             ) : <>
             <CarriersFilters
@@ -155,8 +157,8 @@ export default function CarriersPage() {
                 onToggleAll={toggleAll}
                 onDelete={handleDeleteCarrier}
                 onUpdateCarrier={handleUpdateCarrier}
-                onCreateVehicle={async (carrierId, values) => { try { await createVehicle(carrierId, values); await loadCarriers(); } catch { setError("No se pudo registrar el vehículo."); throw new Error("No se pudo registrar el vehículo."); } }}
-                onCreateDriver={async (carrierId, values) => { try { await createDriver(carrierId, values); await loadCarriers(); } catch { setError("No se pudo registrar el chofer."); throw new Error("No se pudo registrar el chofer."); } }}
+                onCreateVehicle={async (carrierId, values) => { await createVehicle(carrierId, values); await loadCarriers(); }}
+                onCreateDriver={async (carrierId, values) => { await createDriver(carrierId, values); await loadCarriers(); }}
             />
             </>}
 

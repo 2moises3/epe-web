@@ -7,10 +7,13 @@ const EMPTY_PROVIDER: ProveedorFormValues = {
   tipoDocumento: "",
   nmrDocumento: "",
   identidadDocUrl: "",
+  identidadDocArchivo: null,
   zona: "",
   telefono: "",
   email: "",
   codigoLugarProduccion: "",
+  estadoSanidadAgraria: "",
+  frutas: [],
 };
 
 export function createProviderFormSession(provider: ProveedorDto | null = null) {

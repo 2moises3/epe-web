@@ -13,8 +13,8 @@ interface CarrierSuccessModalProps {
 }
 
 const COPY: Record<CarrierSuccessMode, { title: string; description: string }> = {
-    "carrier-created": { title: "Empresa Registrada", description: "La empresa de transporte ya aparece en la lista." },
-    "carrier-updated": { title: "Cambios Guardados", description: "Los datos de la empresa se actualizaron correctamente." },
+    "carrier-created": { title: "Transportista Registrado", description: "El transportista ya aparece en la lista." },
+    "carrier-updated": { title: "Cambios Guardados", description: "Los datos del transportista se actualizaron correctamente." },
     "vehicle-created": { title: "Vehículo Registrado", description: "El vehículo se agregó correctamente a la empresa." },
     "vehicle-updated": { title: "Cambios Guardados", description: "Los datos del vehículo se actualizaron correctamente." },
     "driver-created": { title: "Chofer Registrado", description: "El chofer se agregó correctamente a la empresa." },

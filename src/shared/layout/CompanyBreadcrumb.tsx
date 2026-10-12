@@ -84,7 +84,7 @@ export default function CompanyBreadcrumb() {
                 layout={!reduceMotion}
                 transition={{ layout: reduceMotion ? { duration: 0 } : LAYOUT_TRANSITION }}
                 style={{ borderRadius: 8 }}
-                className="relative max-w-full flex-nowrap gap-0 overflow-hidden border border-slate-200/70 bg-white px-4 py-2.5 text-[13px] font-semibold"
+                className="relative max-w-full flex-nowrap gap-0 overflow-hidden border border-border bg-card px-4 py-2.5 text-[13px] font-semibold"
             >
                 <MotionBreadcrumbItem
                     layout={reduceMotion ? false : "position"}
@@ -94,7 +94,7 @@ export default function CompanyBreadcrumb() {
                     <BreadcrumbLink
                         render={<Link to="/modules" />}
                         aria-label="Ir al inicio"
-                        className="group inline-flex size-6 items-center justify-center rounded-md text-ink-muted outline-none transition-colors duration-200 hover:bg-slate-50 hover:text-brand focus-visible:text-brand focus-visible:ring-2 focus-visible:ring-brand/30 motion-reduce:transition-none"
+                        className="group inline-flex size-6 items-center justify-center rounded-md text-ink-muted outline-none transition-colors duration-200 hover:bg-muted hover:text-brand focus-visible:text-brand focus-visible:ring-2 focus-visible:ring-brand/30 motion-reduce:transition-none"
                     >
                         <Home
                             size={17}

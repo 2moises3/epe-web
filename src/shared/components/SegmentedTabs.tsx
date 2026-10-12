@@ -22,7 +22,7 @@ const TRACK_STYLE: CSSProperties = {
     ...GRADIENT_BORDER_CLIP,
     backgroundColor: "var(--background)",
     backgroundImage:
-        "linear-gradient(var(--background), var(--background)), linear-gradient(180deg, color-mix(in oklab, var(--border), white 70%), color-mix(in oklab, var(--border), var(--ink) 12%))",
+        "linear-gradient(var(--background), var(--background)), linear-gradient(180deg, color-mix(in oklab, var(--border), var(--background) 70%), color-mix(in oklab, var(--border), var(--ink) 12%))",
     boxShadow: "0 8px 28px -12px rgb(0 0 0 / 0.12), 0 1px 2px rgb(0 0 0 / 0.04)",
 };
 
@@ -32,6 +32,8 @@ interface SegmentedTabsProps {
     value: string;
     onChange: (value: string) => void;
     className?: string;
+    /** Para controles de formulario con solo dos opciones, mantener el texto visible en pantallas pequeñas. */
+    showLabelsOnMobile?: boolean;
 }
 
 /**
@@ -39,7 +41,7 @@ interface SegmentedTabsProps {
  * Nació del selector de estado de Campañas, pero no está atado a "estados" — sirve para
  * cualquier set corto de opciones excluyentes (vistas, tipos, periodos, etc.).
  */
-export default function SegmentedTabs({ tabs, value, onChange, className }: SegmentedTabsProps) {
+export default function SegmentedTabs({ tabs, value, onChange, className, showLabelsOnMobile = false }: SegmentedTabsProps) {
     const activeIndex = Math.max(0, tabs.findIndex((tab) => tab.id === value));
 
     return (
@@ -80,7 +82,7 @@ export default function SegmentedTabs({ tabs, value, onChange, className }: Segm
                             <Icon size={17} strokeWidth={2.5} />
                         </span>
                         {/* En móvil el ícono basta; el texto y el contador entran desde sm para no truncarse */}
-                        <span className="hidden sm:inline truncate">{tab.label}</span>
+                        <span className={cn("truncate", !showLabelsOnMobile && "hidden sm:inline")}>{tab.label}</span>
                         {typeof tab.count === "number" && (
                             <span
                                 className={cn(

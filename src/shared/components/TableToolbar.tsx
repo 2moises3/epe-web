@@ -61,18 +61,18 @@ export function TableExportMenu({ onExportExcel, onExportPdf }: TableExportMenuP
         <DropdownMenu>
             <DropdownMenuTrigger
                 render={
-                    <button className="inline-flex h-14 items-center gap-2 rounded-xl px-4 border border-border bg-white text-ink-body text-[13px] font-semibold hover:bg-muted hover:text-ink shadow-sm transition-colors active:scale-95" />
+                    <button className="inline-flex h-14 items-center gap-2 rounded-xl px-4 border border-border bg-card text-ink-body text-[13px] font-semibold hover:bg-muted hover:text-ink shadow-sm transition-colors active:scale-95" />
                 }
             >
                 <Download size={16} strokeWidth={2.5} className="text-ink-muted" />
                 Exportar
                 <ChevronDown size={14} strokeWidth={3} className="text-ink-muted/50" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={8} className="w-44 rounded-xl shadow-xl border-border/50 bg-white p-1.5">
-                <DropdownMenuItem onClick={onExportExcel} className="gap-2.5 px-3 py-2.5 text-[13px] font-medium text-ink-body rounded-lg cursor-pointer transition-colors hover:text-brand! hover:bg-brand-surface focus:text-brand! focus:bg-brand-surface">
+            <DropdownMenuContent align="end" sideOffset={8} className="w-44 rounded-xl shadow-xl border-border/50 bg-popover p-1.5">
+                <DropdownMenuItem onClick={onExportExcel} className="gap-2.5 px-3 py-2.5 text-[13px] font-medium text-ink-body rounded-lg cursor-pointer transition-colors">
                     Exportar a Excel
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onExportPdf} className="gap-2.5 px-3 py-2.5 text-[13px] font-medium text-ink-body rounded-lg cursor-pointer transition-colors hover:text-brand! hover:bg-brand-surface focus:text-brand! focus:bg-brand-surface">
+                <DropdownMenuItem onClick={onExportPdf} className="gap-2.5 px-3 py-2.5 text-[13px] font-medium text-ink-body rounded-lg cursor-pointer transition-colors">
                     Exportar a PDF
                 </DropdownMenuItem>
             </DropdownMenuContent>
@@ -95,7 +95,7 @@ export function TableViewToggle({ value, onChange }: TableViewToggleProps) {
                 onClick={() => onChange("table")}
                 aria-label="Vista de tabla"
                 aria-pressed={value === "table"}
-                className={cn("flex h-full w-11 items-center justify-center rounded-lg transition-colors", value === "table" ? "bg-white shadow-sm text-ink font-semibold" : "text-ink-muted hover:text-ink")}
+                className={cn("flex h-full w-11 items-center justify-center rounded-lg transition-colors", value === "table" ? "bg-card shadow-sm text-ink font-semibold dark:bg-brand-surface dark:text-brand" : "text-ink-muted hover:text-ink")}
             >
                 <List size={18} strokeWidth={2.5} />
             </button>
@@ -103,7 +103,7 @@ export function TableViewToggle({ value, onChange }: TableViewToggleProps) {
                 onClick={() => onChange("grid")}
                 aria-label="Vista de grilla"
                 aria-pressed={value === "grid"}
-                className={cn("flex h-full w-11 items-center justify-center rounded-lg transition-colors", value === "grid" ? "bg-white shadow-sm text-ink font-semibold" : "text-ink-muted hover:text-ink")}
+                className={cn("flex h-full w-11 items-center justify-center rounded-lg transition-colors", value === "grid" ? "bg-card shadow-sm text-ink font-semibold dark:bg-brand-surface dark:text-brand" : "text-ink-muted hover:text-ink")}
             >
                 <LayoutGrid size={18} strokeWidth={2.5} />
             </button>

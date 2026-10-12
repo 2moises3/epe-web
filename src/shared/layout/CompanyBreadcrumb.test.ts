@@ -13,6 +13,14 @@ describe("getBreadcrumbLevels", () => {
         ]);
     });
 
+    it("names the interview management view without adding a fictitious level", () => {
+        expect(getBreadcrumbLevels("/campaigns/12/providers/5/interviews")).toEqual([
+            { label: "Campañas", href: "/campaigns" },
+            { label: "Proveedores", href: "/campaigns/12/providers" },
+            { label: "Entrevistas" },
+        ]);
+    });
+
     it("builds detail hierarchy for other modules", () => {
         expect(getBreadcrumbLevels("/transportistas/8")).toEqual([
             { label: "Transporte", href: "/transportistas" },
@@ -20,7 +28,68 @@ describe("getBreadcrumbLevels", () => {
         ]);
     });
 
+    it("names the fincas management view of a provider", () => {
+        expect(getBreadcrumbLevels("/proveedores/3/fincas")).toEqual([
+            { label: "Proveedores", href: "/proveedores" },
+            { label: "Fincas" },
+        ]);
+    });
+
+    it("names the certifications management view of a campaign", () => {
+        expect(getBreadcrumbLevels("/campaigns/3/certifications")).toEqual([
+            { label: "Campañas", href: "/campaigns" },
+            { label: "Certificaciones" },
+        ]);
+    });
+
+    it("names the clients management view of a campaign", () => {
+        expect(getBreadcrumbLevels("/campaigns/3/clients")).toEqual([
+            { label: "Campañas", href: "/campaigns" },
+            { label: "Clientes" },
+        ]);
+    });
+
+    it("names the contracts view nested under a campaign client", () => {
+        expect(getBreadcrumbLevels("/campaigns/3/clients/8/contracts")).toEqual([
+            { label: "Campañas", href: "/campaigns" },
+            { label: "Clientes", href: "/campaigns/3/clients" },
+            { label: "Contratos" },
+        ]);
+    });
+
+    it("names deliveries below the selected contract", () => {
+        expect(getBreadcrumbLevels("/campaigns/3/clients/8/contracts/2/deliveries")).toEqual([
+            { label: "Campañas", href: "/campaigns" },
+            { label: "Clientes", href: "/campaigns/3/clients" },
+            { label: "Contratos", href: "/campaigns/3/clients/8/contracts" },
+            { label: "Entregas" },
+        ]);
+    });
+
+    it("names the detail view of a provider", () => {
+        expect(getBreadcrumbLevels("/proveedores/3")).toEqual([
+            { label: "Proveedores", href: "/proveedores" },
+            { label: "Detalle" },
+        ]);
+    });
+
+    it("names the certificates management view of a provider", () => {
+        expect(getBreadcrumbLevels("/proveedores/3/certificados")).toEqual([
+            { label: "Proveedores", href: "/proveedores" },
+            { label: "Certificados" },
+        ]);
+    });
+
     it("hides itself on non-operational routes", () => {
         expect(getBreadcrumbLevels("/modules")).toEqual([]);
+    });
+
+    it.each([
+        ["/calidad", "Calidad"],
+        ["/logistica-despacho", "Logística y Despacho"],
+        ["/facturacion-cobros", "Facturación y Cobros"],
+        ["/liquidacion-compra", "Liquidación de Compra"],
+    ])("names the module route %s", (route, label) => {
+        expect(getBreadcrumbLevels(route)).toEqual([{ label }]);
     });
 });

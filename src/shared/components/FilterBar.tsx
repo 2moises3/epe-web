@@ -70,7 +70,7 @@ export default function FilterBar({ children, onClear, canClear = true, classNam
 /** Recuadro común de los campos con etiqueta adentro (fecha, select): borde verde cuando tienen valor */
 function fieldShellClass(hasValue: boolean) {
     return cn(
-        "relative flex h-14 min-w-0 rounded-xl border bg-white transition-colors focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/30",
+        "relative flex h-14 min-w-0 rounded-xl border bg-card transition-colors focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/30",
         // En móvil van de a dos por fila y crecen si quedan solos; desde sm vuelven a su ancho propio
         "grow basis-[calc(50%-0.375rem)] sm:grow-0 sm:basis-auto sm:shrink-0",
         hasValue ? "border-brand/60" : "border-border hover:border-brand-border"
@@ -97,7 +97,7 @@ export function FilterSearch({ value, onChange, placeholder = "Buscar..." }: Fil
                 onChange={(event) => onChange(event.target.value)}
                 placeholder={placeholder}
                 className={cn(
-                    "h-14 rounded-xl bg-white pl-11 pr-12 text-[14.5px] shadow-none transition-colors placeholder:text-muted-foreground focus-visible:border-brand focus-visible:ring-1 focus-visible:ring-brand/30",
+                    "h-14 rounded-xl bg-card pl-11 pr-12 text-[14.5px] shadow-none transition-colors placeholder:text-muted-foreground focus-visible:border-brand focus-visible:ring-1 focus-visible:ring-brand/30",
                     value ? "border-brand/60" : "border-border"
                 )}
             />
@@ -198,7 +198,7 @@ export function FilterSelectField({ label, options, value, onChange, allLabel = 
                 >
                     <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl p-1.5">
+                <SelectContent>
                     {items.map((option) => (
                         <SelectItem
                             key={option.value ?? "__all"}

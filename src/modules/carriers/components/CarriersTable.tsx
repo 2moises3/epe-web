@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Pencil, Eye, Truck, UserRound, UserPlus2, Trash2, ListFilter, Building2 } from "lucide-react";
+import { Pencil, Eye, Truck, UserRound, UserPlus2, Trash2, ListFilter, Building2, MapPin } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/shared/components/ui/table";
 import { Checkbox } from "@/shared/components/ui/checkbox";
-import { Button } from "@/shared/components/ui/button";
+import { Badge } from "@/shared/components/ui/badge";
 import TableCard from "@/shared/components/TableCard";
 import { TABLE_HEAD_BG, TableRowLead } from "@/shared/components/DataTableRow";
 import TableGridCard from "@/shared/components/TableGridCard";
@@ -21,23 +21,38 @@ import CarrierSuccessModal, { type CarrierSuccessMode } from "./CarrierSuccessMo
 import CarrierFormModal from "./CarrierFormModal";
 import CarrierVehicleModal from "./CarrierVehicleModal";
 import CarrierDriverModal from "./CarrierDriverModal";
-import type { Carrier } from "@/modules/carriers/carriers.data";
-import type { CarrierInput, DriverInput, VehicleInput } from "@/modules/carriers/api/carrier.api";
-import type { CarrierFormValues } from "./CarrierFormModal";
+import { CARRIER_TIPOS, type CarrierFormValues, type CarrierProfile } from "@/modules/carriers/carrierProfile.utils";
+import { toDriverInput, toVehicleInput } from "@/modules/carriers/carrierRecords.utils";
+import type { DriverInput, VehicleInput } from "@/modules/carriers/api/carrier.api";
 import type { DriverFormValues } from "./CarrierDriverModal";
 import type { VehicleFormValues } from "./CarrierVehicleModal";
 
 const PAGE_SIZE = 8;
 
+/** Documento que identifica al transportista: el RUC de la empresa o el documento de identidad del independiente */
+function identification(row: CarrierProfile): string {
+    if (row.tipo === "privado") return row.documento ? `Documento ${row.documento}` : row.ruc ? `RUC ${row.ruc}` : "Sin documento";
+    return row.ruc ? `RUC ${row.ruc}` : "Sin RUC";
+}
+
+function CardLine({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="flex justify-between gap-3">
+            <span className="font-bold uppercase tracking-wider text-[11px] text-ink-muted">{label}</span>
+            <span className="font-semibold text-ink truncate">{value || "—"}</span>
+        </div>
+    );
+}
+
 interface CarriersTableProps {
-    data: Carrier[];
+    data: CarrierProfile[];
     hasActiveFilters: boolean;
     onClearFilters: () => void;
     selectedIds: Set<number>;
     onToggleRow: (id: number) => void;
     onToggleAll: (ids: number[]) => void;
     onDelete: (id: number) => void;
-    onUpdateCarrier: (id: number, values: CarrierInput) => Promise<void>;
+    onUpdateCarrier: (id: number, values: CarrierFormValues) => Promise<void>;
     onCreateVehicle: (carrierId: number, values: VehicleInput) => Promise<void>;
     onCreateDriver: (carrierId: number, values: DriverInput) => Promise<void>;
 }
@@ -49,13 +64,13 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
     const [vehicleCarrierId, setVehicleCarrierId] = useState<number | null>(null);
     const [driverCarrierId, setDriverCarrierId] = useState<number | null>(null);
     // La empresa a eliminar se guarda completa: al confirmar desaparece de `data` y el texto no debe vaciarse mientras el modal se cierra
-    const [deleting, setDeleting] = useState<{ open: boolean; carrier: Carrier | null }>({ open: false, carrier: null });
+    const [deleting, setDeleting] = useState<{ open: boolean; carrier: CarrierProfile | null }>({ open: false, carrier: null });
     const [success, setSuccess] = useState<{ open: boolean; mode: CarrierSuccessMode }>({ open: false, mode: "carrier-updated" });
 
     const showSuccess = (mode: CarrierSuccessMode) => setSuccess({ open: true, mode });
 
     /** Ver y editar quedan siempre visibles; registrar vehículo/chofer y eliminar se agrupan en "más opciones" */
-    const getRowActions = (row: Carrier): { primary: RowAction[]; secondary: RowAction[] } => {
+    const getRowActions = (row: CarrierProfile): { primary: RowAction[]; secondary: RowAction[] } => {
         const primary: RowAction[] = [
             { label: "Editar", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditingCarrierId(row.id) },
             { label: "Ver", icon: <Eye size={18} strokeWidth={2.5} />, onClick: () => navigate(`/transportistas/${row.id}`) },
@@ -83,30 +98,24 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
         <>
             <TableCard
                 icon={<Truck size={24} strokeWidth={2.5} />}
-                title="Empresas de Transporte Registradas"
-                description="Gestiona, consulta y da seguimiento a todas tus empresas de transporte registradas."
+                title="Transportistas Registrados"
+                description="Consulta a los transportistas; el detalle completo está en Ver."
                 headerRight={
                     <TableToolbar>
-                        <TableCountPill icon={<Truck size={16} strokeWidth={2.5} className="text-brand" />} count={data.length} label="empresas" />
+                        <TableCountPill icon={<Truck size={16} strokeWidth={2.5} className="text-brand" />} count={data.length} label={data.length === 1 ? "transportista" : "transportistas"} />
                     </TableToolbar>
                 }
                 isEmpty={visibleData.length === 0}
-                emptyTitle={hasActiveFilters ? "Sin resultados" : "Aún no hay empresas de transporte"}
+                emptyTitle={hasActiveFilters ? "Sin resultados" : "Aún no hay transportistas"}
                 emptyDescription={
                     hasActiveFilters
-                        ? "No hay empresas que coincidan con los filtros aplicados. Intenta con otros criterios de búsqueda."
-                        : "Aún no hay empresas de transporte registradas. Haz clic en 'Agregar empresa de transporte' para comenzar."
+                        ? "No hay transportistas que coincidan con los filtros aplicados. Intenta con otros criterios de búsqueda."
+                        : "Aún no hay transportistas registrados. Haz clic en 'Registrar transportista' para comenzar."
                 }
                 emptyAction={
-                    hasActiveFilters ? (
-                        <Button
-                            onClick={onClearFilters}
-                            variant="outline"
-                            className="h-9 px-4 rounded-lg font-semibold border-border text-brand hover:text-brand-dark hover:bg-brand-surface shadow-none transition-colors"
-                        >
-                        <ListFilter size={20} strokeWidth={2.5} /> Limpiar filtros
-                    </Button>
-                    ) : undefined
+                    hasActiveFilters
+                        ? { label: "Limpiar filtros", icon: <ListFilter size={18} />, onClick: onClearFilters, tone: "secondary" }
+                        : undefined
                 }
                 page={currentPage}
                 pageCount={pageCount}
@@ -117,25 +126,20 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                     {visibleData.map((row) => (
                         <TableGridCard
                             key={row.id}
-                            icon={<Building2 size={18} strokeWidth={2} />}
+                            icon={row.tipo === "privado" ? <UserRound size={18} strokeWidth={2} /> : <Building2 size={18} strokeWidth={2} />}
                             title={
                                 <span className="flex items-center gap-2">
                                     <Checkbox checked={selectedIds.has(row.id)} onCheckedChange={() => onToggleRow(row.id)} aria-label={`Seleccionar ${row.nombre}`} />
                                     {row.nombre}
                                 </span>
                             }
-                            subtitle="Responsable de transporte"
+                            subtitle={CARRIER_TIPOS[row.tipo].label}
                             actions={<RowActions {...getRowActions(row)} />}
                         >
                             <div className="mx-4 flex flex-col gap-2 rounded-lg bg-surface-page border border-border p-3 text-[13px]">
-                                <div className="flex justify-between gap-3">
-                                    <span className="font-bold uppercase tracking-wider text-[11px] text-ink-muted">Número</span>
-                                    <span className="font-semibold text-ink truncate">{row.numero}</span>
-                                </div>
-                                <div className="flex justify-between gap-3">
-                                    <span className="font-bold uppercase tracking-wider text-[11px] text-ink-muted">RUC</span>
-                                    <span className="font-semibold text-ink truncate">{row.ruc}</span>
-                                </div>
+                                <CardLine label="MTC" value={row.mtc} />
+                                <CardLine label="Teléfono" value={row.numero} />
+                                <CardLine label="Ubicación" value={[row.ciudad, row.departamento].filter(Boolean).join(", ")} />
                             </div>
                         </TableGridCard>
                     ))}
@@ -153,11 +157,12 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                                         aria-label="Seleccionar todos"
                                     />
                                 </TableHead>
-                                <TableHead className="text-ink font-semibold h-14">Nombre completo</TableHead>
-                                <TableHead className="text-ink font-semibold h-14">Número</TableHead>
-                                <TableHead className="text-ink font-semibold h-14">Correo</TableHead>
-                                <TableHead className="text-ink font-semibold h-14">RUC</TableHead>
-                                <TableHead className="text-ink font-semibold h-14 text-right px-6 w-40">Acciones</TableHead>
+                                <TableHead className="text-ink font-semibold h-14">Transportista</TableHead>
+                                <TableHead className="text-ink font-semibold h-14">Tipo</TableHead>
+                                <TableHead className="text-ink font-semibold h-14">MTC</TableHead>
+                                <TableHead className="text-ink font-semibold h-14">Contacto</TableHead>
+                                <TableHead className="text-ink font-semibold h-14">Ubicación</TableHead>
+                                <TableHead className="text-ink font-semibold h-14 text-center px-6 w-40">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -167,15 +172,41 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                                         <Checkbox checked={selectedIds.has(row.id)} onCheckedChange={() => onToggleRow(row.id)} aria-label={`Seleccionar ${row.nombre}`} />
                                     </TableCell>
                                     <TableCell className="h-20">
-                                        <TableRowLead icon={<UserRound size={20} strokeWidth={2} />} title={row.nombre} subtitle="Responsable de transporte" />
+                                        <TableRowLead
+                                            icon={row.tipo === "privado" ? <UserRound size={20} strokeWidth={2} /> : <Building2 size={20} strokeWidth={2} />}
+                                            title={row.nombre}
+                                            subtitle={identification(row)}
+                                        />
                                     </TableCell>
-                                    <TableCell className="text-ink-body font-medium">{row.numero}</TableCell>
                                     <TableCell>
-                                        <a href={`mailto:${row.correo}`} className="text-brand font-medium hover:underline">{row.correo}</a>
+                                        <Badge variant={row.tipo === "privado" ? "outline" : "brand"} className="h-6 px-2.5 text-[12px] font-semibold">
+                                            {CARRIER_TIPOS[row.tipo].short}
+                                        </Badge>
                                     </TableCell>
-                                    <TableCell className="text-ink-body font-medium">{row.ruc}</TableCell>
+                                    <TableCell className="text-ink-body font-medium">{row.mtc || <span className="text-ink-muted">—</span>}</TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="text-[13.5px] font-semibold leading-tight text-ink-body">{row.numero || "—"}</span>
+                                            {row.correo && (
+                                                <a href={`mailto:${row.correo}`} className="mt-0.5 truncate text-[12px] font-medium text-brand hover:underline">{row.correo}</a>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.ciudad ? (
+                                            <div className="flex items-start gap-2">
+                                                <MapPin size={16} className="mt-0.5 shrink-0 text-ink-muted" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-[13.5px] font-semibold leading-tight text-ink-body">{row.ciudad}</span>
+                                                    <span className="mt-0.5 text-[12px] font-medium text-ink-muted">{row.provincia} · {row.departamento}</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <span className="text-ink-muted">—</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell className="px-6">
-                                        <RowActions {...getRowActions(row)} className="justify-end" />
+                                        <RowActions {...getRowActions(row)} className="justify-center" />
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -202,11 +233,7 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                 carrier={vehicleCarrier}
                 onSuccess={async (values: VehicleFormValues) => {
                     if (!vehicleCarrier) return;
-                    await onCreateVehicle(vehicleCarrier.id, {
-                        placa: values.placa,
-                        ancho: Number(values.ancho), altura: Number(values.altura), profundidad: Number(values.profundidad),
-                        pesoNeto: Number(values.pesoNeto), pesoBruto: Number(values.pesoBruto),
-                    });
+                    await onCreateVehicle(vehicleCarrier.id, toVehicleInput(values));
                     setVehicleCarrierId(null);
                     showSuccess("vehicle-created");
                 }}
@@ -217,7 +244,7 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                 carrier={driverCarrier}
                 onSuccess={async (values: DriverFormValues) => {
                     if (!driverCarrier) return;
-                    await onCreateDriver(driverCarrier.id, values);
+                    await onCreateDriver(driverCarrier.id, toDriverInput(values));
                     setDriverCarrierId(null);
                     showSuccess("driver-created");
                 }}
@@ -226,7 +253,7 @@ export default function CarriersTable({ data, hasActiveFilters, onClearFilters, 
                 open={deleting.open}
                 onOpenChange={(open) => setDeleting((current) => ({ ...current, open }))}
                 icon={<Trash2 size={28} strokeWidth={2.25} />}
-                title="¿Eliminar empresa?"
+                title="¿Eliminar transportista?"
                 description={<>Se intentará eliminar <strong className="font-bold text-ink">{deleting.carrier?.nombre}</strong>. El backend rechazará la operación si aún tiene vehículos o choferes asociados.</>}
                 confirmLabel="Sí, eliminar"
                 onConfirm={() => {

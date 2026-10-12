@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { ChevronRight, FileText, Leaf, ShieldCheck, TreePine } from "lucide-react";
+import { ArrowRight, ChevronRight, FileText, Leaf, ShieldCheck, TreePine } from "lucide-react";
 import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import StatusBadge from "@/shared/components/StatusBadge";
@@ -8,7 +8,13 @@ import { getCertificationStatus } from "@/modules/campaigns/campaignDetails.util
 
 const ICONS = { leaf: Leaf, file: FileText, tree: TreePine, shield: ShieldCheck };
 
-export default function CampaignCertificationsList({ certifications }: { certifications: CampaignCertification[] }) {
+interface CampaignCertificationsListProps {
+    certifications: CampaignCertification[];
+    /** Acceso directo a la vista donde se gestionan; sin él, la tarjeta es solo informativa */
+    onManage?: () => void;
+}
+
+export default function CampaignCertificationsList({ certifications, onManage }: CampaignCertificationsListProps) {
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
     const id = useId();
     const totalFiles = certifications.reduce((sum, cert) => sum + cert.files.length, 0);
@@ -39,8 +45,8 @@ export default function CampaignCertificationsList({ certifications }: { certifi
                                 onClick={() => setExpandedIds((current) => isExpanded ? current.filter((value) => value !== cert.id) : [...current, cert.id])}
                                 aria-expanded={isExpanded} aria-controls={panelId}>
                                 <span className="campaign-icon-circle"><Icon size={20} aria-hidden="true" /></span>
-                                <span className="campaign-cert-info"><strong>{cert.name}</strong><span>{cert.files.length} archivos · vence {cert.expires}</span></span>
-                                <StatusBadge status={getCertificationStatus(cert.expires)} />
+                                <span className="campaign-cert-info"><strong>{cert.name}</strong><span>{cert.files.length} {cert.files.length === 1 ? "archivo" : "archivos"} · vence {cert.expires || "sin fecha"}</span></span>
+                                <StatusBadge status={cert.status ?? getCertificationStatus(cert.expires)} />
                                 <ChevronRight size={15} className={isExpanded ? "rotate-90" : ""} aria-hidden="true" />
                             </button>
                             <div id={panelId} className="campaign-cert-files" hidden={!isExpanded}>
@@ -51,6 +57,13 @@ export default function CampaignCertificationsList({ certifications }: { certifi
                     );
                 })}
             </div>
+            {onManage && (
+                <div className="flex justify-end pb-3 pt-1">
+                    <Button variant="outline" size="sm" className="campaign-view-all" onClick={onManage}>
+                        Gestionar certificaciones <ArrowRight size={13} aria-hidden="true" />
+                    </Button>
+                </div>
+            )}
         </Card>
     );
 }

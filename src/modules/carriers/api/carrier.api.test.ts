@@ -94,7 +94,7 @@ describe("carrier API", () => {
       ruc: carrier.ruc,
     });
 
-    await createVehicle(7, { placa: "abc-123", ancho: 2, altura: 2, profundidad: 3, pesoNeto: 5, pesoBruto: 8 });
+    await createVehicle(7, { placa: "abc-123", ancho: 2, altura: 2, profundidad: 3, volumen: 12, pesoNeto: 5, pesoBruto: 8 });
     expect(apiClient.post).toHaveBeenCalledWith("/vehiculos-externos", {
       idEmpresaTransporteExterno: 7,
       placa: "ABC-123",
@@ -120,7 +120,7 @@ describe("carrier API", () => {
     await deleteCarrier(7);
     expect(apiClient.delete).toHaveBeenCalledWith("/empresas-transporte-externo/7");
 
-    await updateVehicle(9, 7, { placa: "XYZ-999", ancho: 2, altura: 2, profundidad: 3, pesoNeto: 5, pesoBruto: 8 });
+    await updateVehicle(9, 7, { placa: "XYZ-999", ancho: 2, altura: 2, profundidad: 3, volumen: 12, pesoNeto: 5, pesoBruto: 8 });
     expect(apiClient.patch).toHaveBeenCalledWith("/vehiculos-externos/9", expect.objectContaining({ volumen: 12 }));
     expect(apiClient.patch.mock.calls[1]?.[1]).not.toHaveProperty("idEmpresaTransporteExterno");
     await deleteVehicle(9);

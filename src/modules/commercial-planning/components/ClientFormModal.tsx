@@ -2,9 +2,9 @@ import { useRef, useState } from "react";
 import { X, UserPlus, Save, AlertCircle } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm } from "@/shared/hooks/useModalForm";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
+import InputField from "@/shared/components/InputField";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
-import { Input } from "@/shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
 import { createClienteNegocio, updateClienteNegocio } from "@/modules/clients/api/cliente-negocio.api";
@@ -117,38 +117,13 @@ export default function ClientFormModal({
                 </Alert>
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6" aria-busy={isSaving}>
-                <Field className="sm:col-span-2" data-invalid={Boolean(fieldError("nombreEmpresa"))}>
-                    <FieldLabel htmlFor="client-company">Empresa: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                    <Input id="client-company" value={values.nombreEmpresa} onChange={(e) => set("nombreEmpresa")(e.target.value)} required aria-invalid={Boolean(fieldError("nombreEmpresa"))} aria-describedby={fieldError("nombreEmpresa") ? "client-company-error" : undefined} />
-                    {fieldError("nombreEmpresa") && <FieldError id="client-company-error">{fieldError("nombreEmpresa")}</FieldError>}
-                </Field>
-                <Field data-invalid={Boolean(fieldError("nombreContacto"))}>
-                    <FieldLabel htmlFor="client-contact">Nombre de contacto: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                    <Input id="client-contact" value={values.nombreContacto} onChange={(e) => set("nombreContacto")(e.target.value)} required aria-invalid={Boolean(fieldError("nombreContacto"))} aria-describedby={fieldError("nombreContacto") ? "client-contact-error" : undefined} />
-                    {fieldError("nombreContacto") && <FieldError id="client-contact-error">{fieldError("nombreContacto")}</FieldError>}
-                </Field>
-                <Field data-invalid={Boolean(fieldError("telefono"))}>
-                    <FieldLabel htmlFor="client-phone">Teléfono: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                    <Input id="client-phone" value={values.telefono} onChange={(e) => set("telefono")(e.target.value)} required aria-invalid={Boolean(fieldError("telefono"))} aria-describedby={fieldError("telefono") ? "client-phone-error" : undefined} />
-                    {fieldError("telefono") && <FieldError id="client-phone-error">{fieldError("telefono")}</FieldError>}
-                </Field>
-                <Field data-invalid={Boolean(fieldError("ruc"))}>
-                    <FieldLabel htmlFor="client-ruc">RUC: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                    <Input id="client-ruc" value={values.ruc} onChange={(e) => set("ruc")(e.target.value)} required aria-invalid={Boolean(fieldError("ruc"))} aria-describedby={fieldError("ruc") ? "client-ruc-error" : undefined} />
-                    {fieldError("ruc") && <FieldError id="client-ruc-error">{fieldError("ruc")}</FieldError>}
-                </Field>
-                <Field data-invalid={Boolean(fieldError("correoCorporativo"))}>
-                    <FieldLabel htmlFor="client-email">Correo corporativo: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                    <Input id="client-email" type="email" value={values.correoCorporativo} onChange={(e) => set("correoCorporativo")(e.target.value)} required aria-invalid={Boolean(fieldError("correoCorporativo"))} aria-describedby={fieldError("correoCorporativo") ? "client-email-error" : undefined} />
-                    {fieldError("correoCorporativo") && <FieldError id="client-email-error">{fieldError("correoCorporativo")}</FieldError>}
-                </Field>
-                <Field data-invalid={Boolean(fieldError("ubicacion"))}>
-                    <FieldLabel htmlFor="client-location">Ubicación: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
-                    <Input id="client-location" value={values.ubicacion} onChange={(e) => set("ubicacion")(e.target.value)} required aria-invalid={Boolean(fieldError("ubicacion"))} aria-describedby={fieldError("ubicacion") ? "client-location-error" : undefined} />
-                    {fieldError("ubicacion") && <FieldError id="client-location-error">{fieldError("ubicacion")}</FieldError>}
-                </Field>
-                <Field data-invalid={Boolean(fieldError("tipoCliente"))}>
-                    <FieldLabel htmlFor="client-type">Tipo de cliente: <span aria-hidden="true" className="text-destructive">*</span></FieldLabel>
+                <InputField id="client-company" label="Empresa:" className="sm:col-span-2" required value={values.nombreEmpresa} onChange={set("nombreEmpresa")} error={fieldError("nombreEmpresa") || undefined} />
+                <InputField id="client-contact" label="Nombre de contacto:" required value={values.nombreContacto} onChange={set("nombreContacto")} error={fieldError("nombreContacto") || undefined} />
+                <InputField id="client-phone" label="Teléfono:" required value={values.telefono} onChange={set("telefono")} error={fieldError("telefono") || undefined} />
+                <InputField id="client-ruc" label="RUC:" required value={values.ruc} onChange={set("ruc")} error={fieldError("ruc") || undefined} />
+                <InputField id="client-email" label="Correo corporativo:" type="email" required value={values.correoCorporativo} onChange={set("correoCorporativo")} error={fieldError("correoCorporativo") || undefined} />
+                <InputField id="client-location" label="Ubicación:" required value={values.ubicacion} onChange={set("ubicacion")} error={fieldError("ubicacion") || undefined} />
+                <FormField id="client-type" label="Tipo de cliente:" required error={fieldError("tipoCliente") || undefined}>
                     <Select items={CLIENT_TYPES} value={values.tipoCliente || null} onValueChange={(value) => set("tipoCliente")((value ?? "") as ClienteNegocioInput["tipoCliente"])}>
                         <SelectTrigger id="client-type" className="w-full" aria-required="true" aria-invalid={Boolean(fieldError("tipoCliente"))} aria-describedby={fieldError("tipoCliente") ? "client-type-error" : undefined}>
                             <SelectValue placeholder="Seleccionar tipo" />
@@ -158,8 +133,7 @@ export default function ClientFormModal({
                             <SelectItem value="industria">Industria</SelectItem>
                         </SelectContent>
                     </Select>
-                    {fieldError("tipoCliente") && <FieldError id="client-type-error">{fieldError("tipoCliente")}</FieldError>}
-                </Field>
+                </FormField>
             </div>
         </AppModal>
     );

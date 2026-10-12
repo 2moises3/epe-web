@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Search, UserRound } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
+import { TableEmptyState } from "@/shared/components/TableCard";
 
 interface DirectoryRow {
     id: string | number;
@@ -18,7 +19,7 @@ export default function CampaignDirectoryTable({ rows, columns, label }: { rows:
     const [order, setOrder] = useState("");
     const filtered = rows.filter(row => (!category || row.category === category) && normalize(`${row.name} ${row.category} ${row.search}`).includes(normalize(query.trim())));
     if (order) filtered.sort((a, b) => order === "asc" ? a.name.localeCompare(b.name, "es") : b.name.localeCompare(a.name, "es"));
-    const selectClass = "h-9 min-w-0 rounded-lg border border-border bg-white px-2 text-[11px] text-ink focus-visible:outline-2 focus-visible:outline-brand";
+    const selectClass = "h-9 min-w-0 rounded-lg border border-border bg-card px-2 text-[11px] text-ink focus-visible:outline-2 focus-visible:outline-brand";
     return (
         <>
             <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_165px_140px]">
@@ -33,14 +34,20 @@ export default function CampaignDirectoryTable({ rows, columns, label }: { rows:
                     <tbody>{filtered.map(row => <tr key={row.id} className="border-b border-border/60 transition-colors hover:bg-brand-surface/40 motion-reduce:transition-none">{row.cells.map((cell, index) => <td key={columns[index]} className="px-2 py-4 align-middle">{cell}</td>)}</tr>)}</tbody>
                 </table>
             </div>
-            {!filtered.length && <p className="py-8 text-center text-xs">No se encontraron resultados. Prueba otra búsqueda o categoría.</p>}
+            {!filtered.length && (
+                <TableEmptyState
+                    icon={<Search size={28} strokeWidth={2} />}
+                    title="Sin resultados"
+                    description="No se encontraron resultados. Prueba otra búsqueda o categoría."
+                />
+            )}
             <p className="mt-5 text-[11px]" role="status">Mostrando {filtered.length} de {rows.length} {label}</p>
         </>
     );
 }
 
 export function DirectoryIdentity({ name, subtitle, index }: { name: string; subtitle: string; index: number }) {
-    const tones = ["bg-rose-50 text-rose-500", "bg-violet-50 text-violet-500", "bg-emerald-50 text-emerald-700", "bg-amber-50 text-amber-600"];
+    const tones = ["bg-rose-50 text-rose-500 dark:bg-rose-500/15 dark:text-rose-300", "bg-violet-50 text-violet-500 dark:bg-violet-500/15 dark:text-violet-300", "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300", "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300"];
     return <div className="flex items-center gap-3"><span aria-hidden="true" className={`flex size-10 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold ${tones[index % tones.length]}`}>{name.charAt(0)}</span><div><p className="font-bold text-ink">{name}</p><p className="mt-1 text-[11px]">{subtitle}</p></div></div>;
 }
 

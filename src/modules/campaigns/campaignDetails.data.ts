@@ -23,6 +23,8 @@ export interface CampaignCertification {
     name: string;
     files: string[];
     expires: string;
+    /** Estado ya calculado por quien arma el dato; sin él se deduce de `expires` */
+    status?: string;
     icon: "leaf" | "file" | "tree" | "shield";
 }
 

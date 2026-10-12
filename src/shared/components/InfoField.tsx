@@ -18,11 +18,41 @@ export function InfoField({ label, value, suffix, className }: InfoFieldProps) {
     return (
         <div className={cn("flex min-w-0 flex-col gap-2", className)}>
             <label className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{label}</label>
-            <div className="relative flex h-10 items-center rounded-lg border border-border/60 bg-white px-3 text-[13px] font-medium text-ink">
+            <div className="relative flex h-10 items-center rounded-lg border border-border/60 bg-card px-3 text-[13px] font-medium text-ink">
                 <span className="truncate">{value}</span>
                 {suffix && <span className="absolute right-3 text-xs font-bold text-ink-muted">{suffix}</span>}
             </div>
         </div>
+    );
+}
+
+interface SummaryBarItem {
+    label: string;
+    value: ReactNode;
+    /** Resalta la cifra que importa (p. ej. el saldo pendiente): "brand" en verde, "highlight" en ámbar */
+    tone?: "brand" | "highlight";
+}
+
+interface SummaryBarProps {
+    items: SummaryBarItem[];
+    className?: string;
+}
+
+/**
+ * Resumen de contexto de un modal ("costo · pagado · saldo"): una sola franja informativa con las cifras
+ * separadas por líneas. A propósito no usa cajas de campo, para que no se confunda con algo que se llena;
+ * para valores de solo lectura dentro de un formulario o detalle está `InfoField`.
+ */
+export function SummaryBar({ items, className }: SummaryBarProps) {
+    return (
+        <dl className={cn("grid divide-x divide-border/70 rounded-xl border border-brand-border/60 bg-brand-surface/40 py-3", className)} style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+            {items.map(({ label, value, tone }) => (
+                <div key={label} className="flex min-w-0 flex-col items-center gap-0.5 px-2 text-center">
+                    <dt className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{label}</dt>
+                    <dd className={cn("max-w-full truncate text-[15px] font-bold tabular-nums", tone === "brand" ? "text-brand" : tone === "highlight" ? "text-status-highlight" : "text-ink")}>{value}</dd>
+                </div>
+            ))}
+        </dl>
     );
 }
 
@@ -61,7 +91,7 @@ interface StatTileProps {
  */
 export function StatTile({ icon: Icon, label, value, hint, className }: StatTileProps) {
     return (
-        <div className={cn("flex items-start gap-3 rounded-xl border border-border/60 bg-white px-3 py-3", className)}>
+        <div className={cn("flex items-start gap-3 rounded-xl border border-border/60 bg-card px-3 py-3", className)}>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-surface" style={{ color: "var(--brand-gradient-mid)" }}>
                 <Icon size={17} strokeWidth={2.5} />
             </span>

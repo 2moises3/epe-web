@@ -41,7 +41,7 @@ export default function AdminLoginForm({ onLogin }: AdminLoginFormProps) {
 
     return (
         <div
-            className="w-full max-w-md rounded-2xl overflow-hidden relative z-10 bg-white shadow-2xl border border-border/40 transition-[height] duration-300 ease-in-out"
+            className="w-full max-w-md rounded-2xl overflow-hidden relative z-10 bg-card shadow-2xl border border-border/40 transition-[height] duration-300 ease-in-out"
             style={{ height: cardHeight }}
         >
             <div ref={contentRef} className="px-5 py-7 sm:px-10 sm:py-8 lg:px-12 flex flex-col">

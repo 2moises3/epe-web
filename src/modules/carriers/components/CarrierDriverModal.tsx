@@ -1,23 +1,25 @@
-import type { ComponentType } from "react";
 import { X, Save, UserRound, Phone, Mail } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
+import FormField from "@/shared/components/FormField";
 import { useModalForm } from "@/shared/hooks/useModalForm";
-import { Field, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import { useFormSubmit } from "@/shared/hooks/useFormSubmit";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 import type { Carrier } from "@/modules/carriers/carriers.data";
+import {
+    DRIVER_BACKEND_FIELDS,
+    EMPTY_DRIVER,
+    validateDriver,
+    type DriverField,
+    type DriverFormValues,
+} from "@/modules/carriers/carrierRecords.utils";
 
-export interface DriverFormValues {
-    nombre: string;
-    telefono: string;
-    correo: string;
-}
-
-const EMPTY_DRIVER: DriverFormValues = { nombre: "", telefono: "", correo: "" };
+export type { DriverFormValues };
 
 interface CarrierDriverModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** Guarda el chofer; si rechaza con un 400 del backend, sus mensajes salen bajo cada campo */
     onSuccess?: (values: DriverFormValues) => void | Promise<void>;
     carrier: Carrier | null;
     /** "create" arranca vacío; "edit" arranca con `initialValues` y cambia los textos */
@@ -25,82 +27,77 @@ interface CarrierDriverModalProps {
     initialValues?: Partial<DriverFormValues>;
 }
 
-interface IconFieldProps {
-    label: string;
-    icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
-    value: string;
-    onChange: (value: string) => void;
-    type?: string;
-    placeholder?: string;
-    className?: string;
-}
-
-/** Campo con un ícono al inicio del recuadro; se pinta de verde cuando tiene valor */
-function IconField({ label, icon: Icon, value, onChange, type, placeholder, className }: IconFieldProps) {
-    return (
-        <Field className={className}>
-            <FieldLabel>{label}</FieldLabel>
-            <div className="relative">
-                <Icon
-                    size={18}
-                    strokeWidth={2}
-                    className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${value ? "text-brand" : "text-ink-muted"}`}
-                />
-                <Input type={type} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} className="pl-10" />
-            </div>
-        </Field>
-    );
-}
-
 export default function CarrierDriverModal({ open, onOpenChange, onSuccess, carrier, mode = "create", initialValues }: CarrierDriverModalProps) {
     const isEdit = mode === "edit";
     const [values, , set] = useModalForm<DriverFormValues>(open, { ...EMPTY_DRIVER, ...initialValues });
+    const { errors, saving, clearError, submit } = useFormSubmit<DriverFormValues>({
+        open,
+        validate: validateDriver,
+        onSubmit: async (next) => {
+            if (!onSuccess) {
+                onOpenChange(false);
+                return;
+            }
+            await onSuccess(next);
+        },
+        backendFields: DRIVER_BACKEND_FIELDS,
+    });
 
     if (!carrier) return null;
+
+    const bind = (field: DriverField) => ({
+        id: `driver-${field}`,
+        required: true,
+        value: values[field],
+        error: errors[field],
+        disabled: saving,
+        onChange: (next: string) => {
+            set(field)(next);
+            clearError(field);
+        },
+    });
 
     return (
         <AppModal
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={(next) => !(saving && !next) && onOpenChange(next)}
             icon={<UserRound size={22} strokeWidth={2} />}
             title={isEdit ? "Editar Chofer" : "Registrar Chofer"}
-            description={`Chofer de ${carrier.nombre}. Se vincula directamente a un vehículo.`}
+            description={`Chofer de ${carrier.nombre}.`}
             className="sm:max-w-162.5"
             footer={
                 <>
-                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)} disabled={saving}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" disabled={!values.nombre.trim()} onClick={() => (onSuccess ? void Promise.resolve(onSuccess(values)).catch(() => undefined) : onOpenChange(false))}>
-                        <Save size={20} strokeWidth={2.5} /> Guardar chofer
+                    <Button size="xl" onClick={() => void submit(values)} disabled={saving} aria-busy={saving}>
+                        <Save size={20} strokeWidth={2.5} /> {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Guardar chofer"}
                     </Button>
                 </>
             }
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                <IconField
+                {Boolean(errors._form) && <FormField error={errors._form} className="sm:col-span-2" />}
+                <InputField
+                    {...bind("nombre")}
                     className="sm:col-span-2"
                     label="Nombre completo"
-                    icon={UserRound}
+                    leading={<UserRound />}
                     placeholder="Nombres y apellidos"
-                    value={values.nombre}
-                    onChange={set("nombre")}
                 />
-                <IconField
+                <InputField
+                    {...bind("telefono")}
                     label="Teléfono"
-                    icon={Phone}
+                    leading={<Phone />}
                     type="tel"
                     placeholder="987 654 321"
-                    value={values.telefono}
-                    onChange={set("telefono")}
                 />
-                <IconField
+                <InputField
+                    {...bind("correo")}
                     label="Correo"
-                    icon={Mail}
+                    leading={<Mail />}
                     type="email"
                     placeholder="chofer@correo.com"
-                    value={values.correo}
-                    onChange={set("correo")}
                 />
             </div>
         </AppModal>

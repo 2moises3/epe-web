@@ -100,7 +100,7 @@ export default function AppModal({ open, onOpenChange, title, description, icon,
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
                 showCloseButton={false} 
-                className={cn("flex max-h-[90dvh] flex-col gap-0 overflow-hidden rounded-3xl border border-brand-border/50 bg-white p-0 sm:max-w-xl motion-reduce:animate-none", className)}
+                className={cn("flex max-h-[90dvh] flex-col gap-0 overflow-hidden rounded-3xl border border-brand-border/50 bg-card p-0 sm:max-w-xl motion-reduce:animate-none", className)}
                 style={{ 
                     boxShadow: `0 20px 40px -10px ${brandShade("+ 0.08", "1.3", "0.15")}, 0 0 30px -5px ${brandShade("+ 0.1", "1.3", "0.1")}`
                 }}

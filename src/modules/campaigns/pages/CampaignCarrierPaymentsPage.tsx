@@ -199,15 +199,9 @@ export default function CampaignCarrierPaymentsPage() {
                         : "Cuando registres un pago en este estado aparecerá acá."
                 }
                 emptyAction={
-                    hasActiveFilters ? (
-                        <Button
-                            variant="outline"
-                            onClick={clearFilters}
-                            className="h-11 rounded-lg px-6 border-border text-ink-body font-semibold hover:bg-muted hover:text-ink shadow-none transition-colors active:scale-95"
-                        >
-                        <ListFilter size={20} strokeWidth={2.5} /> Limpiar filtros
-                    </Button>
-                    ) : undefined
+                    hasActiveFilters
+                        ? { label: "Limpiar filtros", icon: <ListFilter size={18} />, onClick: clearFilters, tone: "secondary" }
+                        : undefined
                 }
                 page={currentPage}
                 pageCount={pageCount}
@@ -240,7 +234,7 @@ export default function CampaignCarrierPaymentsPage() {
                                 <TableHead className="text-ink font-semibold h-14 px-6">Transportista</TableHead>
                                 <TableHead className="text-ink font-semibold h-14">Cantidad</TableHead>
                                 <TableHead className="text-ink font-semibold h-14">Boleta</TableHead>
-                                <TableHead className="text-ink font-semibold h-14 text-right px-6 w-40">Acciones</TableHead>
+                                <TableHead className="text-ink font-semibold h-14 text-center px-6 w-40">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -253,7 +247,7 @@ export default function CampaignCarrierPaymentsPage() {
                                     <TableCell className="text-ink-body font-medium">S/ {payment.cantidad.toLocaleString("es-PE")}</TableCell>
                                     <TableCell className="text-ink-body font-medium">{payment.boleta ?? "Sin adjuntar"}</TableCell>
                                     <TableCell className="px-6">
-                                        <RowActions {...getRowActions(payment)} className="justify-end" />
+                                        <RowActions {...getRowActions(payment)} className="justify-center" />
                                     </TableCell>
                                 </TableRow>
                             ))}

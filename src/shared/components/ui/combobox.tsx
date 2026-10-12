@@ -37,20 +37,39 @@ function Combobox({
     className = "",
     disabled = false
 }: ComboboxProps) {
-    const [searchQuery, setSearchQuery] = React.useState("");
+    // El texto del campo se deriva en vez de sincronizarse con un efecto: si el usuario está escribiendo se muestra
+    // lo escrito (solo mientras el valor seleccionado sea el mismo con el que escribió); si no, la etiqueta del valor.
+    const [typed, setTyped] = React.useState<{ text: string; forValue: string } | null>(null);
+
+    const selectedLabel = options.find(opt => opt.value === value)?.label ?? "";
+    const searchQuery = typed && typed.forValue === value ? typed.text : selectedLabel;
+    const isTyping = typed !== null && typed.forValue === value;
 
     const filteredOptions = React.useMemo(() => {
-        if (!searchQuery) return options;
+        // Sin escribir se ven todas las opciones, aunque ya haya una seleccionada
+        if (!isTyping || !searchQuery) return options;
         const lowerQuery = searchQuery.toLowerCase();
         return options.filter(opt => opt.label.toLowerCase().includes(lowerQuery));
-    }, [options, searchQuery]);
+    }, [options, searchQuery, isTyping]);
+
+    const handleInputValueChange = (newVal: string) => {
+        // Al elegir una opción el primitivo intenta poner su ID en el campo (no sabe cuál es el texto).
+        // Se ignora: la etiqueta sale de la opción seleccionada.
+        if (options.some(opt => opt.value === newVal)) return;
+        setTyped({ text: newVal, forValue: value });
+    };
 
     return (
         <ComboboxRoot
             value={value}
-            onValueChange={(val: string | null) => onChange(val ?? "")}
+            onValueChange={(val: string | null) => {
+                onChange(val ?? "");
+                // Se descarta lo escrito: el campo pasa a mostrar la etiqueta del valor que deje el padre. Un
+                // selector de "agregar y limpiar" (valor siempre vacío) no se queda mostrando la opción agregada.
+                setTyped(null);
+            }}
             inputValue={searchQuery}
-            onInputValueChange={setSearchQuery}
+            onInputValueChange={handleInputValueChange}
             disabled={disabled}
         >
             <ComboboxInput 
@@ -58,10 +77,10 @@ function Combobox({
                 disabled={disabled}
                 className={cn("w-full rounded-lg !h-11 border-border shadow-none focus:ring-1 focus:ring-brand/30 focus:border-brand", className)}
             />
-            <ComboboxContent className="rounded-lg max-h-60">
+            <ComboboxContent className="max-h-60">
                 <ComboboxList>
                     {filteredOptions.map(option => (
-                        <ComboboxItem key={option.value} value={option.value} className="rounded-lg">
+                        <ComboboxItem key={option.value} value={option.value}>
                             {option.label}
                         </ComboboxItem>
                     ))}
@@ -126,14 +145,12 @@ function ComboboxInput({
         {...props}
       />
       <InputGroupAddon align="inline-end">
+        {/* Solo el ícono, como la flecha del Select: sin fondo, sin escalado ni hundimiento al pasar el mouse o presionar */}
         {showTrigger && (
-          <InputGroupButton
-            size="icon-xs"
-            variant="ghost"
-            render={<ComboboxTrigger />}
-            data-slot="input-group-button"
-            className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
+          <ComboboxTrigger
+            aria-label="Mostrar opciones"
             disabled={disabled}
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md outline-none group-has-data-[slot=combobox-clear]/input-group:hidden disabled:pointer-events-none"
           />
         )}
         {showClear && <ComboboxClear disabled={disabled} />}
@@ -169,7 +186,7 @@ function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           data-chips={!!anchor}
-          className={cn("group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+          className={cn("group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl duration-100 data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-border/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
           {...props}
         />
       </ComboboxPrimitive.Positioner>
@@ -199,7 +216,7 @@ function ComboboxItem({
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        "relative flex w-full cursor-default items-center gap-2 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "relative flex w-full cursor-pointer items-center gap-2 rounded-lg py-2.5 pr-9 pl-3 text-[14px] font-medium text-ink-body outline-hidden select-none transition-colors data-highlighted:bg-brand-surface data-highlighted:text-brand not-data-[variant=destructive]:data-highlighted:**:text-brand aria-selected:font-semibold aria-selected:text-brand data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
@@ -207,10 +224,10 @@ function ComboboxItem({
       {children}
       <ComboboxPrimitive.ItemIndicator
         render={
-          <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
+          <span className="pointer-events-none absolute right-3 flex size-4 items-center justify-center" />
         }
       >
-        <CheckIcon className="pointer-events-none" />
+        <CheckIcon className="pointer-events-none text-brand" />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
   )
@@ -280,7 +297,7 @@ function ComboboxChips({
     <ComboboxPrimitive.Chips
       data-slot="combobox-chips"
       className={cn(
-        "flex min-h-8 flex-wrap items-center gap-1 rounded-lg border border-input bg-transparent bg-clip-padding px-2.5 py-1 text-sm transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 has-aria-invalid:border-destructive has-aria-invalid:ring-3 has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40",
+        "flex min-h-8 flex-wrap items-center gap-1 rounded-lg border border-border bg-transparent bg-clip-padding px-2.5 py-1 text-sm transition-colors focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/30 has-aria-invalid:border-destructive has-aria-invalid:ring-1 has-aria-invalid:ring-destructive/20 has-data-[slot=combobox-chip]:px-1 dark:bg-input/30 dark:has-aria-invalid:border-destructive/50 dark:has-aria-invalid:ring-destructive/40",
         className
       )}
       {...props}

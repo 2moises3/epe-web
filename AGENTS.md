@@ -16,12 +16,24 @@ Todo lo transversal / no-dominio vive aquí:
   - **No envolver un componente de `ui/` en otro archivo solo para darle estilo o lógica.** Ese envoltorio duplica la API, obliga a mantener dos piezas y esconde el componente real. Si a un `Input` le falta algo, se le agrega a `ui/input.tsx` y se usa `<Input>` directo.
   - Un componente propio en `shared/components/` se justifica cuando compone **varias** piezas en un patrón nuevo (p. ej. `AppModal`, `RowActions`), no cuando reexporta una sola con clases encima.
   - Lo que sí queda fuera: lógica de negocio/dominio. Eso vive en el módulo.
+  - Campos de formulario: nunca armar a mano el trío `Field` + `FieldLabel` + control + error, ni crear wrappers locales (`UnitField`, `IconField`, `AmountField`, `RequiredField`, `InterviewInput`…).
+    - Texto o número: `InputField`. Lo que cambia de un campo a otro es una prop: `unit` (insignia a la derecha), `leading` (ícono o prefijo como "S/" a la izquierda), `required`/`optional`, `readOnly`, `hint`, `type`, `inputMode`, `variant="compact"` (etiqueta chica en mayúsculas), `className` (columnas de la grilla), `inputClassName`.
+    - Selector, `Combobox`, fecha, área de texto o archivo: `FormField` (etiqueta + control + ayuda/error) con el control adentro. Sin etiqueta ni control, `<FormField error={…} />` muestra un error general del formulario.
+    - Valor de solo lectura (no editable): `InfoField`, no un `Input` deshabilitado ni una caja armada a mano.
+    - El error (con ícono y animación de entrada) y su espaciado salen siempre de `FormField`. Si falta una variante, se agrega a `InputField`/`FormField`/`ui/input.tsx`, no se duplica.
+    - Fuera de esto quedan solo los formularios de `modules/auth` (login), que tienen su propio diseño.
+  - Unidad o sufijo dentro de un campo (KG, ha, m, /año…): `unit`, tanto en `InputField` como en `<Input unit="ha" />`. Es el único estilo (recuadro verde de marca a la derecha, como el de tipo `date`); no dibujar la unidad a mano con un `<span>` posicionado.
+  - Subtítulos de sección dentro del cuerpo de un modal: usar siempre `ModalSection` (texto en mayúsculas verde + línea degradada que remata en trazos; `aside` para un contador, "Opcional" o una acción chica). Es el único subtítulo de modal: no crear `<h3>` sueltos ni variantes locales, y no repetir ícono en círculo por sección (ese patrón es de la cabecera de `AppModal`). Los subtítulos son a rasgos generales y la mayoría de modales no los necesita: un formulario que registra o vincula una sola cosa (campaña, cliente, examen, vínculo) va sin subtítulos aunque tenga muchos campos; no se parte un registro en "periodo", "fruta", etc. Solo se usan cuando el modal junta bloques de distinta naturaleza: un formulario y la lista de lo ya registrado, los datos de un registro y sus relaciones (contratos, exámenes), o bloques realmente independientes (identificación vs. ubicación de una finca).
 - `shared/layout/` — chrome de la app: `Sidebar.tsx`, `TopNavBar.tsx`, `DashboardLayout.tsx`.
 
 ## Gestor de paquetes
 
 - Solo **pnpm** (`pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm test`, `pnpm build`). La versión está fijada en `packageManager` de `package.json`.
 - La única referencia de dependencias es `pnpm-lock.yaml`. No generar ni versionar `package-lock.json` (ya está en `.gitignore`): un segundo lockfile desincroniza versiones entre quienes usan npm y pnpm, y el `Dockerfile` y el workflow de CI instalan con `--frozen-lockfile`.
+
+## Comprobación de tipos
+
+- El `tsconfig.json` de la raíz solo tiene referencias: `tsc -p .` **no comprueba nada**. Usar `pnpm build` (que corre `tsc -b`) o `npx tsc --noEmit -p tsconfig.app.json`.
 
 ## Convención de imports
 
@@ -61,9 +73,23 @@ Todo lo transversal / no-dominio vive aquí:
 - Al incorporar APIs nuevas o modificadas, repetir el cruce API↔vista, actualizar estados con la fecha actual y revisar las pruebas pertinentes.
 - No usar datos de prueba/mock/fixtures del frontend como fallback ni en vistas activas. Si no existe un endpoint backend para una vista/operación, deshabilitar el bloque y mostrar claramente que está pendiente de API; registrar la ausencia con fecha en `doc/reporte-conexion-vistas.md`. Conservar los archivos de datos de prueba como referencia histórica si existen; no borrarlos salvo solicitud explícita del usuario.
 - **Excepción — flujos de diseño sin endpoint (confirmado por el responsable de diseño, 2026-10-03):** cuando una operación todavía no tiene API (entrevistas, subida del archivo de un examen, pagos al transportista), el diseño no se deja muerto: el flujo funciona con **estado local en memoria** (se pierde al recargar) y sin datos precargados que simulen respuestas del backend. Cada uno de esos puntos queda marcado con `// TODO(api)` y su lógica separada de la pantalla (`<tema>.utils.ts`, con pruebas), para que quien conecte el backend solo reemplace el guardado local por la llamada. Nunca se muestra como si el backend hubiera confirmado nada y siempre se registra en `doc/reporte-conexion-vistas.md`.
+- **Excepción — datos de demostración en desarrollo (pedido del responsable, 2026-10-11):** el almacén local de proveedores (`providerLocalData.store.ts`) arranca con datos de `providerLocalData.demo.ts` **solo con `import.meta.env.DEV`** (nunca en producción ni en pruebas), para revisar fincas y certificados con listas largas, nombres extensos y estados vacíos antes de tener la API. Es el único lugar con datos precargados; se borra el archivo cuando existan los servicios. La misma excepción aplica a las certificaciones de campaña (`campaignCertificates.demo.ts`, `campaignCertificates.store.ts`, 2026-10-12). No extender esta excepción a vistas conectadas a la API.
 - **Archivos y documentos:** el backend solo guarda URLs, pero el diseño usa `FileDropzone` (subir archivo), no campos de URL. Todo formulario con zona de archivo convierte el archivo en URL justo antes de guardar con `uploadDocument(file)` de `shared/api/uploadDocument.ts`. Ese es el único punto que hay que implementar cuando se integre el servicio de archivos; mientras no exista falla con un aviso claro y no guarda nada. No volver a poner campos de URL en lugar de la zona de archivo.
 - **Recarga automática (HMR) de Vite:** va encendida por defecto para que los cambios se vean al guardar. Quien no pueda usar el websocket de Vite (p. ej. al abrir la web desde otro dispositivo) la apaga con `VITE_DISABLE_HMR=true` en su `.env` (documentado en `.env.example`) y reinicia Vite. No fijar `hmr: false` en `vite.config.ts`.
 - El cache de la aplicación está deshabilitado intencionalmente en desarrollo y producción: no agregar estrategias cache-first/service-worker para documentos, assets ni llamadas API sin autorización explícita. Si se modifica SW o servidor, preservar `no-store` y verificar que no existan cachés antiguos activos.
+
+## Tema claro / oscuro
+
+- El tema se aplica con la clase `dark` en `<html>`. Lo maneja `shared/hooks/useTheme.ts` (sigue al sistema hasta que el usuario elige; se guarda en `localStorage` con la clave `epe-theme`) y el script inline de `index.html` lo aplica antes de pintar para evitar el destello. El interruptor es `shared/components/ThemeToggle.tsx`, en el header.
+- Todos los colores salen de los tokens de `src/index.css`, que tienen valor en `:root` y en `.dark`: superficies `bg-card` / `bg-popover` / `bg-muted` / `bg-surface-page`, texto `text-ink` / `text-ink-body` / `text-ink-muted`, marca `brand` / `brand-surface` / `brand-border`, estados `status-*`. **No usar `bg-white`, hex sueltos (`[#...]`) ni paletas fijas de Tailwind (`gray-…`, `slate-…`)**: no cambian con el tema.
+- **Criterio del verde en modo oscuro**: verde = identidad de marca, acción o feedback; gris neutro = estructura y contenido.
+  - Gris neutro: fondo de página, cards, menús/popovers, inputs, cuerpo de tablas, botones secundarios, divisores, texto.
+  - Verde lleno: botones principales, enlaces, pestaña/paginación activa, interruptor de tema, foco.
+  - Velo verde (`brand-surface`, `bg-brand/…`): banda del header de tablas (`TABLE_HEAD_BG`), hover de filas (en `ui/table.tsx`), botón activo de vista tabla/grilla, círculos de ícono, píldoras de conteo, badges, recuadros destacados y avisos (p. ej. nota de cosecha).
+  - Degradado verde: piezas de marca (banners con lema, hero) y el resplandor tenue de fondo `.page-ambient` del layout.
+  - Toque verde en bordes: borde inferior del header y borde de modales (`brand-border`).
+- Degradados que funden una imagen con su contenedor terminan en el token del contenedor (`from-card`), nunca en `from-white`.
+- Excepciones válidas: texto blanco sobre el degradado o el verde de marca (`text-white`, `bg-white/20`), que se ve igual en ambos temas. Si un acento de color no puede salir de un token, se le da su variante `dark:` en el mismo lugar (o un bloque `.dark …` en el `.css` del módulo).
 
 ## Organización de archivos — checklist
 

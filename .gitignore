@@ -12,9 +12,16 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+coverage
 
-# Env vars
+# Almacén de pnpm: se genera al instalar, no es del proyecto
+.pnpm-store/
+
+# Env vars: cualquier .env.* (production, development…) queda fuera; solo se sube la plantilla
 .env
+.env.*
+!.env.example
 
 # Volcados temporales de auditorías/refactors automatizados
 build-errors.txt
@@ -33,6 +40,7 @@ package-lock.json
 # Claude skills (downloaded from registry, reproducible via skills-lock.json)
 .agents/skills/
 .claude/skills/
+.claude/settings.local.json
 
 # Editor directories and files
 .vscode/*

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { X, Send, Truck, FileText, AlignLeft, Building2, Info } from "lucide-react";
+import { X, Send, Truck, Building2, Info } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
-import FormSection from "@/shared/components/FormSection";
+import ModalSection from "@/shared/components/ModalSection";
 import FileDropzone from "@/shared/components/FileDropzone";
 import RemovableChip from "@/shared/components/RemovableChip";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
-import { FieldError, FieldDescription } from "@/shared/components/ui/field";
+import { FieldDescription } from "@/shared/components/ui/field";
+import FormField from "@/shared/components/FormField";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Separator } from "@/shared/components/ui/separator";
 import { Badge } from "@/shared/components/ui/badge";
@@ -32,11 +33,13 @@ interface CarrierSendRequirementModalProps {
 export default function CarrierSendRequirementModal({ open, onOpenChange, onSuccess, selectedCarriers, onRemoveCarrier }: CarrierSendRequirementModalProps) {
     const [file, setFile] = useState<File | null>(null);
     const [fileError, setFileError] = useState("");
+    const [recipientsError, setRecipientsError] = useState("");
     const [detail, setDetail] = useState("");
 
     useResetOnToggle(open, () => {
         setFile(null);
         setFileError("");
+        setRecipientsError("");
         setDetail("");
     });
 
@@ -52,7 +55,16 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
 
     const count = selectedCarriers.length;
     const countLabel = `${count} ${count === 1 ? "empresa" : "empresas"}`;
-    const canSend = count > 0 && file !== null;
+
+    // Sin botón desactivado: al enviar, lo que falta se indica bajo su bloque
+    const handleSend = () => {
+        const noRecipients = count === 0;
+        const noFile = file === null;
+        setRecipientsError(noRecipients ? "Selecciona al menos una empresa en la tabla." : "");
+        setFileError(noFile ? "Adjunta el documento del requerimiento." : "");
+        if (noRecipients || noFile) return;
+        onSuccess?.();
+    };
 
     return (
         <AppModal
@@ -73,7 +85,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                     <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" disabled={!canSend} onClick={onSuccess}>
+                    <Button size="xl" onClick={handleSend}>
                         <Send size={20} strokeWidth={2.5} /> Enviar requerimiento
                     </Button>
                 </>
@@ -82,7 +94,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4 rounded-2xl border border-brand-border/60 bg-brand-surface p-4 sm:flex-row sm:items-center sm:gap-5">
                     <div className="flex items-center gap-4">
-                        <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-brand shadow-sm">
+                        <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-card text-brand shadow-sm">
                             <Truck size={22} strokeWidth={2} />
                         </span>
                         <div className="flex flex-col">
@@ -96,11 +108,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                     </p>
                 </div>
 
-                <section className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-[14.5px] font-bold text-ink">Empresas destinatarias</h3>
-                        <Badge variant="brand" className="h-5 px-2 text-[12px] font-bold">{count}</Badge>
-                    </div>
+                <ModalSection title="Empresas destinatarias" aside={<Badge variant="brand" className="h-5 px-2 text-[12px] font-bold">{count}</Badge>}>
                     {count > 0 ? (
                         <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto pr-1">
                             {selectedCarriers.map((carrier) => (
@@ -114,15 +122,17 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                             ))}
                         </div>
                     ) : (
-                        <div className="flex items-center gap-3 rounded-xl border border-dashed border-border p-4 text-[13px] font-medium text-ink-muted">
-                            <Building2 size={18} strokeWidth={2} className="shrink-0" />
-                            Selecciona al menos una empresa en la tabla para enviar el requerimiento.
-                        </div>
+                        <FormField error={recipientsError || undefined}>
+                            <div className="flex items-center gap-3 rounded-xl border border-dashed border-border p-4 text-[13px] font-medium text-ink-muted">
+                                <Building2 size={18} strokeWidth={2} className="shrink-0" />
+                                Selecciona al menos una empresa en la tabla para enviar el requerimiento.
+                            </div>
+                        </FormField>
                     )}
-                </section>
+                </ModalSection>
 
-                <FormSection icon={<FileText size={17} strokeWidth={2.25} />} title="Documento del requerimiento" aside="Formatos permitidos: PDF, Word o Excel">
-                    <div className="flex flex-col gap-2">
+                <ModalSection title="Documento del requerimiento" aside="Formatos permitidos: PDF, Word o Excel">
+                    <FormField error={fileError || undefined}>
                         <FileDropzone
                             label="Documento del requerimiento"
                             hideLabel
@@ -131,11 +141,10 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                             file={file}
                             onChange={handleFileChange}
                         />
-                        <FieldError>{fileError}</FieldError>
-                    </div>
-                </FormSection>
+                    </FormField>
+                </ModalSection>
 
-                <FormSection icon={<AlignLeft size={17} strokeWidth={2.25} />} title="Detalle del requerimiento" aside="Opcional">
+                <ModalSection title="Detalle del requerimiento" aside="Opcional">
                     <div className="flex flex-col gap-1.5">
                         <Textarea
                             value={detail}
@@ -149,7 +158,7 @@ export default function CarrierSendRequirementModal({ open, onOpenChange, onSucc
                             {detail.length.toLocaleString("en-US")}/{MAX_DETAIL_LENGTH.toLocaleString("en-US")}
                         </FieldDescription>
                     </div>
-                </FormSection>
+                </ModalSection>
             </div>
         </AppModal>
     );

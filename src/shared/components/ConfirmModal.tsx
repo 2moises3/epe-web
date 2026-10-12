@@ -45,7 +45,7 @@ const TONES: Record<ConfirmTone, {
         wash: "bg-destructive/12",
         dash: "bg-destructive",
         ring: "bg-destructive/20",
-        coreBorder: "border-destructive/20 bg-white/90",
+        coreBorder: "border-destructive/20 bg-card/90",
         coreClass: "bg-destructive",
         pill: "border-destructive/20 bg-destructive/10 text-destructive",
         defaultIcon: <TriangleAlert size={30} strokeWidth={2.5} />,
@@ -56,7 +56,7 @@ const TONES: Record<ConfirmTone, {
         wash: "bg-status-warning/12",
         dash: "bg-status-warning",
         ring: "bg-status-warning/20",
-        coreBorder: "border-status-warning/25 bg-white/90",
+        coreBorder: "border-status-warning/25 bg-card/90",
         coreClass: "bg-status-warning",
         pill: "border-status-warning/25 bg-status-warning/10 text-status-warning",
         defaultIcon: <CircleHelp size={30} strokeWidth={2.5} />,
@@ -90,10 +90,10 @@ export default function ConfirmModal({
 
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent className="flex flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl ring-0 data-[size=default]:sm:max-w-115">
+            <AlertDialogContent className="flex flex-col gap-0 overflow-hidden rounded-2xl border-0 bg-card p-0 shadow-2xl ring-0 data-[size=default]:sm:max-w-115">
                 {/* Banner de marca con el ícono animado, teñido con el color del tono */}
                 <div
-                    className="relative h-44 w-full shrink-0 bg-brand-surface bg-cover bg-center sm:h-48"
+                    className="relative h-44 w-full shrink-0 bg-brand-surface bg-cover bg-center sm:h-48 dark:bg-blend-multiply"
                     style={{ backgroundImage: "url('/image/success_modal_background.webp')" }}
                 >
                     <div aria-hidden className={cn("absolute inset-0", t.wash)} />
@@ -108,7 +108,7 @@ export default function ConfirmModal({
                     <AlertDialogCancel
                         variant="ghost"
                         aria-label="Cerrar"
-                        className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-full bg-white/80 p-0 text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
+                        className="absolute right-3 top-3 z-20 flex size-9 items-center justify-center rounded-full bg-card/80 p-0 text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-card active:scale-95"
                     >
                         <X size={18} strokeWidth={2.5} />
                     </AlertDialogCancel>

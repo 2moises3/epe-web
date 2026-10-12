@@ -1,0 +1,109 @@
+/* Only the interacted tile moves. Short sequences stop even if the pointer stays. */
+[data-module-icon] [data-icon-part] {
+    transform-box: view-box;
+}
+
+[data-icon-part="leaf"] {
+    transform-origin: 32px 55px;
+    --icon-animation: module-leaf 1.2s ease-in-out 2;
+}
+[data-icon-part="person-left"] { --icon-animation: module-greet 1.4s ease-in-out 2; }
+[data-icon-part="person-center"] { --icon-animation: module-greet 1.4s ease-in-out .12s 2; }
+[data-icon-part="person-right"] { --icon-animation: module-greet 1.4s ease-in-out .24s 2; }
+[data-icon-part^="bar-"] { transform-origin: 32px 56px; }
+[data-icon-part="bar-first"] { --icon-animation: module-grow 1.6s ease-in-out 2; }
+[data-icon-part="bar-second"] { --icon-animation: module-grow 1.6s ease-in-out .12s 2; }
+[data-icon-part="bar-third"] { --icon-animation: module-grow 1.6s ease-in-out .24s 2; }
+[data-icon-part="truck-body"] { --icon-animation: module-drive .65s ease-in-out 4; }
+[data-icon-part="wheel-rear"] {
+    transform-origin: 18px 49px;
+    --icon-animation: module-wheel .65s linear 4;
+}
+[data-icon-part="wheel-front"] {
+    transform-origin: 49px 49px;
+    --icon-animation: module-wheel .65s linear 4;
+}
+[data-icon-part="wind-top"] { --icon-animation: module-wind 1.1s ease-out 2; }
+[data-icon-part="wind-back"] { --icon-animation: module-wind 1.1s ease-out .15s 2; }
+[data-icon-part="wind-bottom"] { --icon-animation: module-wind 1.1s ease-out .3s 2; }
+[data-icon-part="check"] {
+    stroke-dasharray: 1;
+    --icon-animation: module-check 1.8s ease-in-out 1;
+}
+[data-icon-part="shutter"] {
+    transform-origin: 32px 29px;
+    --icon-animation: module-shutter 2.4s ease-in-out 1;
+}
+[data-icon-part="parcel"] { --icon-animation: module-parcel 2.4s ease-in-out 1; }
+[data-icon-part="coin"] {
+    transform-origin: 46px 47px;
+    --icon-animation: module-coin 1.4s ease-in-out 2;
+}
+[data-icon-part="balance"] {
+    transform-origin: 32px 19px;
+    --icon-animation: module-balance 2.4s ease-in-out 1;
+}
+
+/* No autoplay, no JS timers, and no delay to navigation on click. */
+@media (prefers-reduced-motion: no-preference) {
+    [data-module-option]:is(:focus-visible, :active) [data-icon-part] {
+        animation: var(--icon-animation);
+    }
+    @media (hover: hover) {
+        [data-module-option]:hover [data-icon-part] {
+            animation: var(--icon-animation);
+        }
+    }
+}
+
+@keyframes module-leaf {
+    0%, 100% { transform: rotate(0); }
+    30% { transform: rotate(-9deg); }
+    65% { transform: rotate(5deg); }
+}
+@keyframes module-greet {
+    0%, 65%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-3px); }
+}
+@keyframes module-grow {
+    0%, 100% { transform: scaleY(1); }
+    25% { transform: scaleY(.55); }
+    65% { transform: scaleY(1); }
+}
+@keyframes module-drive {
+    0%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-1.2px); }
+    65% { transform: translateY(.6px); }
+}
+@keyframes module-wheel {
+    to { transform: rotate(360deg); }
+}
+@keyframes module-wind {
+    0%, 100% { opacity: 0; transform: translateX(3px); }
+    20% { opacity: .75; }
+    80% { opacity: 0; transform: translateX(-2px); }
+}
+@keyframes module-check {
+    0%, 100% { stroke-dashoffset: 0; }
+    15% { stroke-dashoffset: 1; }
+    65% { stroke-dashoffset: 0; }
+}
+@keyframes module-shutter {
+    0%, 100% { transform: scaleY(1); }
+    35%, 65% { transform: scaleY(.16); }
+}
+@keyframes module-parcel {
+    0%, 15%, 90%, 100% { opacity: 0; transform: translateY(2px); }
+    40%, 65% { opacity: 1; transform: translateY(0); }
+}
+@keyframes module-coin {
+    0%, 100% { transform: scaleX(1) translateY(0); }
+    30% { transform: scaleX(.2) translateY(-3px); }
+    65% { transform: scaleX(1) translateY(-1px); }
+}
+@keyframes module-balance {
+    0%, 100% { transform: rotate(0); }
+    20% { transform: rotate(-4deg); }
+    45% { transform: rotate(4deg); }
+    70% { transform: rotate(-2deg); }
+}

@@ -1,14 +1,16 @@
 import { useState } from "react";
+
 import { X, Save, FlaskConical } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm, useResetOnToggle } from "@/shared/hooks/useModalForm";
 import FileDropzone from "@/shared/components/FileDropzone";
-import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
-import { Input } from "@/shared/components/ui/input";
+import FormField from "@/shared/components/FormField";
+import InputField from "@/shared/components/InputField";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Combobox } from "@/shared/components/ui/combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import SegmentedControl from "@/shared/components/SegmentedControl";
 import { EMPTY_EXAM, EXAM_TYPES, validateExam, type ExamErrors, type ExamResult, type ExamValues } from "@/modules/campaigns/campaignExam";
 
 interface CampaignExamModalProps {
@@ -16,13 +18,13 @@ interface CampaignExamModalProps {
     onOpenChange: (open: boolean) => void;
     /** Proveedor al que se le registra el examen, se muestra bajo el título */
     providerName?: string;
+    initialValues?: ExamValues;
+    isViewOnly?: boolean;
     onSave?: (values: ExamValues) => void;
 }
 
-const REQUIRED = <span aria-hidden="true" className="text-destructive">*</span>;
-
-export default function CampaignExamModal({ open, onOpenChange, providerName, onSave }: CampaignExamModalProps) {
-    const [values, , set] = useModalForm<ExamValues>(open, EMPTY_EXAM);
+export default function CampaignExamModal({ open, onOpenChange, initialValues, isViewOnly, onSave }: CampaignExamModalProps) {
+    const [values, , set] = useModalForm<ExamValues>(open, initialValues || EMPTY_EXAM);
     const [errors, setErrors] = useState<ExamErrors>({});
 
     useResetOnToggle(open, () => setErrors({}));
@@ -47,101 +49,112 @@ export default function CampaignExamModal({ open, onOpenChange, providerName, on
             open={open}
             onOpenChange={onOpenChange}
             icon={<FlaskConical size={22} strokeWidth={2} />}
-            title="Registrar Examen"
-            description={providerName ? `Registra los análisis de laboratorio de ${providerName}.` : "Registra los análisis de laboratorio asociados al productor."}
+            title={isViewOnly ? "Detalles del Examen" : initialValues ? "Editar Examen" : "Registrar examen"}
             className="sm:max-w-275 md:max-w-250"
             footer={
-                <>
-                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
-                        <X size={20} strokeWidth={2.5} /> Cancelar
+                isViewOnly ? (
+                    <Button size="xl" onClick={() => onOpenChange(false)}>
+                        Cerrar
                     </Button>
-                    <Button size="xl" onClick={handleSave}>
-                        <Save size={20} strokeWidth={2.5} /> Guardar
-                    </Button>
-                </>
+                ) : (
+                    <>
+                        <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                            <X size={20} strokeWidth={2.5} /> Cancelar
+                        </Button>
+                        <Button size="xl" onClick={handleSave}>
+                            <Save size={20} strokeWidth={2.5} /> Guardar
+                        </Button>
+                    </>
+                )
             }
         >
             <div className="flex flex-col gap-6">
+                {/* Row 1: Origen | Tipo de examen */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Columna izquierda */}
-                    <div className="flex flex-col gap-4 sm:gap-5">
-                        <Field data-invalid={errors.fecha ? true : undefined}>
-                            <FieldLabel htmlFor="exam-date">Fecha: {REQUIRED}</FieldLabel>
-                            <Input
-                                id="exam-date"
-                                type="date"
-                                value={values.fecha}
-                                onChange={(event) => update("fecha", event.target.value)}
-                                aria-invalid={errors.fecha ? true : undefined}
-                            />
-                            {errors.fecha && <FieldError>{errors.fecha}</FieldError>}
-                        </Field>
-                        <Field data-invalid={errors.resultado ? true : undefined}>
-                            <FieldLabel htmlFor="exam-result">Resultado: {REQUIRED}</FieldLabel>
-                            <Select
-                                items={[{ value: "positivo", label: "Positivo" }, { value: "negativo", label: "Negativo" }]}
-                                value={values.resultado || null}
-                                onValueChange={(result) => update("resultado", (result as ExamResult | null) ?? "")}
-                            >
-                                <SelectTrigger id="exam-result" className="w-full" aria-invalid={errors.resultado ? true : undefined}>
-                                    <SelectValue placeholder="Seleccionar resultado" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="positivo">Positivo</SelectItem>
-                                    <SelectItem value="negativo">Negativo</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {errors.resultado && <FieldError>{errors.resultado}</FieldError>}
-                        </Field>
-                    </div>
+                    <InputField id="exam-origin" label="Origen" required placeholder="Ej. Campo A" value={values.origen} onChange={(value) => update("origen", value)} error={errors.origen} readOnly={isViewOnly} />
 
-                    {/* Columna derecha */}
-                    <div className="flex flex-col gap-4 sm:gap-5">
-                        <Field data-invalid={errors.tipoExamen ? true : undefined}>
-                            <FieldLabel>Tipo de examen: {REQUIRED}</FieldLabel>
+                    <FormField label="Tipo de examen" required error={errors.tipoExamen}>
+                        <div className={isViewOnly ? "pointer-events-none" : ""}>
                             <Combobox
                                 options={EXAM_TYPES}
                                 value={EXAM_TYPES.find((type) => type.label === values.tipoExamen)?.value ?? ""}
                                 onChange={(value) => update("tipoExamen", EXAM_TYPES.find((type) => type.value === value)?.label ?? "")}
-                                placeholder="Seleccionar tipo..."
+                                placeholder="Buscar..."
                             />
-                            {errors.tipoExamen && <FieldError>{errors.tipoExamen}</FieldError>}
-                        </Field>
-                        <Field data-invalid={errors.origen ? true : undefined}>
-                            <FieldLabel htmlFor="exam-origin">Origen: {REQUIRED}</FieldLabel>
-                            <Input
-                                id="exam-origin"
-                                placeholder="Origen"
-                                value={values.origen}
-                                onChange={(event) => update("origen", event.target.value)}
-                                className="placeholder:text-muted-foreground"
-                                aria-invalid={errors.origen ? true : undefined}
-                            />
-                            {errors.origen && <FieldError>{errors.origen}</FieldError>}
-                        </Field>
-                    </div>
+                        </div>
+                    </FormField>
                 </div>
 
+                {/* Row 2: Identificación | Resultado */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Observaciones (ocupa la misma altura visual que el dropzone) */}
-                    <Field className="h-full">
-                        <FieldLabel htmlFor="exam-observation">Observaciones/Detalles:</FieldLabel>
+                    <InputField id="exam-sample" label="Identificación de muestra" required placeholder="Ej. MUESTRA-001" value={values.identificacionMuestra} onChange={(value) => update("identificacionMuestra", value)} error={errors.identificacionMuestra} readOnly={isViewOnly} />
+
+                    <FormField id="exam-result" label="Resultado del examen" required error={errors.resultado}>
+                        <div className={isViewOnly ? "pointer-events-none" : ""}>
+                            <SegmentedControl
+                                options={[{ label: "Positivo", value: "positivo" }, { label: "Negativo", value: "negativo" }]}
+                                value={values.resultado || ""}
+                                onChange={(value) => update("resultado", value as ExamResult)}
+                            />
+                        </div>
+                    </FormField>
+                </div>
+
+                {/* Row 3: Fecha del examen | Fecha de envío | Estado */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                    <InputField id="exam-date" type="date" label="Fecha del examen" required value={values.fecha} onChange={(value) => update("fecha", value)} error={errors.fecha} readOnly={isViewOnly} />
+                    <InputField id="exam-sample-date" type="date" label="Fecha de envío de la muestra" required value={values.fechaEnvioMuestra} onChange={(value) => update("fechaEnvioMuestra", value)} error={errors.fechaEnvioMuestra} readOnly={isViewOnly} />
+
+                    <FormField id="exam-status" label="Estado de envío/resultado" required error={errors.estadoEnvioResultado}>
+                        <div className={isViewOnly ? "pointer-events-none" : ""}>
+                            <Select
+                                items={[{ value: "Pendiente", label: "Pendiente" }, { value: "En proceso", label: "En proceso" }, { value: "Entregado", label: "Entregado" }]}
+                                value={values.estadoEnvioResultado || null}
+                                onValueChange={(result) => update("estadoEnvioResultado", result ?? "")}
+                            >
+                                <SelectTrigger id="exam-status" className="w-full" aria-invalid={errors.estadoEnvioResultado ? true : undefined}>
+                                    <SelectValue placeholder="Seleccionar estado" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                    <SelectItem value="En proceso">En proceso</SelectItem>
+                                    <SelectItem value="Entregado">Entregado</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </FormField>
+                </div>
+
+                {/* Row 4: Observación | Archivo */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                    <FormField id="exam-observation" label="Observación" className="h-full">
                         <Textarea
                             id="exam-observation"
+                            placeholder="Escribe alguna observación o detalle adicional..."
                             value={values.observacion}
                             onChange={(event) => update("observacion", event.target.value)}
-                            className="resize-none h-full min-h-35.5 rounded-2xl border-border shadow-none focus-visible:ring-1 focus-visible:ring-brand/30 focus-visible:border-brand placeholder:text-muted-foreground"
+                            className="resize-none h-full min-h-35.5"
+                            readOnly={isViewOnly}
                         />
-                    </Field>
+                    </FormField>
 
-                    <div className="flex flex-col">
-                        <FileDropzone
-                            label="Archivo de examen"
-                            hint="PDF, Imagen · Máx. 10 MB"
-                            file={values.archivo}
-                            onChange={(file) => update("archivo", file)}
-                        />
-                    </div>
+                    <FormField label="Archivo de examen" required error={errors.archivo}>
+                        {isViewOnly && !values.archivo ? (
+                            <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-border bg-surface-elevated text-sm text-ink-muted">
+                                Sin archivo adjunto
+                            </div>
+                        ) : (
+                            <div className={isViewOnly ? "pointer-events-none" : ""}>
+                                <FileDropzone
+                                    label="Archivo de examen"
+                                    hideLabel
+                                    hint="PDF, Imagen · Máx. 10 MB"
+                                    file={values.archivo}
+                                    onChange={(file) => update("archivo", file)}
+                                />
+                            </div>
+                        )}
+                    </FormField>
                 </div>
             </div>
         </AppModal>

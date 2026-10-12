@@ -22,6 +22,9 @@ const provider = {
   telefono: 987654321,
   email: "ana@example.com",
   codigoLugarProduccion: 42,
+  estadoSanidadAgraria: "Registrado",
+  identidadDocArchivo: null as File | null,
+  frutas: [],
 };
 
 describe("proveedor API", () => {

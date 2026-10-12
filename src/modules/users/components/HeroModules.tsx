@@ -10,7 +10,7 @@ export default function HeroModules() {
   return (
     /* Alto en % del área disponible: el hero cede espacio al grid en pantallas
        bajas, así todo entra sin scroll sin depender de un alto fijo en px. */
-    <section className="relative w-full h-auto py-8 lg:py-0 lg:h-[30.6%] shrink-0 overflow-hidden">
+    <section className="relative h-auto w-full shrink-0 overflow-hidden py-7 lg:h-[27.5%] lg:py-0">
       {/* Foto. El borde curvo se recorta por CSS (no viene incrustado en el asset),
           así la altura del hero y la forma de la curva se ajustan por separado.
           En móvil se oculta: el recorte curvo y el 67% de ancho dejarían el texto
@@ -64,12 +64,12 @@ export default function HeroModules() {
       <div className="relative z-20 h-full flex flex-col justify-center px-4 sm:px-8 lg:px-0 lg:pl-16 max-w-full lg:max-w-[35%] xl:max-w-[38%]">
         <div className="flex items-center gap-2 mb-2 lg:mb-3">
           <Sparkles size={16} className="text-brand shrink-0" strokeWidth={2} />
-          <span className="text-[12px] sm:text-[14px] md:text-[16px] xl:text-[18px] font-medium tracking-[0.15em] sm:tracking-[0.2em] md:tracking-[0.25em]">
+          <span className="text-[12px] font-medium tracking-[0.15em] sm:text-[14px] sm:tracking-[0.2em] md:text-[15px] md:tracking-[0.25em] xl:text-[16px]">
             Bienvenido a tu
           </span>
         </div>
 
-        <h1 className="text-[28px] sm:text-4xl lg:text-[42px] xl:text-[52px] leading-[1.1] lg:leading-[1.05] text-brand-dark font-semibold tracking-tight text-balance break-words">
+        <h1 className="text-balance text-[28px] font-semibold leading-[1.1] tracking-tight text-brand-dark sm:text-4xl lg:text-[38px] lg:leading-[1.05] xl:text-[46px]">
           Centro de operaciones
           <br />
           <span className="text-brand font-medium">Agro F.V.</span>

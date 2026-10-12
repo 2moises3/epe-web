@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { X, Contact, ExternalLink, FileSignature, AlertCircle, RotateCw } from "lucide-react";
+import { X, Contact, ExternalLink, AlertCircle, RotateCw } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { Button } from "@/shared/components/ui/button";
 import { InfoField } from "@/shared/components/InfoField";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
-import FormSection from "@/shared/components/FormSection";
+import ModalSection from "@/shared/components/ModalSection";
 import { TABLE_HEAD_BG } from "@/shared/components/DataTableRow";
 import { getClienteNegocioContratos } from "@/modules/clients/api/cliente-negocio-contratos.api";
 import type { ContratoClienteNegocioDto } from "@/modules/clients/api/cliente-negocio-contratos.dto";
@@ -82,18 +82,20 @@ function ClientViewModalContent({ open, onOpenChange, client }: ClientViewModalP
             className="sm:max-w-4xl"
             footer={<Button variant="outline" size="xl" onClick={() => onOpenChange(false)}><X size={20} strokeWidth={2.5} /> Cerrar</Button>}
         >
-            <div className="grid grid-cols-2 gap-5 sm:gap-6">
-                <InfoField label="Empresa" value={client.nombreEmpresa} className="col-span-2" />
-                <InfoField label="Nombre de contacto" value={client.nombreContacto} />
-                <InfoField label="Teléfono" value={client.telefono} />
-                <InfoField label="RUC" value={client.ruc} />
-                <InfoField label="Correo corporativo" value={client.correoCorporativo} />
-                <InfoField label="Ubicación" value={client.ubicacion} />
-                <InfoField label="Tipo de cliente" value={client.tipoCliente === "exportador" ? "Exportador" : "Industria"} />
-            </div>
+            <div className="flex flex-col gap-7">
+                <ModalSection title="Datos del cliente">
+                <div className="grid grid-cols-2 gap-5 sm:gap-6">
+                    <InfoField label="Empresa" value={client.nombreEmpresa} className="col-span-2" />
+                    <InfoField label="Nombre de contacto" value={client.nombreContacto} />
+                    <InfoField label="Teléfono" value={client.telefono} />
+                    <InfoField label="RUC" value={client.ruc} />
+                    <InfoField label="Correo corporativo" value={client.correoCorporativo} />
+                    <InfoField label="Ubicación" value={client.ubicacion} />
+                    <InfoField label="Tipo de cliente" value={client.tipoCliente === "exportador" ? "Exportador" : "Industria"} />
+                </div>
+                </ModalSection>
 
-            <div className="mt-7">
-                <FormSection icon={<FileSignature size={16} strokeWidth={2.5} />} title="Contratos por campaña">
+                <ModalSection title="Contratos por campaña">
                     {loadState.status === "loading" && <p role="status" aria-live="polite" className="text-[13px] text-ink-muted">Cargando contratos...</p>}
                     {loadState.status === "error" && (
                         <Alert variant="destructive">
@@ -138,7 +140,7 @@ function ClientViewModalContent({ open, onOpenChange, client }: ClientViewModalP
                             </Table>
                         </div>
                     )}
-                </FormSection>
+                </ModalSection>
             </div>
         </AppModal>
     );

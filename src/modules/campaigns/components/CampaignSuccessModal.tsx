@@ -7,7 +7,11 @@ type CampaignSuccessMode =
     | "exam"
     | "interview"
     | "client"
+    | "contract"
+    | "delivery"
     | "certification"
+    | "expansion"
+    | "certificationPayment"
     | "payment"
     | "receipt"
     | "advance";
@@ -27,8 +31,12 @@ const COPY: Record<CampaignSuccessMode, { title: string; description: string }> 
     provider: { title: "Proveedor Añadido a Campaña", description: "Se ha añadido el proveedor exitosamente a la campaña" },
     exam: { title: "Examen Médico Registrado", description: "Se ha registrado el examen médico del proveedor exitosamente" },
     interview: { title: "Informe Registrado", description: "Se visualizara informe" },
-    client: { title: "Clientes vinculados", description: "Los clientes se vincularon correctamente y ya puedes consultarlos en el detalle de la campaña." },
+    client: { title: "Cliente vinculado", description: "El cliente ya aparece en la gestión de clientes de esta campaña." },
+    contract: { title: "Contrato guardado", description: "El acuerdo comercial ya aparece en la gestión de contratos del cliente." },
+    delivery: { title: "Entrega guardada", description: "La programación ya aparece en la gestión de entregas del contrato." },
     certification: { title: "Certificación guardada", description: "Los cambios de la certificación de campaña se guardaron correctamente." },
+    expansion: { title: "Ampliación Registrada", description: "Los kilos adicionales se sumaron correctamente a la certificación." },
+    certificationPayment: { title: "Pago Registrado", description: "El pago de la certificación se registró correctamente." },
     payment: { title: "Pago Registrado", description: "Se ha registrado el pago al transportista exitosamente" },
     receipt: { title: "Boleta Adjuntada", description: "Se ha adjuntado la boleta de pago exitosamente" },
     advance: { title: "Pago Completado", description: "Se ha cerrado el saldo pendiente del adelanto exitosamente" },

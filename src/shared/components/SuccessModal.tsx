@@ -70,11 +70,11 @@ export default function SuccessModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 showCloseButton={false}
-                className="group max-w-[calc(100%-2rem)] sm:max-w-115 p-0 rounded-2xl bg-white border-0 shadow-2xl gap-0 overflow-hidden max-h-[90vh] flex flex-col"
+                className="group max-w-[calc(100%-2rem)] sm:max-w-115 p-0 rounded-2xl bg-card border-0 shadow-2xl gap-0 overflow-hidden max-h-[90vh] flex flex-col"
             >
                 {/* Banner de marca con el check animado */}
                 <div
-                    className="relative h-44 sm:h-48 w-full shrink-0 bg-brand-surface bg-cover bg-center"
+                    className="relative h-44 sm:h-48 w-full shrink-0 bg-brand-surface bg-cover bg-center dark:bg-blend-multiply"
                     style={{ backgroundImage: "url('/image/success_modal_background.webp')" }}
                 >
                     <div aria-hidden className="absolute left-6 top-6 hidden sm:block">
@@ -88,7 +88,7 @@ export default function SuccessModal({
                         render={
                             <button
                                 aria-label="Cerrar"
-                                className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-white active:scale-95"
+                                className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-card/80 text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-card active:scale-95"
                             />
                         }
                     >
