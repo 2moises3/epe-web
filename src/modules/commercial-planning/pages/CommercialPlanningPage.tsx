@@ -80,7 +80,7 @@ export default function CommercialPlanningPage() {
         <div className="px-4 py-5 sm:px-8 lg:px-14">
             <PageHeader
                 icon={<Contact size={24} strokeWidth={2.5} />}
-                title="Planificación Comercial"
+                title="Gestión Comercial"
                 description="Administra los clientes y planifica la gestión comercial."
                 action={
                     <Button size="xl" onClick={() => setIsCreateModalOpen(true)}>

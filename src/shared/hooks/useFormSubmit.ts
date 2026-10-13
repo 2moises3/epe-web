@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useResetOnToggle } from "@/shared/hooks/useModalForm";
 import { getBadRequestFieldErrors, type FormFieldErrors } from "@/shared/validation/api-form-errors";
 
@@ -21,22 +21,26 @@ interface UseFormSubmitOptions<V> {
 export function useFormSubmit<V>({ open, validate, onSubmit, backendFields }: UseFormSubmitOptions<V>) {
     const [errors, setErrors] = useState<FormFieldErrors>({});
     const [saving, setSaving] = useState(false);
+    // El estado no alcanza contra un doble clic: dos clics en el mismo instante verían `saving` en false
+    const inFlight = useRef(false);
 
     useResetOnToggle(open, () => {
         setErrors({});
         setSaving(false);
+        inFlight.current = false;
     });
 
     /** Quita el error de un campo (y el general) en cuanto el usuario lo corrige */
     const clearError = (field: string) => setErrors((current) => ({ ...current, [field]: undefined, _form: undefined }));
 
     const submit = async (values: V) => {
-        if (saving) return;
+        if (inFlight.current) return;
         const found = validate(values);
         if (Object.keys(found).length > 0) {
             setErrors(found);
             return;
         }
+        inFlight.current = true;
         setSaving(true);
         setErrors({});
         try {
@@ -44,6 +48,7 @@ export function useFormSubmit<V>({ open, validate, onSubmit, backendFields }: Us
         } catch (error) {
             setErrors(getBadRequestFieldErrors(error, backendFields));
         } finally {
+            inFlight.current = false;
             setSaving(false);
         }
     };

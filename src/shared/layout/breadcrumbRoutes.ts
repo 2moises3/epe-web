@@ -6,7 +6,7 @@ export interface BreadcrumbLevel {
 const ROOT_ROUTES: Record<string, string> = {
     campaigns: "Campañas",
     proveedores: "Proveedores",
-    "planificacion-comercial": "Planificación comercial",
+    "planificacion-comercial": "Gestión comercial",
     transportistas: "Transporte",
     calidad: "Calidad",
     "logistica-despacho": "Logística y Despacho",

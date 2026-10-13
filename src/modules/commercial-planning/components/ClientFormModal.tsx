@@ -1,23 +1,31 @@
-import { useRef, useState } from "react";
-import { X, UserPlus, Save, AlertCircle } from "lucide-react";
+import { X, UserPlus, Save } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm } from "@/shared/hooks/useModalForm";
+import { useFormSubmit } from "@/shared/hooks/useFormSubmit";
 import FormField from "@/shared/components/FormField";
 import InputField from "@/shared/components/InputField";
-import { Alert, AlertDescription } from "@/shared/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import SegmentedControl from "@/shared/components/SegmentedControl";
 import { Button } from "@/shared/components/ui/button";
 import { createClienteNegocio, updateClienteNegocio } from "@/modules/clients/api/cliente-negocio.api";
 import type { ClienteNegocioInput } from "@/modules/clients/api/cliente-negocio.dto";
 import type { ClienteNegocio } from "@/modules/clients/api/cliente-negocio.mapper";
 import { toClienteNegocioInput, validateClienteNegocioInput } from "@/modules/clients/api/cliente-negocio.validation";
-import { createInFlightGuard } from "@/modules/clients/api/in-flight-guard";
-import { submitValidatedClienteNegocio } from "@/modules/clients/api/client-submission";
 
 const CLIENT_TYPES = [
     { value: "exportador", label: "Exportador" },
     { value: "industria", label: "Industria" },
 ];
+
+/** Propiedades del backend → campo del formulario (coinciden), para ubicar los errores 400 bajo cada campo */
+const BACKEND_FIELDS: Record<string, string> = {
+    nombreEmpresa: "nombreEmpresa",
+    nombreContacto: "nombreContacto",
+    telefono: "telefono",
+    ruc: "ruc",
+    correoCorporativo: "correoCorporativo",
+    ubicacion: "ubicacion",
+    tipoCliente: "tipoCliente",
+};
 
 const EMPTY_CLIENT: ClienteNegocioInput = {
     nombreEmpresa: "", nombreContacto: "", telefono: "", ruc: "",
@@ -27,113 +35,92 @@ const EMPTY_CLIENT: ClienteNegocioInput = {
 interface ClientFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** Se llama solo cuando el backend confirmó el guardado */
     onSuccess?: (client: ClienteNegocio) => void;
     mode?: "create" | "edit";
     clientId?: number;
     initialValues?: Partial<ClienteNegocioInput>;
 }
 
+/**
+ * Alta y edición de un cliente. Los datos van agrupados por afinidad: la empresa (nombre, RUC, tipo) y,
+ * debajo, la persona y los medios para contactarla. Si el backend rechaza algo, el mensaje sale bajo su campo.
+ */
 export default function ClientFormModal({
     open, onOpenChange, onSuccess, mode = "create", clientId, initialValues,
 }: ClientFormModalProps) {
     const isEdit = mode === "edit";
     const [values, , set] = useModalForm<ClienteNegocioInput>(open, { ...EMPTY_CLIENT, ...initialValues });
-    const formIdentity = `${open}:${mode}:${clientId ?? "new"}`;
-    const [feedback, setFeedback] = useState<{
-        identity: string;
-        errors: Partial<Record<keyof ClienteNegocioInput, string>>;
-        requestError: string | null;
-    }>({ identity: "", errors: {}, requestError: null });
-    const [isSaving, setIsSaving] = useState(false);
-    const savingGuard = useRef(createInFlightGuard());
-    const errors = feedback.identity === formIdentity ? feedback.errors : {};
-    const requestError = feedback.identity === formIdentity ? feedback.requestError : null;
+    const { errors, saving, clearError, submit } = useFormSubmit<ClienteNegocioInput>({
+        open,
+        validate: (current) => validateClienteNegocioInput(toClienteNegocioInput(current)),
+        onSubmit: async (current) => {
+            const input = toClienteNegocioInput(current);
+            const saved = isEdit && clientId ? await updateClienteNegocio(clientId, input) : await createClienteNegocio(input);
+            onSuccess?.(saved);
+        },
+        backendFields: BACKEND_FIELDS,
+    });
 
-    const handleOpenChange = (nextOpen: boolean) => {
-        if (savingGuard.current.isInFlight) return;
-        setFeedback({ identity: "", errors: {}, requestError: null });
-        onOpenChange(nextOpen);
-    };
-
-    const handleSubmit = async () => {
-        const input = toClienteNegocioInput(values);
-        let requestStarted = false;
-        setFeedback({ identity: formIdentity, errors: {}, requestError: null });
-        try {
-            const result = await submitValidatedClienteNegocio(
-                input,
-                validateClienteNegocioInput,
-                savingGuard.current,
-                (validatedInput) => isEdit && clientId
-                    ? updateClienteNegocio(clientId, validatedInput)
-                    : createClienteNegocio(validatedInput),
-                () => {
-                    requestStarted = true;
-                    setIsSaving(true);
-                },
-            );
-            if (result.status === "invalid") {
-                setFeedback({ identity: formIdentity, errors: result.errors, requestError: null });
-                return;
-            }
-            if (result.status === "busy") return;
-            onSuccess?.(result.value);
-        } catch {
-            setFeedback({ identity: formIdentity, errors: {}, requestError: "No se pudo guardar el cliente. Verifica la conexión e inténtalo nuevamente." });
-        } finally {
-            if (requestStarted) setIsSaving(false);
-        }
-    };
-
-    const fieldError = (field: keyof ClienteNegocioInput) => errors[field];
+    const bind = (field: keyof ClienteNegocioInput) => ({
+        id: `client-${field}`,
+        required: true,
+        value: values[field],
+        error: errors[field],
+        disabled: saving,
+        onChange: (next: string) => {
+            set(field)(next as never);
+            clearError(field);
+        },
+    });
 
     return (
         <AppModal
             open={open}
-            onOpenChange={handleOpenChange}
+            onOpenChange={(next) => !(saving && !next) && onOpenChange(next)}
             icon={<UserPlus size={22} strokeWidth={2} />}
-            title={isEdit ? "Editar Cliente" : "Registrar Cliente"}
-            description={isEdit
-                ? "Modifica la información del cliente existente. Los campos con * son obligatorios."
-                : "Completa la información para registrar un nuevo cliente. Los campos con * son obligatorios."}
+            title={isEdit ? "Editar cliente" : "Registrar cliente"}
+            description={isEdit ? "Modifica los datos del cliente." : "Completa los datos para registrar un nuevo cliente."}
             className="sm:max-w-162.5"
             footer={
                 <>
-                    <Button variant="outline" size="xl" onClick={() => handleOpenChange(false)} disabled={isSaving}>
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)} disabled={saving}>
                         <X size={20} strokeWidth={2.5} /> Cancelar
                     </Button>
-                    <Button size="xl" onClick={handleSubmit} disabled={isSaving} aria-busy={isSaving}>
-                        {isSaving ? "Guardando..." : isEdit
-                            ? <><Save size={20} strokeWidth={2.5} /> Guardar</>
-                            : <><UserPlus size={20} strokeWidth={2.5} /> Crear Cliente</>}
+                    <Button size="xl" onClick={() => void submit(values)} disabled={saving} aria-busy={saving}>
+                        {saving
+                            ? "Guardando..."
+                            : isEdit
+                                ? <><Save size={20} strokeWidth={2.5} /> Guardar cambios</>
+                                : <><UserPlus size={20} strokeWidth={2.5} /> Guardar cliente</>}
                     </Button>
                 </>
             }
         >
-            {requestError && (
-                <Alert variant="destructive" className="mb-5">
-                    <AlertCircle />
-                    <AlertDescription>{requestError}</AlertDescription>
-                </Alert>
-            )}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6" aria-busy={isSaving}>
-                <InputField id="client-company" label="Empresa:" className="sm:col-span-2" required value={values.nombreEmpresa} onChange={set("nombreEmpresa")} error={fieldError("nombreEmpresa") || undefined} />
-                <InputField id="client-contact" label="Nombre de contacto:" required value={values.nombreContacto} onChange={set("nombreContacto")} error={fieldError("nombreContacto") || undefined} />
-                <InputField id="client-phone" label="Teléfono:" required value={values.telefono} onChange={set("telefono")} error={fieldError("telefono") || undefined} />
-                <InputField id="client-ruc" label="RUC:" required value={values.ruc} onChange={set("ruc")} error={fieldError("ruc") || undefined} />
-                <InputField id="client-email" label="Correo corporativo:" type="email" required value={values.correoCorporativo} onChange={set("correoCorporativo")} error={fieldError("correoCorporativo") || undefined} />
-                <InputField id="client-location" label="Ubicación:" required value={values.ubicacion} onChange={set("ubicacion")} error={fieldError("ubicacion") || undefined} />
-                <FormField id="client-type" label="Tipo de cliente:" required error={fieldError("tipoCliente") || undefined}>
-                    <Select items={CLIENT_TYPES} value={values.tipoCliente || null} onValueChange={(value) => set("tipoCliente")((value ?? "") as ClienteNegocioInput["tipoCliente"])}>
-                        <SelectTrigger id="client-type" className="w-full" aria-required="true" aria-invalid={Boolean(fieldError("tipoCliente"))} aria-describedby={fieldError("tipoCliente") ? "client-type-error" : undefined}>
-                            <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="exportador">Exportador</SelectItem>
-                            <SelectItem value="industria">Industria</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </FormField>
+            <div className="flex flex-col gap-4">
+                {Boolean(errors._form) && <FormField error={errors._form} />}
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5" aria-busy={saving}>
+                    <InputField {...bind("nombreEmpresa")} label="Empresa" maxLength={255} placeholder="Ej. Exportadora Andina S.A.C." className="sm:col-span-2" />
+                    <InputField {...bind("ruc")} label="RUC" maxLength={11} inputMode="numeric" placeholder="11 dígitos" />
+
+                    <FormField label="Tipo de cliente" required error={errors.tipoCliente}>
+                        <SegmentedControl
+                            options={CLIENT_TYPES}
+                            value={values.tipoCliente}
+                            onChange={(next) => {
+                                if (saving) return;
+                                set("tipoCliente")(next as ClienteNegocioInput["tipoCliente"]);
+                                clearError("tipoCliente");
+                            }}
+                        />
+                    </FormField>
+
+                    <InputField {...bind("nombreContacto")} label="Nombre de contacto" maxLength={255} placeholder="Nombres y apellidos" />
+                    <InputField {...bind("telefono")} label="Teléfono" type="tel" inputMode="tel" maxLength={16} placeholder="Ej. 987654321" />
+                    <InputField {...bind("correoCorporativo")} label="Correo corporativo" type="email" inputMode="email" maxLength={320} placeholder="compras@empresa.com" />
+                    <InputField {...bind("ubicacion")} label="Ubicación" placeholder="Ej. Piura, Perú" />
+                </div>
             </div>
         </AppModal>
     );

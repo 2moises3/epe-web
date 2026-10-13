@@ -19,6 +19,7 @@ import ProviderFincasPage from './modules/providers/pages/ProviderFincasPage'
 import ProviderDetailsPage from './modules/providers/pages/ProviderDetailsPage'
 import ProviderCertificadosPage from './modules/providers/pages/ProviderCertificadosPage'
 import CommercialPlanningPage from './modules/commercial-planning/pages/CommercialPlanningPage'
+import ClientDetailsPage from './modules/commercial-planning/pages/ClientDetailsPage'
 import CarriersPage from './modules/carriers/pages/CarriersPage'
 import CarrierDetailsPage from './modules/carriers/pages/CarrierDetailsPage'
 import QualityPage from '@/modules/quality/pages/QualityPage'
@@ -123,6 +124,7 @@ function App() {
           <Route path="/proveedores/:id/fincas" element={<ProviderFincasPage />} />
           <Route path="/proveedores/:id/certificados" element={<ProviderCertificadosPage />} />
           <Route path="/planificacion-comercial" element={<CommercialPlanningPage />} />
+          <Route path="/planificacion-comercial/:id" element={<ClientDetailsPage />} />
           <Route path="/transportistas" element={<CarriersPage />} />
           <Route path="/transportistas/:id" element={<CarrierDetailsPage />} />
           <Route path="/calidad" element={<QualityPage />} />

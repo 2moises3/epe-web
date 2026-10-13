@@ -5,7 +5,6 @@ export type Theme = "light" | "dark";
 /** Misma clave que lee el script inline de index.html para pintar el tema antes del primer render (sin parpadeo). */
 const STORAGE_KEY = "epe-theme";
 const listeners = new Set<() => void>();
-const systemQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
 function readStoredTheme(): Theme | null {
     try {
@@ -16,9 +15,12 @@ function readStoredTheme(): Theme | null {
     }
 }
 
-/** Sin elección guardada, sigue al sistema operativo. */
+/**
+ * La app siempre arranca en claro: sin elección guardada NO sigue al sistema operativo (un equipo en modo oscuro
+ * no debe abrir la app oscura). Solo el interruptor del header, al usarse, cambia y recuerda el tema.
+ */
 function getTheme(): Theme {
-    return readStoredTheme() ?? (systemQuery.matches ? "dark" : "light");
+    return readStoredTheme() ?? "light";
 }
 
 function applyTheme(theme: Theme) {
@@ -29,11 +31,6 @@ function emit() {
     applyTheme(getTheme());
     listeners.forEach((listener) => listener());
 }
-
-// Si el usuario nunca eligió, el tema acompaña los cambios del sistema en vivo
-systemQuery.addEventListener("change", () => {
-    if (!readStoredTheme()) emit();
-});
 
 function subscribe(listener: () => void) {
     listeners.add(listener);

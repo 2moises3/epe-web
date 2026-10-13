@@ -37,7 +37,7 @@ La experiencia combina tablas y tarjetas, filtros, formularios en modales y una 
 | :--- | :--- | :--- |
 | 🌾 **Gestión de campañas** | Campañas, fruta/derivadas, relaciones con proveedores/clientes y certificados. | Integración parcial; pagos a transportistas sin API backend |
 | 🤝 **Gestión de proveedores** | Directorio, filtros, detalle y entrevista. | Listado conectado; CRUD, certificados, exámenes y frutas pendientes |
-| 🏢 **Planificación comercial** | Directorio y gestión de clientes/contratos. | Listado API parcial; edición y vistas comerciales pendientes |
+| 🏢 **Gestión comercial** | Directorio y gestión de clientes/contratos. | Listado API parcial; edición y vistas comerciales pendientes |
 | 🚚 **Gestión de transporte** | Empresas, vehículos, choferes y pagos. | CRUD de empresas/vehículos/choferes conectado; trazabilidad pendiente; pagos sin API backend |
 | 🛡️ **Gestión de calidad** | Certificaciones de campañas y proveedores. | Certificados de campaña parcialmente conectados; certificados/exámenes de proveedor pendientes |
 
