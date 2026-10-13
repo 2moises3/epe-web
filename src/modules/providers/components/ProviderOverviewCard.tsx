@@ -6,6 +6,8 @@ import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 
 interface ProviderOverviewCardProps {
     provider: Proveedor;
+    /** Etiqueta sobre el nombre; por defecto "Proveedor agrícola" (en campaña: Productor o Acopiador) */
+    eyebrow?: string;
 }
 
 /** Solo se enlaza a documentos http(s): cualquier otro esquema (javascript:, data:) se descarta */
@@ -31,7 +33,7 @@ function DetailItem({ icon, label, children }: { icon: ReactNode; label: string;
 }
 
 /** Tarjeta principal del detalle: quién es el proveedor y los datos con los que se registró. */
-export default function ProviderOverviewCard({ provider }: ProviderOverviewCardProps) {
+export default function ProviderOverviewCard({ provider, eyebrow = "Proveedor agrícola" }: ProviderOverviewCardProps) {
     const fullName = `${provider.nombres} ${provider.apellido}`;
     const initials = `${provider.nombres[0] ?? ""}${provider.apellido[0] ?? ""}`.toUpperCase();
     const documentUrl = safeUrl(provider.identidadDocUrl);
@@ -50,7 +52,7 @@ export default function ProviderOverviewCard({ provider }: ProviderOverviewCardP
                         {initials}
                     </span>
                     <div className="min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-brand">Proveedor agrícola</p>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{eyebrow}</p>
                         <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-ink wrap-anywhere sm:text-[28px]">{fullName}</h2>
                         <div className="mt-2 flex flex-wrap gap-2">
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-surface px-2.5 py-1 text-[11px] font-semibold text-brand">

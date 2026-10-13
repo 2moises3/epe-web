@@ -1,415 +1,232 @@
-import { useCallback, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
-import { Tractor, Truck, MapPin, FlaskConical, UserCheck, TriangleAlert, FilePlus, Eye, Pencil, Trash2, User } from "lucide-react";
-
+import { ClipboardList, FlaskConical, Layers, MapPin, RotateCw, Scale, TriangleAlert, UserRoundCheck } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
-import SegmentedTabs from "@/shared/components/SegmentedTabs";
+import StatusBadge from "@/shared/components/StatusBadge";
+import LinkedCard, { LinkedRow } from "@/shared/components/LinkedCard";
+import MetricCards, { type Metric } from "@/shared/components/MetricCards";
 import PageHeader from "@/shared/layout/PageHeader";
-
-import TableCard from "@/shared/components/TableCard";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/shared/components/ui/empty";
-import { TABLE_HEAD_BG } from "@/shared/components/DataTableRow";
-import ConfirmModal from "@/shared/components/ConfirmModal";
-
+import ProviderOverviewCard from "@/modules/providers/components/ProviderOverviewCard";
 import { getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
 import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
+import { parseFecha } from "@/modules/campaigns/api/fecha.util";
+import { examEstadoLabel, type LocalExam } from "@/modules/campaigns/campaignExam";
+import { useProviderExams } from "@/modules/campaigns/campaignExams.store";
+import { getCampaignInterviews } from "@/modules/campaigns/campaignInterview.utils";
 import { formatCampaignNumber } from "@/modules/campaigns/campaignDetails.utils";
 import { getExamenesProveedor } from "@/modules/providers/api/provider-subresources.api";
 import type { ExamenProveedorDto } from "@/modules/providers/api/provider-subresources.dto";
-import { parseFecha } from "@/modules/campaigns/api/fecha.util";
 
-import type { ExamValues, LocalExam } from "@/modules/campaigns/campaignExam";
-import CampaignExamModal from "@/modules/campaigns/components/CampaignExamModal";
-import CampaignFincaModal, { type FincaValues } from "@/modules/campaigns/components/CampaignFincaModal";
+/** Cuántas filas muestra cada resumen; el resto se ve en su vista de gestión */
+const PREVIEW_ROWS = 3;
 
-// --- Mock Interfaces for Fincas ---
-interface LocalFinca extends FincaValues {
-    id: string;
-}
+type LoadState =
+    | { status: "loading" }
+    | { status: "error"; message: string }
+    | { status: "ready"; relation: CampaniaProveedor };
 
-function formatExamDate(value: string | undefined | null) {
+function displayDate(value: string) {
     if (!value) return "—";
     const date = parseFecha(value);
     return Number.isNaN(date.getTime()) ? "—" : format(date, "dd/MM/yyyy");
 }
 
+/** Cada examen, sea local o del backend, con lo mínimo que muestra el resumen */
+interface ExamSummary {
+    key: string;
+    title: string;
+    type: string;
+    date: string;
+    status: string;
+    hasResult: boolean;
+}
+
+const fromLocal = (exam: LocalExam): ExamSummary => ({
+    key: exam.id,
+    title: exam.identificacionMuestra,
+    type: exam.tipoExamen,
+    date: exam.fecha,
+    status: exam.estado === "resultado" && exam.resultado ? (exam.resultado === "positivo" ? "Positivo" : "Negativo") : examEstadoLabel(exam.estado),
+    hasResult: exam.estado === "resultado",
+});
+
+const fromApi = (exam: ExamenProveedorDto): ExamSummary => ({
+    key: `api-${exam.examenProveedorId}`,
+    title: exam.tipoExamen,
+    type: exam.tipoExamen,
+    date: exam.fecha,
+    status: exam.resultado === "positivo" ? "Positivo" : "Negativo",
+    hasResult: true,
+});
+
+/**
+ * Detalle de un proveedor dentro de una campaña: quién es, cuánto aporta y un resumen de sus exámenes y
+ * entrevistas, con acceso directo a las vistas donde se gestionan. Las fincas no se vinculan acá: salen de
+ * las entrevistas del productor.
+ */
 export default function CampaignProviderDetailsPage() {
-    const { id, cxpId: paramCxpId } = useParams<{ id: string; cxpId: string }>();
+    const { id, cxpId: relationParam } = useParams<{ id: string; cxpId: string }>();
     const campaniaId = Number(id);
-    const cxpId = Number(paramCxpId);
+    const cxpId = Number(relationParam);
     const navigate = useNavigate();
-
-    const [relation, setRelation] = useState<CampaniaProveedor | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [loadError, setLoadError] = useState<string | null>(null);
-
-    const [activeTab, setActiveTab] = useState<"fincas" | "examen" | "entrevista">("fincas");
-
-    // States for Tabs API/Local Data
+    const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
     const [apiExams, setApiExams] = useState<ExamenProveedorDto[]>([]);
 
-
-    // In-memory data (TODO: replace with APIs when ready)
-    const [localExams, setLocalExams] = useState<LocalExam[]>([]);
-    const [localFincas, setLocalFincas] = useState<LocalFinca[]>([
-        { id: "finca-1", nombre: "Finca El Pedregal", hectareas: "15.5", zona: "Sullana Norte" }
-    ]);
-
-    // Modals state
-    const [examModal, setExamModal] = useState<{ open: boolean; mode?: "create" | "edit" | "view"; examId?: string }>({ open: false });
-    const [fincaModalOpen, setFincaModalOpen] = useState(false);
-
-    // Confirm Modals
-    const [deleteExamId, setDeleteExamId] = useState<string | null>(null);
-    const [deleteFincaId, setDeleteFincaId] = useState<string | null>(null);
-
-    const loadData = useCallback(async () => {
-        if (!campaniaId || !cxpId) return;
-        setIsLoading(true);
+    const load = useCallback(async () => {
+        if (!Number.isInteger(campaniaId) || campaniaId < 1 || !Number.isInteger(cxpId) || cxpId < 1) {
+            setLoadState({ status: "error", message: "La campaña o el proveedor no son válidos." });
+            return;
+        }
+        setLoadState({ status: "loading" });
         try {
-            const data = await getCampaniaProveedoresByCampania(campaniaId);
-            const found = data.find((r) => r.cxpId === cxpId);
-            if (!found) {
-                setLoadError("No se encontró el proveedor en esta campaña.");
+            const relations = await getCampaniaProveedoresByCampania(campaniaId);
+            const relation = relations.find((item) => item.cxpId === cxpId);
+            if (!relation) {
+                setLoadState({ status: "error", message: "No se encontró el proveedor en esta campaña." });
                 return;
             }
-            setRelation(found);
-            
-            // Load exams if provider exists
-            try {
-                const exams = await getExamenesProveedor(found.proveedorId);
-                setApiExams(exams);
-            } catch {
-                // Silently fail exams for now
-            }
-
+            setLoadState({ status: "ready", relation });
+            // Los exámenes son una sección secundaria: si su servicio falla, el detalle igual se muestra
+            getExamenesProveedor(relation.proveedorId).then(setApiExams).catch(() => setApiExams([]));
         } catch {
-            setLoadError("No se pudo cargar la información.");
-        } finally {
-            setIsLoading(false);
+            setLoadState({ status: "error", message: "No se pudo cargar la información del proveedor." });
         }
     }, [campaniaId, cxpId]);
 
-    // Carga inicial desde la API; el estado se actualiza al resolverse la petición.
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        void loadData();
-    }, [loadData]);
+    // Carga inicial desde las APIs existentes; el estado se actualiza al resolverse la petición.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => { void load(); }, [load]);
 
-    if (isLoading) {
+    const proveedorId = loadState.status === "ready" ? loadState.relation.proveedorId : 0;
+    const localExams = useProviderExams(proveedorId);
+    const exams = useMemo<ExamSummary[]>(() => [...localExams.map(fromLocal), ...apiExams.map(fromApi)], [localExams, apiExams]);
+
+    if (loadState.status !== "ready") {
         return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <div className="flex flex-col items-center gap-4 text-ink-muted">
-                    <Spinner className="size-10" />
-                    <p className="font-medium">Cargando detalles...</p>
-                </div>
+            <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-5 text-center">
+                {loadState.status === "loading" ? (
+                    <><Spinner className="size-9 text-brand" /><p className="text-ink-muted">Cargando detalle...</p></>
+                ) : (
+                    <>
+                        <TriangleAlert className="size-10 text-brand" aria-hidden="true" />
+                        <h1 className="text-xl font-bold text-ink">Detalle no disponible</h1>
+                        <p role="alert" className="text-ink-muted">{loadState.message}</p>
+                        <div className="flex gap-3">
+                            <Button variant="outline" onClick={() => navigate(`/campaigns/${campaniaId}/providers`)}>Volver a proveedores</Button>
+                            <Button onClick={() => void load()}><RotateCw size={17} /> Reintentar</Button>
+                        </div>
+                    </>
+                )}
             </div>
         );
     }
 
-    if (loadError || !relation) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center px-4">
-                <Empty className="max-w-md rounded-2xl bg-card border border-border shadow-sm p-8">
-                    <EmptyHeader>
-                        <EmptyMedia variant="default"><TriangleAlert size={32} strokeWidth={2} /></EmptyMedia>
-                        <EmptyTitle>Error al cargar</EmptyTitle>
-                        <EmptyDescription>{loadError}</EmptyDescription>
-                        <Button className="mt-4" onClick={() => navigate(`/campaigns/${campaniaId}/providers`)}>
-                            Volver a proveedores
-                        </Button>
-                    </EmptyHeader>
-                </Empty>
-            </div>
-        );
-    }
-
+    const { relation } = loadState;
+    const proveedor = relation.proveedor;
     const isProducer = relation.tipoProveedor === "productor";
-    const name = relation.proveedor ? `${relation.proveedor.nombres} ${relation.proveedor.apellido}` : "Proveedor sin datos";
+    const roleLabel = isProducer ? "Productor" : "Acopiador";
 
-    const TABS = [
-        { id: "fincas", label: "Fincas", icon: MapPin },
-        { id: "examen", label: "Exámenes", icon: FlaskConical },
-        ...(isProducer ? [{ id: "entrevista", label: "Entrevista", icon: UserCheck }] : []),
+    const interviews = isProducer ? getCampaignInterviews(cxpId) : [];
+    const interviewedHectares = interviews.reduce((sum, record) => sum + (Number(record.values.haCultivo) || 0), 0);
+    const withResult = exams.filter((exam) => exam.hasResult).length;
+    const pending = exams.length - withResult;
+
+    const goToExams = () => navigate(`/campaigns/${campaniaId}/providers/${cxpId}/exams`);
+    const goToInterviews = () => navigate(`/campaigns/${campaniaId}/providers/${cxpId}/interviews`);
+
+    const metrics: Metric[] = [
+        { title: "Cantidad estimada", value: formatCampaignNumber(Number(relation.cantidadProveedor)), unit: "kg", description: "Lo que se espera recibir de este proveedor", icon: Scale },
+        { title: "MTD Ceratitis", value: formatCampaignNumber(Number(relation.mtdCeratitis)), unit: "", description: "Medida de control de la campaña", icon: Layers },
+        { title: "Exámenes", value: String(exams.length), unit: exams.length === 1 ? "examen" : "exámenes", description: exams.length === 0 ? "Aún sin exámenes registrados" : `${withResult} con resultado · ${pending} en seguimiento`, icon: FlaskConical },
+        isProducer
+            ? { title: "Fincas entrevistadas", value: String(interviews.length), unit: interviews.length === 1 ? "finca" : "fincas", description: interviews.length === 0 ? "Aún sin entrevistas registradas" : `${formatCampaignNumber(interviewedHectares)} ha de cultivo`, icon: UserRoundCheck, warm: true }
+            : { title: "Fruta convencional", value: relation.frutaConvencionalEstimado === null ? "—" : formatCampaignNumber(Number(relation.frutaConvencionalEstimado)), unit: relation.frutaConvencionalEstimado === null ? "" : "kg", description: "Estimado informado por el acopiador", icon: ClipboardList, warm: true },
     ];
 
-    const handleSaveExam = (values: ExamValues) => {
-        if (examModal.mode === "edit" && examModal.examId) {
-            setLocalExams(current => current.map(e => e.id === examModal.examId ? { ...e, ...values, resultado: values.resultado as "positivo"|"negativo" } : e));
-        } else {
-            setLocalExams((current) => [
-                {
-                    id: crypto.randomUUID(),
-                    proveedorId: relation.proveedorId,
-                    fecha: values.fecha,
-                    tipoExamen: values.tipoExamen,
-                    resultado: values.resultado as "positivo" | "negativo",
-                    origen: values.origen.trim(),
-                    observacion: values.observacion.trim(),
-                    archivoNombre: values.archivo?.name ?? null,
-                    identificacionMuestra: values.identificacionMuestra,
-                    fechaEnvioMuestra: values.fechaEnvioMuestra,
-                    estadoEnvioResultado: values.estadoEnvioResultado,
-                },
-                ...current,
-            ]);
-        }
-        setExamModal({ open: false });
-    };
+    const examsCard = (
+        <LinkedCard
+            icon={<FlaskConical size={22} strokeWidth={2.2} />}
+            title="Exámenes"
+            description={`${exams.length} ${exams.length === 1 ? "examen registrado" : "exámenes registrados"}`}
+            manageLabel="Gestionar exámenes"
+            onManage={goToExams}
+            stats={[
+                { label: "Registrados", value: exams.length },
+                { label: "Con resultado", value: withResult },
+                { label: "En seguimiento", value: pending },
+            ]}
+            isEmpty={exams.length === 0}
+            emptyMessage="Este proveedor todavía no tiene exámenes de laboratorio en esta campaña."
+            emptyActionLabel="Registrar examen"
+        >
+            {exams.slice(0, PREVIEW_ROWS).map((exam) => (
+                <LinkedRow
+                    key={exam.key}
+                    icon={<FlaskConical size={16} strokeWidth={2.2} />}
+                    title={exam.title}
+                    subtitle={`${exam.type} · ${displayDate(exam.date)}`}
+                    trailing={<StatusBadge status={exam.status} />}
+                />
+            ))}
+            {exams.length > PREVIEW_ROWS && (
+                <p className="pt-1 text-center text-[12px] font-medium text-ink-muted">y {exams.length - PREVIEW_ROWS} {exams.length - PREVIEW_ROWS === 1 ? "examen más" : "exámenes más"}</p>
+            )}
+        </LinkedCard>
+    );
 
-    const handleDeleteExam = (id: string) => {
-        setDeleteExamId(id);
-    };
-
-
-    const combinedExams = [
-        ...localExams,
-        ...apiExams.map((exam) => ({
-            id: `api-${exam.examenProveedorId}`,
-            proveedorId: exam.proveedorId,
-            fecha: exam.fecha,
-            tipoExamen: exam.tipoExamen,
-            resultado: exam.resultado,
-            origen: exam.origen,
-            identificacionMuestra: "—",
-            fechaEnvioMuestra: "—",
-            estadoEnvioResultado: "—",
-            observacion: exam.observacion || "—",
-            archivoNombre: exam.documentoUrl ? "Ver archivo" : null,
-        })),
-    ];
+    const interviewsCard = isProducer && (
+        <LinkedCard
+            icon={<UserRoundCheck size={22} strokeWidth={2.2} />}
+            title="Entrevistas"
+            description={`${interviews.length} ${interviews.length === 1 ? "finca entrevistada" : "fincas entrevistadas"}`}
+            manageLabel="Gestionar entrevistas"
+            onManage={goToInterviews}
+            stats={[
+                { label: "Entrevistas", value: interviews.length },
+                { label: "Hectáreas de cultivo", value: `${formatCampaignNumber(interviewedHectares)} ha` },
+            ]}
+            isEmpty={interviews.length === 0}
+            emptyMessage="Aún no se registró ninguna entrevista de este productor. Las fincas de la campaña salen de ellas."
+            emptyActionLabel="Registrar entrevista"
+        >
+            {interviews.slice(0, PREVIEW_ROWS).map((record) => (
+                <LinkedRow
+                    key={record.id}
+                    icon={<MapPin size={16} strokeWidth={2.2} />}
+                    title={record.values.fincaNombre || "Finca sin nombre"}
+                    subtitle={[record.values.distrito, record.values.provincia, record.values.departamento].filter(Boolean).join(" · ") || "Sin ubicación"}
+                    trailing={<span className="rounded-md bg-card px-2 py-1 text-[11px] font-bold text-brand ring-1 ring-border">{record.codigoFyv}</span>}
+                />
+            ))}
+            {interviews.length > PREVIEW_ROWS && (
+                <p className="pt-1 text-center text-[12px] font-medium text-ink-muted">y {interviews.length - PREVIEW_ROWS} {interviews.length - PREVIEW_ROWS === 1 ? "finca más" : "fincas más"}</p>
+            )}
+        </LinkedCard>
+    );
 
     return (
         <div className="px-4 py-5 sm:px-8 lg:px-14">
-
             <PageHeader
-                icon={isProducer ? <Tractor size={24} strokeWidth={2.5} /> : <Truck size={24} strokeWidth={2.5} />}
-                title={`${isProducer ? "Productor" : "Acopiador"} - ${name}`}
-                description={`Cantidad estimada: ${formatCampaignNumber(Number(relation.cantidadProveedor))} kg · MTD Ceratitis: ${formatCampaignNumber(Number(relation.mtdCeratitis))}`}
+                icon={<UserRoundCheck size={24} strokeWidth={2.5} />}
+                title={`Detalle de ${roleLabel}`}
+                description="Su participación en la campaña, sus exámenes y sus entrevistas."
             />
 
-            <div className="w-full bg-card border border-border rounded-2xl p-5 mt-6 mb-8 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                <div className="h-14 w-14 bg-brand/10 text-brand rounded-2xl flex items-center justify-center shrink-0">
-                    <User size={28} strokeWidth={2} />
-                </div>
-                <div className="flex-1 w-full min-w-0">
-                    <h2 className="text-sm font-bold text-ink mb-4 text-center sm:text-left flex items-center gap-2">
-                        DATOS DEL PROVEEDOR
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-5">
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted/80 mb-1">Documento</span>
-                            <span className="text-[14px] font-semibold text-ink truncate">{relation.proveedor?.tipoDocumento || ""} {relation.proveedor?.nmrDocumento || "—"}</span>
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted/80 mb-1">Zona</span>
-                            <span className="text-[14px] font-semibold text-ink truncate">{relation.proveedor?.zona || "—"}</span>
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted/80 mb-1">Teléfono</span>
-                            <span className="text-[14px] font-semibold text-ink truncate">{relation.proveedor?.telefono || "—"}</span>
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted/80 mb-1">Email</span>
-                            <span className="text-[14px] font-semibold text-ink truncate" title={relation.proveedor?.email || ""}>{relation.proveedor?.email || "—"}</span>
-                        </div>
-                        {isProducer && (
-                            <div className="flex flex-col min-w-0">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted/80 mb-1">Cod. Lugar Producción</span>
-                                <span className="text-[14px] font-semibold text-ink truncate">{relation.proveedor?.codigoLugarProduccion || "—"}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 lg:grid-cols-[1.95fr_1fr]">
+                {proveedor ? (
+                    <ProviderOverviewCard provider={proveedor} eyebrow={`${roleLabel} en la campaña`} />
+                ) : (
+                    <p className="rounded-2xl border border-border bg-card p-6 text-[13px] text-ink-muted">Los datos de registro de este proveedor no están disponibles.</p>
+                )}
+                <MetricCards metrics={metrics} label={`Indicadores del ${roleLabel.toLowerCase()}`} />
             </div>
 
-            <div className="mt-8 mb-6">
-                <SegmentedTabs
-                    tabs={TABS}
-                    value={activeTab}
-                    onChange={(val) => val === "entrevista"
-                        ? navigate(`/campaigns/${campaniaId}/providers/${cxpId}/interviews`)
-                        : setActiveTab(val as "fincas" | "examen")}
-                />
+            <div className={`mt-4 grid grid-cols-1 items-start gap-4 animate-in fade-in slide-in-from-bottom-2 duration-700 ${isProducer ? "lg:grid-cols-2" : ""}`}>
+                {examsCard}
+                {interviewsCard}
             </div>
-
-            {/* Fincas Tab */}
-            {activeTab === "fincas" && (
-                <TableCard
-                    title="Fincas Vinculadas"
-                    icon={<MapPin size={24} strokeWidth={2.5} />}
-                    description="Gestiona las fincas asociadas a este proveedor en esta campaña."
-                    headerRight={
-                        <Button size="xl" onClick={() => setFincaModalOpen(true)}>
-                            <FilePlus size={18} strokeWidth={2.5} className="mr-2" /> Vincular Finca
-                        </Button>
-                    }
-                    isEmpty={localFincas.length === 0}
-                    emptyIcon={<MapPin size={28} strokeWidth={2.5} />}
-                    emptyTitle="No hay fincas vinculadas"
-                    emptyDescription="Aún no has vinculado ninguna finca a este proveedor."
-                    page={1}
-                    pageCount={1}
-                    onPageChange={() => {}}
-                >
-                    <div className="overflow-hidden rounded-xl border border-border">
-                        <Table>
-                            <TableHeader className={TABLE_HEAD_BG}>
-                                <TableRow className="border-b border-border hover:bg-transparent">
-                                    <TableHead className="text-ink font-semibold h-12 px-6">Nombre de la Finca</TableHead>
-                                    <TableHead className="text-ink font-semibold h-12">Hectáreas</TableHead>
-                                    <TableHead className="text-ink font-semibold h-12">Zona</TableHead>
-                                    <TableHead className="text-ink font-semibold h-12 text-center px-6 w-36">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {localFincas.map((finca) => (
-                                    <TableRow key={finca.id} className="border-b border-border hover:bg-surface-page/60">
-                                        <TableCell className="h-14 px-6 font-medium text-ink">{finca.nombre}</TableCell>
-                                        <TableCell className="text-ink-body">{finca.hectareas} ha</TableCell>
-                                        <TableCell className="text-ink-body">{finca.zona}</TableCell>
-                                        <TableCell className="px-6">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button onClick={() => setDeleteFincaId(finca.id)} className="p-2 text-ink-muted hover:text-destructive transition-colors rounded-md hover:bg-destructive/10">
-                                                    <Trash2 size={18} strokeWidth={2.5} />
-                                                </button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </TableCard>
-            )}
-
-            {/* Exámenes Tab */}
-            {activeTab === "examen" && (
-                <TableCard
-                    title="Exámenes Registrados"
-                    icon={<FlaskConical size={24} strokeWidth={2.5} />}
-                    description="Registro de análisis de laboratorio de este proveedor."
-                    headerRight={
-                        <Button size="xl" onClick={() => setExamModal({ open: true, mode: "create" })}>
-                            <FilePlus size={18} strokeWidth={2.5} className="mr-2" /> Registrar Examen
-                        </Button>
-                    }
-                    isEmpty={combinedExams.length === 0}
-                    emptyIcon={<FlaskConical size={28} strokeWidth={2.5} />}
-                    emptyTitle="No hay exámenes registrados"
-                    emptyDescription="Los exámenes de laboratorio vinculados aparecerán aquí."
-                    page={1}
-                    pageCount={1}
-                    onPageChange={() => {}}
-                >
-                    <div className="overflow-hidden rounded-xl border border-border">
-                        <Table>
-                            <TableHeader className={TABLE_HEAD_BG}>
-                                <TableRow className="border-b border-border hover:bg-transparent">
-                                    <TableHead className="text-ink font-semibold h-12 px-6">Identificación</TableHead>
-                                    <TableHead className="text-ink font-semibold h-12">Examen</TableHead>
-                                    <TableHead className="text-ink font-semibold h-12">Resultado</TableHead>
-                                    <TableHead className="text-ink font-semibold h-12">Fecha</TableHead>
-                                    <TableHead className="text-ink font-semibold h-12 text-center px-6 w-36">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {combinedExams.map((exam) => (
-                                    <TableRow key={exam.id} className="border-b border-border hover:bg-surface-page/60">
-                                        <TableCell className="h-14 px-6 font-medium text-ink">{exam.identificacionMuestra}</TableCell>
-                                        <TableCell className="text-ink-body">{exam.tipoExamen}</TableCell>
-                                        <TableCell>
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[12px] font-bold ${exam.resultado === "positivo" ? "bg-brand/10 text-brand" : "bg-status-neutral-surface text-ink-muted"}`}>
-                                                {exam.resultado === "positivo" ? "Positivo" : "Negativo"}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-ink-body">{formatExamDate(exam.fecha)}</TableCell>
-                                        <TableCell className="px-6">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button onClick={() => setExamModal({ open: true, mode: "view", examId: exam.id })} className="p-2 text-ink-muted hover:text-brand transition-colors rounded-md hover:bg-brand/10"><Eye size={18} strokeWidth={2.5} /></button>
-                                                {exam.id.startsWith("api-") ? null : (
-                                                    <>
-                                                        <button onClick={() => setExamModal({ open: true, mode: "edit", examId: exam.id })} className="p-2 text-ink-muted hover:text-brand transition-colors rounded-md hover:bg-brand/10"><Pencil size={18} strokeWidth={2.5} /></button>
-                                                        <button onClick={() => handleDeleteExam(exam.id)} className="p-2 text-ink-muted hover:text-destructive transition-colors rounded-md hover:bg-destructive/10"><Trash2 size={18} strokeWidth={2.5} /></button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </TableCard>
-            )}
-
-            <CampaignExamModal
-                open={examModal.open}
-                onOpenChange={(open) => setExamModal(cur => ({ ...cur, open }))}
-                providerName={name}
-                initialValues={
-                    examModal.examId ? (() => {
-                        const ex = combinedExams.find(e => e.id === examModal.examId);
-                        if (!ex) return undefined;
-                        return {
-                            fecha: ex.fecha,
-                            tipoExamen: ex.tipoExamen,
-                            origen: ex.origen,
-                            identificacionMuestra: ex.identificacionMuestra,
-                            resultado: ex.resultado as ExamValues["resultado"],
-                            fechaEnvioMuestra: ex.fechaEnvioMuestra,
-                            estadoEnvioResultado: ex.estadoEnvioResultado,
-                            observacion: ex.observacion,
-                            archivo: null
-                        };
-                    })() : undefined
-                }
-                isViewOnly={examModal.mode === "view"}
-                onSave={handleSaveExam}
-            />
-
-            <CampaignFincaModal
-                open={fincaModalOpen}
-                onOpenChange={setFincaModalOpen}
-                linkedIds={localFincas.map(f => f.id)}
-                onSave={(vals) => {
-                    setLocalFincas((cur) => cur.some(f => f.id === vals.id) ? cur : [vals as LocalFinca, ...cur]);
-                    setFincaModalOpen(false);
-                }}
-            />
-
-            <ConfirmModal
-                open={deleteExamId !== null}
-                onOpenChange={(open) => !open && setDeleteExamId(null)}
-                title="Eliminar examen"
-                description="¿Estás seguro de eliminar este examen? Esta acción no se puede deshacer."
-                confirmLabel="Eliminar"
-                tone="danger"
-                onConfirm={() => {
-                    if (deleteExamId) {
-                        setLocalExams((current) => current.filter((e) => e.id !== deleteExamId));
-                        setDeleteExamId(null);
-                    }
-                }}
-            />
-
-            <ConfirmModal
-                open={deleteFincaId !== null}
-                onOpenChange={(open) => !open && setDeleteFincaId(null)}
-                title="Desvincular finca"
-                description="¿Estás seguro de desvincular esta finca del proveedor para esta campaña? No se eliminará la finca del sistema, solo su vinculación."
-                confirmLabel="Desvincular"
-                tone="danger"
-                onConfirm={() => {
-                    if (deleteFincaId) {
-                        setLocalFincas((cur) => cur.filter((f) => f.id !== deleteFincaId));
-                        setDeleteFincaId(null);
-                    }
-                }}
-            />
         </div>
     );
 }

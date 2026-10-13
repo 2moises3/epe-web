@@ -52,13 +52,15 @@ const TONES: Record<ConfirmTone, {
         defaultBadge: "Acción irreversible",
         confirmVariant: "danger",
     },
+    // Advertencia en rojo, como el peligro: el naranja se leía como un estado, no como una alerta.
+    // Se distingue de "danger" por el ícono, la píldora y el botón de confirmar (de marca, no rojo).
     warning: {
-        wash: "bg-status-warning/12",
-        dash: "bg-status-warning",
-        ring: "bg-status-warning/20",
-        coreBorder: "border-status-warning/25 bg-card/90",
-        coreClass: "bg-status-warning",
-        pill: "border-status-warning/25 bg-status-warning/10 text-status-warning",
+        wash: "bg-destructive/12",
+        dash: "bg-destructive",
+        ring: "bg-destructive/20",
+        coreBorder: "border-destructive/20 bg-card/90",
+        coreClass: "bg-destructive",
+        pill: "border-destructive/20 bg-destructive/10 text-destructive",
         defaultIcon: <CircleHelp size={30} strokeWidth={2.5} />,
         defaultBadge: "Confirmación requerida",
         confirmVariant: "default",

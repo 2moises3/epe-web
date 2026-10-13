@@ -1,5 +1,6 @@
 import type { InterviewAgronomicValues, InterviewValues } from "@/modules/campaigns/campaignInterview";
 import type { Finca } from "@/modules/providers/providerFinca.utils";
+import { createDemoInterviews } from "@/modules/campaigns/campaignInterviews.demo";
 
 export interface CampaignInterviewRecord {
     id: string;
@@ -11,7 +12,10 @@ export interface CampaignInterviewRecord {
 
 // TODO(api): sustituir este almacén en memoria por el servicio de entrevistas cuando exista.
 // No representa una confirmación del backend y se vacía al recargar la aplicación.
-const interviewsByRelation = new Map<number, CampaignInterviewRecord[]>();
+// En desarrollo arranca con entrevistas de demostración (`campaignInterviews.demo.ts`); en producción y en las
+// pruebas arranca vacío, sin simular respuestas del backend.
+const useDemoData = import.meta.env.DEV && import.meta.env.MODE !== "test";
+const interviewsByRelation: Map<number, CampaignInterviewRecord[]> = useDemoData ? createDemoInterviews() : new Map();
 
 const normalizeFincaName = (name: string) => name.trim().toLocaleLowerCase("es");
 

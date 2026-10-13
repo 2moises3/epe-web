@@ -1,30 +1,71 @@
 import { useState } from "react";
-
 import { X, Save, FlaskConical } from "lucide-react";
 import AppModal from "@/shared/components/AppModal";
 import { useModalForm, useResetOnToggle } from "@/shared/hooks/useModalForm";
 import FileDropzone from "@/shared/components/FileDropzone";
 import FormField from "@/shared/components/FormField";
 import InputField from "@/shared/components/InputField";
+import { InfoField } from "@/shared/components/InfoField";
+import ModalSection from "@/shared/components/ModalSection";
+import SegmentedControl from "@/shared/components/SegmentedControl";
+import StatusBadge from "@/shared/components/StatusBadge";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { Combobox } from "@/shared/components/ui/combobox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
-import SegmentedControl from "@/shared/components/SegmentedControl";
-import { EMPTY_EXAM, EXAM_TYPES, validateExam, type ExamErrors, type ExamResult, type ExamValues } from "@/modules/campaigns/campaignExam";
+import {
+    EMPTY_EXAM,
+    EXAM_ESTADOS,
+    EXAM_RESULTS,
+    EXAM_TYPES,
+    examEstadoLabel,
+    examNeedsResult,
+    examNeedsShipDate,
+    examResultLabel,
+    normalizeExam,
+    validateExam,
+    type ExamErrors,
+    type ExamEstado,
+    type ExamResult,
+    type ExamValues,
+} from "@/modules/campaigns/campaignExam";
+import { parseFecha } from "@/modules/campaigns/api/fecha.util";
+import { format } from "date-fns";
+
+export type ExamModalMode = "create" | "edit" | "view";
 
 interface CampaignExamModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    /** Proveedor al que se le registra el examen, se muestra bajo el título */
+    /** Proveedor al que pertenece el examen, se muestra bajo el título */
     providerName?: string;
+    /** "create" arranca vacío; "edit" carga el examen; "view" lo muestra sin poder modificarlo */
+    mode?: ExamModalMode;
     initialValues?: ExamValues;
-    isViewOnly?: boolean;
     onSave?: (values: ExamValues) => void;
 }
 
-export default function CampaignExamModal({ open, onOpenChange, initialValues, isViewOnly, onSave }: CampaignExamModalProps) {
-    const [values, , set] = useModalForm<ExamValues>(open, initialValues || EMPTY_EXAM);
+const NOT_REGISTERED = "No registrado";
+
+const displayDate = (value: string) => {
+    if (!value) return NOT_REGISTERED;
+    const date = parseFecha(value);
+    return Number.isNaN(date.getTime()) ? value : format(date, "dd/MM/yyyy");
+};
+
+const TITLES: Record<ExamModalMode, string> = {
+    create: "Registrar examen",
+    edit: "Editar examen",
+    view: "Detalles del examen",
+};
+
+/**
+ * Registro, edición y detalle de un examen de laboratorio del proveedor. El examen avanza por etapas (pendiente
+ * de envío → enviado → con resultado) y cada etapa habilita sus datos: la fecha de envío cuando la muestra viaja
+ * y el resultado cuando el laboratorio responde. Lo que aún no aplica no se muestra, así no hay campos muertos.
+ */
+export default function CampaignExamModal({ open, onOpenChange, providerName, mode = "create", initialValues, onSave }: CampaignExamModalProps) {
+    const isView = mode === "view";
+    const [values, , set] = useModalForm<ExamValues>(open, initialValues ?? EMPTY_EXAM);
     const [errors, setErrors] = useState<ExamErrors>({});
 
     useResetOnToggle(open, () => setErrors({}));
@@ -40,21 +81,25 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
             setErrors(nextErrors);
             return;
         }
-        if (onSave) onSave(values);
+        if (onSave) onSave(normalizeExam(values));
         else onOpenChange(false);
     };
+
+    const showShipDate = examNeedsShipDate(values.estado);
+    const showResult = examNeedsResult(values.estado);
 
     return (
         <AppModal
             open={open}
             onOpenChange={onOpenChange}
             icon={<FlaskConical size={22} strokeWidth={2} />}
-            title={isViewOnly ? "Detalles del Examen" : initialValues ? "Editar Examen" : "Registrar examen"}
-            className="sm:max-w-275 md:max-w-250"
+            title={TITLES[mode]}
+            description={providerName}
+            className="sm:max-w-170"
             footer={
-                isViewOnly ? (
-                    <Button size="xl" onClick={() => onOpenChange(false)}>
-                        Cerrar
+                isView ? (
+                    <Button variant="outline" size="xl" onClick={() => onOpenChange(false)}>
+                        <X size={20} strokeWidth={2.5} /> Cerrar
                     </Button>
                 ) : (
                     <>
@@ -62,100 +107,142 @@ export default function CampaignExamModal({ open, onOpenChange, initialValues, i
                             <X size={20} strokeWidth={2.5} /> Cancelar
                         </Button>
                         <Button size="xl" onClick={handleSave}>
-                            <Save size={20} strokeWidth={2.5} /> Guardar
+                            <Save size={20} strokeWidth={2.5} /> {mode === "edit" ? "Guardar cambios" : "Guardar examen"}
                         </Button>
                     </>
                 )
             }
         >
             <div className="flex flex-col gap-6">
-                {/* Row 1: Origen | Tipo de examen */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <InputField id="exam-origin" label="Origen" required placeholder="Ej. Campo A" value={values.origen} onChange={(value) => update("origen", value)} error={errors.origen} readOnly={isViewOnly} />
+                <ModalSection title="Muestra">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {isView ? (
+                            <>
+                                <InfoField label="Tipo de examen" value={values.tipoExamen || NOT_REGISTERED} className="sm:col-span-2" />
+                                <InfoField label="Identificación de muestra" value={values.identificacionMuestra || NOT_REGISTERED} />
+                                <InfoField label="Fecha del examen" value={displayDate(values.fecha)} />
+                            </>
+                        ) : (
+                            <>
+                                <FormField label="Tipo de examen" required error={errors.tipoExamen} className="sm:col-span-2">
+                                    <Combobox
+                                        options={EXAM_TYPES}
+                                        value={EXAM_TYPES.find((type) => type.label === values.tipoExamen)?.value ?? ""}
+                                        onChange={(value) => update("tipoExamen", EXAM_TYPES.find((type) => type.value === value)?.label ?? "")}
+                                        placeholder="Buscar..."
+                                    />
+                                </FormField>
+                                <InputField
+                                    id="exam-sample"
+                                    label="Identificación de muestra"
+                                    required
+                                    placeholder="Ej. MUESTRA-001"
+                                    value={values.identificacionMuestra}
+                                    onChange={(value) => update("identificacionMuestra", value)}
+                                    error={errors.identificacionMuestra}
+                                />
+                                <InputField
+                                    id="exam-date"
+                                    type="date"
+                                    label="Fecha del examen"
+                                    required
+                                    value={values.fecha}
+                                    onChange={(value) => update("fecha", value)}
+                                    error={errors.fecha}
+                                />
+                            </>
+                        )}
+                    </div>
+                </ModalSection>
 
-                    <FormField label="Tipo de examen" required error={errors.tipoExamen}>
-                        <div className={isViewOnly ? "pointer-events-none" : ""}>
-                            <Combobox
-                                options={EXAM_TYPES}
-                                value={EXAM_TYPES.find((type) => type.label === values.tipoExamen)?.value ?? ""}
-                                onChange={(value) => update("tipoExamen", EXAM_TYPES.find((type) => type.value === value)?.label ?? "")}
-                                placeholder="Buscar..."
-                            />
-                        </div>
-                    </FormField>
-                </div>
-
-                {/* Row 2: Identificación | Resultado */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <InputField id="exam-sample" label="Identificación de muestra" required placeholder="Ej. MUESTRA-001" value={values.identificacionMuestra} onChange={(value) => update("identificacionMuestra", value)} error={errors.identificacionMuestra} readOnly={isViewOnly} />
-
-                    <FormField id="exam-result" label="Resultado del examen" required error={errors.resultado}>
-                        <div className={isViewOnly ? "pointer-events-none" : ""}>
-                            <SegmentedControl
-                                options={[{ label: "Positivo", value: "positivo" }, { label: "Negativo", value: "negativo" }]}
-                                value={values.resultado || ""}
-                                onChange={(value) => update("resultado", value as ExamResult)}
-                            />
-                        </div>
-                    </FormField>
-                </div>
-
-                {/* Row 3: Fecha del examen | Fecha de envío | Estado */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    <InputField id="exam-date" type="date" label="Fecha del examen" required value={values.fecha} onChange={(value) => update("fecha", value)} error={errors.fecha} readOnly={isViewOnly} />
-                    <InputField id="exam-sample-date" type="date" label="Fecha de envío de la muestra" required value={values.fechaEnvioMuestra} onChange={(value) => update("fechaEnvioMuestra", value)} error={errors.fechaEnvioMuestra} readOnly={isViewOnly} />
-
-                    <FormField id="exam-status" label="Estado de envío/resultado" required error={errors.estadoEnvioResultado}>
-                        <div className={isViewOnly ? "pointer-events-none" : ""}>
-                            <Select
-                                items={[{ value: "Pendiente", label: "Pendiente" }, { value: "En proceso", label: "En proceso" }, { value: "Entregado", label: "Entregado" }]}
-                                value={values.estadoEnvioResultado || null}
-                                onValueChange={(result) => update("estadoEnvioResultado", result ?? "")}
-                            >
-                                <SelectTrigger id="exam-status" className="w-full" aria-invalid={errors.estadoEnvioResultado ? true : undefined}>
-                                    <SelectValue placeholder="Seleccionar estado" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Pendiente">Pendiente</SelectItem>
-                                    <SelectItem value="En proceso">En proceso</SelectItem>
-                                    <SelectItem value="Entregado">Entregado</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </FormField>
-                </div>
-
-                {/* Row 4: Observación | Archivo */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <FormField id="exam-observation" label="Observación" className="h-full">
-                        <Textarea
-                            id="exam-observation"
-                            placeholder="Escribe alguna observación o detalle adicional..."
-                            value={values.observacion}
-                            onChange={(event) => update("observacion", event.target.value)}
-                            className="resize-none h-full min-h-35.5"
-                            readOnly={isViewOnly}
-                        />
-                    </FormField>
-
-                    <FormField label="Archivo de examen" required error={errors.archivo}>
-                        {isViewOnly && !values.archivo ? (
-                            <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-border bg-surface-elevated text-sm text-ink-muted">
-                                Sin archivo adjunto
+                <ModalSection title="Seguimiento del laboratorio">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {isView ? (
+                            <div className="flex flex-col gap-2 sm:col-span-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Estado del examen</p>
+                                <div><StatusBadge status={examEstadoLabel(values.estado)} /></div>
                             </div>
                         ) : (
-                            <div className={isViewOnly ? "pointer-events-none" : ""}>
-                                <FileDropzone
-                                    label="Archivo de examen"
-                                    hideLabel
-                                    hint="PDF, Imagen · Máx. 10 MB"
-                                    file={values.archivo}
-                                    onChange={(file) => update("archivo", file)}
+                            <FormField label="Estado del examen" required error={errors.estado} className="sm:col-span-2">
+                                <SegmentedControl
+                                    options={EXAM_ESTADOS}
+                                    value={values.estado}
+                                    onChange={(value) => update("estado", value as ExamEstado)}
                                 />
-                            </div>
+                            </FormField>
                         )}
-                    </FormField>
-                </div>
+
+                        {showShipDate && (isView ? (
+                            <InfoField label="Fecha de envío de la muestra" value={displayDate(values.fechaEnvioMuestra)} />
+                        ) : (
+                            <InputField
+                                id="exam-sample-date"
+                                type="date"
+                                label="Fecha de envío de la muestra"
+                                required
+                                value={values.fechaEnvioMuestra}
+                                onChange={(value) => update("fechaEnvioMuestra", value)}
+                                error={errors.fechaEnvioMuestra}
+                            />
+                        ))}
+
+                        {showResult && (isView ? (
+                            <div className="flex flex-col gap-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Resultado del examen</p>
+                                <div>{values.resultado ? <StatusBadge status={examResultLabel(values.resultado)} /> : <span className="text-[13px] text-ink-muted">{NOT_REGISTERED}</span>}</div>
+                            </div>
+                        ) : (
+                            <FormField label="Resultado del examen" required error={errors.resultado}>
+                                <SegmentedControl
+                                    options={EXAM_RESULTS}
+                                    value={values.resultado}
+                                    onChange={(value) => update("resultado", value as ExamResult)}
+                                />
+                            </FormField>
+                        ))}
+
+                        <div className="sm:col-span-2">
+                            {isView ? (
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Observación</p>
+                                    <div className="min-h-10 whitespace-pre-wrap rounded-lg border border-border/60 bg-card px-3 py-2.5 text-[13px] font-medium text-ink">
+                                        {values.observacion || <span className="text-ink-muted">Sin observaciones</span>}
+                                    </div>
+                                </div>
+                            ) : (
+                                <FormField id="exam-observation" label="Observación" optional>
+                                    <Textarea
+                                        id="exam-observation"
+                                        placeholder="Escribe alguna observación o detalle adicional..."
+                                        value={values.observacion}
+                                        onChange={(event) => update("observacion", event.target.value)}
+                                        className="min-h-24 resize-none"
+                                    />
+                                </FormField>
+                            )}
+                        </div>
+
+                        <FormField
+                            label={isView ? undefined : "Documento del examen"}
+                            required={!isView && showResult}
+                            optional={!isView && !showResult}
+                            error={errors.archivo}
+                            className="sm:col-span-2"
+                        >
+                            <FileDropzone
+                                label="Documento del examen"
+                                hideLabel={!isView}
+                                hasColon={false}
+                                variant="horizontal"
+                                hint="PDF, Imagen · Máx. 10 MB"
+                                file={values.archivo}
+                                readOnly={isView}
+                                replaceable={mode === "edit"}
+                                onChange={(file) => update("archivo", file)}
+                            />
+                        </FormField>
+                    </div>
+                </ModalSection>
             </div>
         </AppModal>
     );

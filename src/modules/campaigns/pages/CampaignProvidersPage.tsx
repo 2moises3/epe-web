@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Eye, Users, FilePlus, Tractor, Truck, SearchX, ListFilter, Link, TriangleAlert, RotateCw, UserRoundCheck, Pencil } from "lucide-react";
+import { Eye, Users, FlaskConical, Tractor, Truck, SearchX, ListFilter, Link, TriangleAlert, RotateCw, UserRoundCheck, Pencil } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Spinner } from "@/shared/components/ui/spinner";
 import FilterBar, { FilterSearch } from "@/shared/components/FilterBar";
@@ -22,8 +22,6 @@ import { TableToolbar, TableCountPill, TableExportMenu, TableViewToggle, type Ta
 import PageHeader from "@/shared/layout/PageHeader";
 import CampaignLinkProviderModal from "@/modules/campaigns/components/CampaignLinkProviderModal";
 import CampaignSuccessModal from "@/modules/campaigns/components/CampaignSuccessModal";
-import CampaignExamModal from "@/modules/campaigns/components/CampaignExamModal";
-import type { ExamValues } from "@/modules/campaigns/campaignExam";
 
 import { getCampaniaProveedoresByCampania } from "@/modules/campaigns/api/campania-proveedor.api";
 import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
@@ -42,7 +40,7 @@ const TYPE_LABEL: Record<TipoProveedorCampania, string> = {
     acopio: "Acopiador",
 };
 
-type SuccessMode = "provider" | "exam";
+type SuccessMode = "provider";
 /** Relación sobre la que está abierto un modal; se conserva al cerrar para no vaciar el modal durante su animación de salida */
 type RelationModal = { open: boolean; relation: CampaniaProveedor | null };
 const CLOSED: RelationModal = { open: false, relation: null };
@@ -60,11 +58,8 @@ export default function CampaignProvidersPage() {
     const [isLoading, setIsLoading] = useState(isValidCampaign);
     const [loadError, setLoadError] = useState<string | null>(isValidCampaign ? null : "La campaña no es válida.");
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-    const [examModal, setExamModal] = useState<RelationModal>(CLOSED);
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
     const [successMode, setSuccessMode] = useState<SuccessMode>("provider");
-
-    // TODO(api): el archivo del examen aún no tiene servicio de carga; ver campaignExam.ts.
 
     const [page, setPage] = useState(1);
     const [viewMode, setViewMode] = useState<TableViewMode>("table");
@@ -121,14 +116,6 @@ export default function CampaignProvidersPage() {
         setIsSuccessModalOpen(true);
     };
 
-    const handleSaveExam = (values: ExamValues) => {
-        const relation = examModal.relation;
-        if (!relation || values.resultado === "") return;
-
-        setExamModal((current) => ({ ...current, open: false }));
-        showSuccess("exam");
-    };
-
     const [editModal, setEditModal] = useState<RelationModal>(CLOSED);
 
     const navigate = useNavigate();
@@ -140,7 +127,7 @@ export default function CampaignProvidersPage() {
             { label: "Editar vínculo", icon: <Pencil size={18} strokeWidth={2.5} />, onClick: () => setEditModal({ open: true, relation: row }) },
         ],
         secondary: [
-            { label: "Registrar examen", icon: <FilePlus size={16} strokeWidth={2.5} />, onClick: () => setExamModal({ open: true, relation: row }) },
+            { label: "Gestionar exámenes", icon: <FlaskConical size={16} strokeWidth={2.5} />, onClick: () => navigate(`/campaigns/${campaniaId}/providers/${row.cxpId}/exams`) },
             ...(row.tipoProveedor === "productor"
                 ? [
                     { label: "Gestionar entrevistas", icon: <UserRoundCheck size={16} strokeWidth={2.5} />, onClick: () => navigate(`/campaigns/${campaniaId}/providers/${row.cxpId}/interviews`) },
@@ -299,13 +286,6 @@ export default function CampaignProvidersPage() {
                     void loadRelations();
                 }}
                 onRefresh={() => void loadRelations()}
-            />
-
-            <CampaignExamModal
-                open={examModal.open}
-                onOpenChange={(open) => setExamModal((current) => ({ ...current, open }))}
-                providerName={examModal.relation ? providerName(examModal.relation) : undefined}
-                onSave={handleSaveExam}
             />
 
             <CampaignSuccessModal

@@ -29,7 +29,7 @@ const COPY: Record<CampaignSuccessMode, { title: string; description: string }> 
     create: { title: "Campaña Registrada", description: "Se podra ver las campañas registradas en el inicio" },
     edit: { title: "Cambios Guardados", description: "Se actualizó correctamente" },
     provider: { title: "Proveedor Añadido a Campaña", description: "Se ha añadido el proveedor exitosamente a la campaña" },
-    exam: { title: "Examen Médico Registrado", description: "Se ha registrado el examen médico del proveedor exitosamente" },
+    exam: { title: "Examen Registrado", description: "El examen de laboratorio del proveedor se registró correctamente." },
     interview: { title: "Informe Registrado", description: "Se visualizara informe" },
     client: { title: "Cliente vinculado", description: "El cliente ya aparece en la gestión de clientes de esta campaña." },
     contract: { title: "Contrato guardado", description: "El acuerdo comercial ya aparece en la gestión de contratos del cliente." },

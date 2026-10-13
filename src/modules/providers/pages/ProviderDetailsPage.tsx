@@ -7,7 +7,7 @@ import PageHeader from "@/shared/layout/PageHeader";
 import ProviderOverviewCard from "@/modules/providers/components/ProviderOverviewCard";
 import ProviderMetricCards from "@/modules/providers/components/ProviderMetricCards";
 import ProviderProductionCard from "@/modules/providers/components/ProviderProductionCard";
-import ProviderLinkedCard, { ProviderLinkedRow } from "@/modules/providers/components/ProviderLinkedCard";
+import LinkedCard, { LinkedRow } from "@/shared/components/LinkedCard";
 import { getProveedor } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
 import { useProviderLocalData } from "@/modules/providers/providerLocalData.store";
@@ -109,7 +109,7 @@ function ProviderDetailsView({ provider }: { provider: Proveedor }) {
             </div>
 
             <div className="mt-4 grid grid-cols-1 items-start gap-4 animate-in fade-in slide-in-from-bottom-2 duration-700 lg:grid-cols-[1.35fr_1fr]">
-                <ProviderLinkedCard
+                <LinkedCard
                     icon={<LandPlot size={22} strokeWidth={2.2} />}
                     title="Fincas"
                     description={`${providerFincas.length} ${providerFincas.length === 1 ? "finca registrada" : "fincas registradas"}`}
@@ -125,7 +125,7 @@ function ProviderDetailsView({ provider }: { provider: Proveedor }) {
                     emptyActionLabel="Registrar finca"
                 >
                     {providerFincas.slice(0, PREVIEW_ROWS).map((finca) => (
-                        <ProviderLinkedRow
+                        <LinkedRow
                             key={finca.nombre}
                             icon={<Sprout size={16} strokeWidth={2.2} />}
                             title={finca.nombre}
@@ -140,12 +140,12 @@ function ProviderDetailsView({ provider }: { provider: Proveedor }) {
                         />
                     ))}
                     {hiddenFincas > 0 && <p className="pt-1 text-center text-[12px] font-medium text-ink-muted">y {hiddenFincas} {hiddenFincas === 1 ? "finca más" : "fincas más"}</p>}
-                </ProviderLinkedCard>
+                </LinkedCard>
 
                 <div className="flex flex-col gap-4">
                     <ProviderProductionCard produccion={produccion[provider.proveedorId]} />
 
-                    <ProviderLinkedCard
+                    <LinkedCard
                         icon={<ShieldCheck size={22} strokeWidth={2.2} />}
                         title="Certificados"
                         description={`${providerCertificates.length} ${providerCertificates.length === 1 ? "certificado registrado" : "certificados registrados"}`}
@@ -156,7 +156,7 @@ function ProviderDetailsView({ provider }: { provider: Proveedor }) {
                         emptyActionLabel="Registrar certificado"
                     >
                         {providerCertificates.slice(0, PREVIEW_ROWS).map((certificate) => (
-                            <ProviderLinkedRow
+                            <LinkedRow
                                 key={certificate.certificadoId}
                                 icon={<Award size={16} strokeWidth={2.2} />}
                                 title={certificate.nombre}
@@ -170,7 +170,7 @@ function ProviderDetailsView({ provider }: { provider: Proveedor }) {
                             />
                         ))}
                         {hiddenCertificates > 0 && <p className="pt-1 text-center text-[12px] font-medium text-ink-muted">y {hiddenCertificates} {hiddenCertificates === 1 ? "certificado más" : "certificados más"}</p>}
-                    </ProviderLinkedCard>
+                    </LinkedCard>
                 </div>
             </div>
         </div>

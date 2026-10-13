@@ -43,7 +43,7 @@ export function getBreadcrumbLevels(pathname: string): BreadcrumbLevel[] {
 
         if (segments.length > 3) {
             levels.push({
-                label: segments[4] === "interviews" ? "Entrevistas" : segments[4] === "contracts" ? "Contratos" : "Detalle",
+                label: segments[4] === "interviews" ? "Entrevistas" : segments[4] === "exams" ? "Exámenes" : segments[4] === "contracts" ? "Contratos" : "Detalle",
                 href: segments[4] === "contracts" && segments.length > 5 ? `/${rootSegment}/${segments[1]}/${segments[2]}/${segments[3]}/contracts` : undefined,
             });
             if (segments[6] === "deliveries") levels.push({ label: "Entregas" });

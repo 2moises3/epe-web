@@ -20,6 +20,10 @@ const STATUS_TONES: Record<string, StatusTone> = {
     "en espera": "highlight",
     pendiente: "highlight",
     "en proceso": "warning",
+    // Etapas de un examen de laboratorio
+    "pendiente de envío": "highlight",
+    "enviado al laboratorio": "warning",
+    "con resultado": "brand",
     adelanto: "warning",
     realizados: "brand",
     // Resultado de examen de laboratorio: negativo es el resultado esperado (sin residuos)

@@ -3,7 +3,7 @@ import { ArrowRight, Plus } from "lucide-react";
 import { Card } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 
-interface ProviderLinkedCardProps {
+interface LinkedCardProps {
     icon: ReactNode;
     title: string;
     description: string;
@@ -19,10 +19,11 @@ interface ProviderLinkedCardProps {
 }
 
 /**
- * Resumen de un recurso del proveedor (fincas, certificados): encabezado con acceso directo a su vista de
+ * Resumen de un recurso de una entidad (fincas o certificados de un proveedor, exámenes o entrevistas de un
+ * proveedor en campaña): encabezado con acceso directo a su vista de
  * gestión, cifras y una lista corta. Mismo esquema que las tarjetas de proveedores y clientes de campaña.
  */
-export default function ProviderLinkedCard({ icon, title, description, manageLabel, onManage, stats, isEmpty, emptyMessage, emptyActionLabel, children }: ProviderLinkedCardProps) {
+export default function LinkedCard({ icon, title, description, manageLabel, onManage, stats, isEmpty, emptyMessage, emptyActionLabel, children }: LinkedCardProps) {
     return (
         <Card className="gap-0 rounded-2xl border-0 p-0 ring-1 ring-border">
             <div className="flex items-center gap-3 px-5 pt-5">
@@ -61,7 +62,7 @@ export default function ProviderLinkedCard({ icon, title, description, manageLab
     );
 }
 
-interface ProviderLinkedRowProps {
+interface LinkedRowProps {
     icon: ReactNode;
     title: string;
     /** Ícono chico que antecede al subtítulo (ubicación, fecha…) */
@@ -71,10 +72,10 @@ interface ProviderLinkedRowProps {
 }
 
 /**
- * Fila de la lista de una `ProviderLinkedCard`. Se distingue del encabezado de la tarjeta a propósito: va en
+ * Fila de la lista de una `LinkedCard`. Se distingue del encabezado de la tarjeta a propósito: va en
  * una caja propia con filo de color a la izquierda, ícono cuadrado y neutro, y el dato clave alineado a la derecha.
  */
-export function ProviderLinkedRow({ icon, title, metaIcon, subtitle, trailing }: ProviderLinkedRowProps) {
+export function LinkedRow({ icon, title, metaIcon, subtitle, trailing }: LinkedRowProps) {
     return (
         <div className="flex items-center gap-3 rounded-xl border border-l-[3px] border-border/70 border-l-brand bg-surface-page/60 py-2.5 pl-3 pr-3.5 transition-colors hover:bg-brand-surface/50">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-card text-ink-muted ring-1 ring-border">{icon}</span>

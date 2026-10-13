@@ -21,6 +21,14 @@ describe("getBreadcrumbLevels", () => {
         ]);
     });
 
+    it("names the exams management view of a campaign provider", () => {
+        expect(getBreadcrumbLevels("/campaigns/12/providers/5/exams")).toEqual([
+            { label: "Campañas", href: "/campaigns" },
+            { label: "Proveedores", href: "/campaigns/12/providers" },
+            { label: "Exámenes" },
+        ]);
+    });
+
     it("builds detail hierarchy for other modules", () => {
         expect(getBreadcrumbLevels("/transportistas/8")).toEqual([
             { label: "Transporte", href: "/transportistas" },

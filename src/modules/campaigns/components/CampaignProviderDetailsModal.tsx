@@ -15,7 +15,7 @@ import type { ExamenProveedorDto } from "@/modules/providers/api/provider-subres
 import type { CampaniaProveedor } from "@/modules/campaigns/api/campania-proveedor.mapper";
 import { parseFecha } from "@/modules/campaigns/api/fecha.util";
 import { formatCampaignNumber } from "@/modules/campaigns/campaignDetails.utils";
-import type { LocalExam } from "@/modules/campaigns/campaignExam";
+import { examEstadoLabel, type LocalExam } from "@/modules/campaigns/campaignExam";
 import type { InterviewValues } from "@/modules/campaigns/campaignInterview";
 
 interface CampaignProviderDetailsModalProps {
@@ -166,9 +166,26 @@ export default function CampaignProviderDetailsModal({ open, onOpenChange, relat
 
     // Los registrados en esta sesión van primero; así lo recién guardado se ve sin esperar al backend
     const apiExams = examState.status === "success" ? examState.exams : [];
+    // Cada fila lleva lo mismo sin importar de dónde venga: la muestra, la etapa y el resultado si ya lo hay
     const rows = [
-        ...localExams.filter((exam) => exam.proveedorId === relation.proveedorId).map((exam) => ({ ...exam, key: exam.id })),
-        ...apiExams.map((exam) => ({ ...exam, key: `api-${exam.examenProveedorId}` })),
+        ...localExams.filter((exam) => exam.proveedorId === relation.proveedorId).map((exam) => ({
+            key: exam.id,
+            tipoExamen: exam.tipoExamen,
+            fecha: exam.fecha,
+            muestra: exam.identificacionMuestra,
+            estado: exam.estado === "resultado" && exam.resultado
+                ? (exam.resultado === "positivo" ? "Positivo" : "Negativo")
+                : examEstadoLabel(exam.estado),
+            observacion: exam.observacion,
+        })),
+        ...apiExams.map((exam) => ({
+            key: `api-${exam.examenProveedorId}`,
+            tipoExamen: exam.tipoExamen,
+            fecha: exam.fecha,
+            muestra: exam.origen,
+            estado: exam.resultado === "positivo" ? "Positivo" : "Negativo",
+            observacion: exam.observacion,
+        })),
     ];
 
     return (
@@ -237,9 +254,9 @@ export default function CampaignProviderDetailsModal({ open, onOpenChange, relat
                         <TableHeader className={TABLE_HEAD_BG}>
                             <TableRow className="border-b border-border hover:bg-transparent">
                                 <TableHead className="text-ink font-semibold h-14 px-6">Nombre Análisis</TableHead>
-                                <TableHead className="text-ink font-semibold h-14">Resultado</TableHead>
+                                <TableHead className="text-ink font-semibold h-14">Estado</TableHead>
                                 <TableHead className="text-ink font-semibold h-14">Fecha</TableHead>
-                                <TableHead className="text-ink font-semibold h-14">Origen</TableHead>
+                                <TableHead className="text-ink font-semibold h-14">Muestra</TableHead>
                                 <TableHead className="text-ink font-semibold h-14 pr-6">Detalles</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -248,10 +265,10 @@ export default function CampaignProviderDetailsModal({ open, onOpenChange, relat
                                 <TableRow key={exam.key} className="border-b border-border hover:bg-surface-page/60">
                                     <TableCell className="text-ink-body font-medium h-16 px-6">{exam.tipoExamen}</TableCell>
                                     <TableCell>
-                                        <StatusBadge status={exam.resultado === "positivo" ? "Positivo" : "Negativo"} />
+                                        <StatusBadge status={exam.estado} />
                                     </TableCell>
                                     <TableCell className="text-ink-body font-medium">{formatExamDate(exam.fecha)}</TableCell>
-                                    <TableCell className="text-ink-body font-medium">{exam.origen || "—"}</TableCell>
+                                    <TableCell className="text-ink-body font-medium">{exam.muestra || "—"}</TableCell>
                                     <TableCell className="text-ink-muted font-medium text-xs pr-6">{exam.observacion || "—"}</TableCell>
                                 </TableRow>
                             ))}

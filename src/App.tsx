@@ -11,6 +11,7 @@ import CampaignClientContractsPage from '@/modules/campaigns/pages/CampaignClien
 import CampaignContractDeliveriesPage from '@/modules/campaigns/pages/CampaignContractDeliveriesPage'
 import CampaignProviderDetailsPage from './modules/campaigns/pages/CampaignProviderDetailsPage'
 import CampaignInterviewsPage from './modules/campaigns/pages/CampaignInterviewsPage'
+import CampaignExamsPage from './modules/campaigns/pages/CampaignExamsPage'
 import CampaignCertificationsPage from './modules/campaigns/pages/CampaignCertificationsPage'
 import CampaignCarrierPaymentsPage from './modules/campaigns/pages/CampaignCarrierPaymentsPage'
 import ProvidersPage from './modules/providers/pages/ProvidersPage'
@@ -114,6 +115,7 @@ function App() {
           <Route path="/campaigns/:id/clients/:clientLinkId/contracts/:contractId/deliveries" element={<CampaignContractDeliveriesPage />} />
           <Route path="/campaigns/:id/providers/:cxpId" element={<CampaignProviderDetailsPage />} />
           <Route path="/campaigns/:id/providers/:cxpId/interviews" element={<CampaignInterviewsPage />} />
+          <Route path="/campaigns/:id/providers/:cxpId/exams" element={<CampaignExamsPage />} />
           <Route path="/campaigns/:id/certifications" element={<CampaignCertificationsPage />} />
           <Route path="/campaigns/:id/carrier-payments" element={<CampaignCarrierPaymentsPage />} />
           <Route path="/proveedores" element={<ProvidersPage />} />

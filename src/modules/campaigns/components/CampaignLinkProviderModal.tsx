@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Link2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import AppModal from "@/shared/components/AppModal";
 import InputField from "@/shared/components/InputField";
 import SegmentedControl from "@/shared/components/SegmentedControl";
 import FormField from "@/shared/components/FormField";
 import { Button } from "@/shared/components/ui/button";
 import { Combobox } from "@/shared/components/ui/combobox";
-import { Checkbox } from "@/shared/components/ui/checkbox";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { getProveedores } from "@/modules/providers/api/proveedor.api";
 import type { Proveedor } from "@/modules/providers/api/proveedor.mapper";
@@ -34,12 +32,11 @@ interface CampaignLinkProviderModalProps {
     initialData?: import("@/modules/campaigns/api/campania-proveedor.mapper").CampaniaProveedor | null;
 }
 
-type DraftField = Exclude<keyof CampaniaProveedorDraft, "proveedorId" | "tipoProveedor"> | "observacionesParticipacion" | "precioEstimado" | "moneda" | "fincasParticipantes";
+type DraftField = Exclude<keyof CampaniaProveedorDraft, "proveedorId" | "tipoProveedor"> | "observacionesParticipacion" | "precioEstimado" | "moneda";
 type DraftValues = Record<Exclude<keyof CampaniaProveedorDraft, "proveedorId" | "tipoProveedor">, string> & {
     observacionesParticipacion: string;
     precioEstimado: string;
     moneda: string;
-    fincasParticipantes: number[];
 };
 // type DraftErrors = CampaniaProveedorDraftErrors & Partial<Record<"proveedorId" | "frutaConvencional" | "observacionesParticipacion", string>>;
 
@@ -49,7 +46,6 @@ const EMPTY_DRAFT: DraftValues = {
     observacionesParticipacion: "",
     precioEstimado: "",
     moneda: "PEN",
-    fincasParticipantes: [],
 };
 
 const PROVIDER_TYPES = [
@@ -216,8 +212,7 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
         .filter((provider) => !linkedIds.has(provider.proveedorId))
         .map((provider) => ({ value: String(provider.proveedorId), label: `${provider.nombres} ${provider.apellido}` }));
 
-    type DraftStringField = Exclude<DraftField, "fincasParticipantes">;
-    const renderField = ({ field, label, step, placeholder, suffix }: { field: DraftStringField; label: string; step?: string; placeholder?: string; suffix?: string }) => (
+    const renderField = ({ field, label, step, placeholder, suffix }: { field: DraftField; label: string; step?: string; placeholder?: string; suffix?: string }) => (
         <InputField
             key={field}
             id={`link-provider-${field}`}
@@ -302,68 +297,6 @@ export default function CampaignLinkProviderModal({ open, campaniaId, onOpenChan
                         onChange={(e) => updateDraft("observacionesParticipacion", e.target.value)}
                         disabled={isLocked}
                     />
-                </FormField>
-
-                <FormField label="Fincas participantes">
-                    <p className="-mt-1 text-[13px] text-muted-foreground">Selecciona una o varias fincas registradas del proveedor para esta campaña.</p>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-                        {/* Placeholder para la lista de fincas - por ahora mockeado visualmente */}
-                        {[
-                            {
-                                id: 1,
-                                nombre: "Fundo Tambogrande",
-                                ubicacion: "Piura · Piura · Tambogrande",
-                                detalle: "12 ha totales · 8 ha de cultivo"
-                            },
-                            {
-                                id: 2,
-                                nombre: "Fundo San José de los Milagros Extendidos del Valle Norte",
-                                ubicacion: "Lambayeque · Chiclayo · San José de los Milagros Sector 4",
-                                detalle: "150.5 ha totales · 120 ha de cultivo orgánico certificado"
-                            }
-                        ].map((finca) => {
-                            const isFincaSelected = draft.fincasParticipantes.includes(finca.id);
-                            return (
-                                <label 
-                                    key={finca.id}
-                                    className={cn(
-                                        "flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all duration-200",
-                                        isFincaSelected 
-                                            ? "border-brand bg-card shadow-[0_4px_12px_-2px_var(--brand-gradient-glow)]" 
-                                            : "border-border bg-card hover:bg-accent/30 hover:border-border/80"
-                                    )}
-                                >
-                                    <Checkbox 
-                                        checked={isFincaSelected} 
-                                        onCheckedChange={(checked) => {
-                                            const newFincas = checked 
-                                                ? [...draft.fincasParticipantes, finca.id] 
-                                                : draft.fincasParticipantes.filter(id => id !== finca.id);
-                                            updateDraft("fincasParticipantes", newFincas);
-                                        }}
-                                        className="mt-0.5 shrink-0"
-                                        disabled={isLocked}
-                                    />
-                                    <div className="flex flex-col min-w-0">
-                                        <span 
-                                            className={cn("text-[14px] leading-tight mb-1.5 transition-colors line-clamp-2", isFincaSelected ? "text-transparent bg-clip-text font-bold" : "font-medium text-foreground")}
-                                            style={isFincaSelected ? { backgroundImage: "var(--brand-gradient)" } : undefined}
-                                            title={finca.nombre}
-                                        >
-                                            {finca.nombre}
-                                        </span>
-                                        <span className="text-[13px] text-muted-foreground leading-tight truncate" title={finca.ubicacion}>
-                                            {finca.ubicacion}
-                                        </span>
-                                        <span className="text-[13px] text-muted-foreground leading-tight truncate" title={finca.detalle}>
-                                            {finca.detalle}
-                                        </span>
-                                    </div>
-                                </label>
-                            );
-                        })}
-                    </div>
                 </FormField>
             </div>
 

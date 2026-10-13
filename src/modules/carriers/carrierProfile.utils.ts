@@ -67,7 +67,7 @@ export const CARRIER_TIPOS: Record<CarrierTipo, CarrierTipoMeta> = {
     publico: {
         label: "Público · Transportista",
         short: "Público",
-        nameLabel: "Transportista",
+        nameLabel: "Nombre de la empresa",
         description: "Transportista con sus propios vehículos y choferes.",
     },
     privado: {
@@ -94,7 +94,7 @@ export function validateCarrier(values: CarrierFormValues): CarrierErrors {
         if (!values[field].trim()) errors[field] = message;
     };
 
-    require("nombre", isPrivado ? "Ingresa el nombre completo." : "Ingresa el nombre del transportista.");
+    require("nombre", isPrivado ? "Ingresa el nombre completo." : "Ingresa el nombre de la empresa.");
     require("mtc", "Ingresa el número de registro MTC.");
     require("numero", "Ingresa un teléfono de contacto.");
     require("correo", "Ingresa el correo de contacto.");
